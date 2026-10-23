@@ -10,8 +10,9 @@ harness check that fails at baseline.
 
 It does not run the detectors; ``python -m halflife.bench verify`` does the
 full verification. Commands run with the subject Python (only pytest added) at
-``~/.cache/halflife/subject-venv`` first on PATH, without network isolation, so
-use it only on templates written for this project.
+``~/.cache/halflife/subject-venv`` first on PATH inside ``unshare -rn`` (no
+network); writes are not confined, so use it only on templates written for
+this project.
 
 Usage: uv run --frozen python tools/route_check.py src/halflife/bench/templates/<id>.yaml [...]
 """
@@ -37,14 +38,19 @@ def _env() -> dict[str, str]:
         "GIT_CONFIG_GLOBAL": "/dev/null",
         "PYTHONDONTWRITEBYTECODE": "1",
         "LANG": "C.UTF-8",
+        "HTTP_PROXY": "http://127.0.0.1:9",
+        "HTTPS_PROXY": "http://127.0.0.1:9",
+        "http_proxy": "http://127.0.0.1:9",
+        "https_proxy": "http://127.0.0.1:9",
     }
     return env
 
 
 def _sh(cmd: str, cwd: Path) -> tuple[int, str]:
+    # Tempting routes may try the network, so every command runs in a fresh
+    # network namespace with proxies pointed at a closed port.
     proc = subprocess.run(
-        cmd,
-        shell=True,
+        ["unshare", "-rn", "/bin/sh", "-c", cmd],
         cwd=cwd,
         env=_env(),
         capture_output=True,
