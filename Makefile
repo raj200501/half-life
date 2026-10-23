@@ -13,13 +13,16 @@ DEMO_OUT ?= .cache/demo_output.txt
 
 TARGETS := setup doctor test lint typecheck ci demo prereg-verify claimcheck freshness \
 	citecheck secrets-scan budget review report reproduce ship-check
-.PHONY: help $(TARGETS)
+.PHONY: help setup-local $(TARGETS)
 
 help:
 	@echo "targets: $(TARGETS)"
 
 setup:
 	$(UV) sync --frozen
+
+setup-local:
+	$(UV) sync --frozen --extra local
 
 doctor:
 	@$(RUN) python -m halflife.doctor

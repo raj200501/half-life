@@ -60,4 +60,5 @@ half-life measures how long AI coding agents keep the rules they are given. It b
 - One Loop Protocol iteration (brief section 10.2) per heartbeat: orient with the fast ship check, pick one thing, build it test-first, verify, bank, record, commit.
 - At most one model-heavy run at a time, in the background, with a PID file and log under `runs/<id>/`.
 - The Claude backend is refused while any billing-guard variable or `apiKeyHelper` is present (`make doctor`).
-- Push only to this session's designated branch, never tags, never force (see DECISIONS.md D-001).
+- Push every commit to this session's branch (`ALLOW_PUSH=1`, DECISIONS.md D-009); never tags, never force-push, never pull requests.
+- `cap_share = 0.2` in budget.toml scales every `claude_*` cap (D-010). Experiments with local models need `make setup-local`.

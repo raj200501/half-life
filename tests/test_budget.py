@@ -157,3 +157,35 @@ def test_main_fails_on_violation(tmp_path: Path, capsys: pytest.CaptureFixture[s
     code = budget.main(["--budget", str(REPO_ROOT / "budget.toml"), "--ledger", str(ledger)])
     assert code == 1
     assert capsys.readouterr().out.splitlines()[-1] == "BUDGET: FAIL"
+
+
+def test_file_cap_share_reads_budget_toml(tmp_path: Path) -> None:
+    assert budget.file_cap_share(REPO_ROOT / "budget.toml") == 0.2
+    plain = tmp_path / "budget.toml"
+    plain.write_text("cash_usd = 0\n", encoding="utf-8")
+    assert budget.file_cap_share(plain) == 1.0
+
+
+@pytest.mark.parametrize("value", ["0", "1.5", "true", "'x'"])
+def test_file_cap_share_rejects_bad_values(tmp_path: Path, value: str) -> None:
+    path = tmp_path / "budget.toml"
+    path.write_text(f"cap_share = {value}\n", encoding="utf-8")
+    with pytest.raises(budget.BudgetError):
+        budget.file_cap_share(path)
+
+
+def test_environment_can_only_lower_file_share() -> None:
+    assert budget.cap_share({"CAP_SHARE": "0.5"}, file_share=0.2) == 0.2
+    assert budget.cap_share({"CAP_SHARE": "0.1"}, file_share=0.2) == 0.1
+    assert budget.cap_share({}, file_share=0.2) == 0.2
+
+
+def test_main_applies_recorded_share(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    code = budget.main(
+        ["--budget", str(REPO_ROOT / "budget.toml"), "--ledger", str(tmp_path / "none.jsonl")]
+    )
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "claude_agent_runs_per_day = 6 " in out
+    assert "claude_review_runs_per_day = 1 " in out
+    assert "cap_share = 0.2" in out

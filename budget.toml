@@ -7,3 +7,7 @@ claude_single_calls_per_day = 300   # short single-turn calls (labeling, judging
 claude_review_runs_per_day = 6      # make review
 local_model_max_params_b = 8        # make doctor may lower this to fit RAM
 disk_floor_gb = 8                   # never download if free disk would fall below this
+
+# Launch setting from Raj (DECISIONS.md D-010): five projects share one Max plan.
+# Every claude_* cap is multiplied by this; CAP_SHARE in the environment can only lower it.
+cap_share = 0.2

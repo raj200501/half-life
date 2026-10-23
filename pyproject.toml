@@ -6,10 +6,19 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Raj" }]
-dependencies = []
+dependencies = [
+    "numpy>=1.26",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Local open-weight inference (CPU wheels from the llama-cpp-python index).
+local = ["llama-cpp-python>=0.3.16"]
 
 [project.scripts]
 halflife-doctor = "halflife.doctor:main"
+halflife-guard = "halflife.kit.guard:main"
+halflife-pin = "halflife.kit.pin:main"
 
 [dependency-groups]
 dev = [
@@ -17,7 +26,16 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.6",
     "mypy>=1.10",
+    "types-pyyaml>=6.0",
 ]
+
+[[tool.uv.index]]
+name = "llama-cpp-cpu"
+url = "https://abetlen.github.io/llama-cpp-python/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+llama-cpp-python = { index = "llama-cpp-cpu" }
 
 [build-system]
 requires = ["hatchling>=1.24"]

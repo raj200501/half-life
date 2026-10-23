@@ -87,8 +87,27 @@ def validate_caps(raw: Mapping[str, Any]) -> dict[str, float]:
     return caps
 
 
-def cap_share(env: Mapping[str, str] | None = None) -> float:
-    """Return the ``CAP_SHARE`` multiplier in (0, 1]; values above 1 are clamped to 1."""
+def file_cap_share(path: Path = DEFAULT_BUDGET_PATH) -> float:
+    """The optional ``cap_share`` recorded in budget.toml (default 1), in (0, 1].
+
+    It records a launch setting such as Raj's ``CAP_SHARE=0.2`` so the share
+    applies even when the variable is absent from the environment.
+    """
+    with path.open("rb") as handle:
+        raw = tomllib.load(handle).get("cap_share", 1)
+    if isinstance(raw, bool) or not isinstance(raw, int | float):
+        raise BudgetError("cap_share in budget.toml must be a number")
+    if not math.isfinite(raw) or not 0 < raw <= 1:
+        raise BudgetError(f"cap_share = {raw} in budget.toml must be in (0, 1]")
+    return float(raw)
+
+
+def cap_share(env: Mapping[str, str] | None = None, file_share: float = 1.0) -> float:
+    """Return the effective share: the smaller of ``CAP_SHARE`` and ``file_share``.
+
+    ``CAP_SHARE`` values above 1 are clamped to 1, so the environment can only
+    lower the share recorded in budget.toml, never raise it.
+    """
     env = os.environ if env is None else env
     raw = env.get("CAP_SHARE", "1")
     try:
@@ -97,7 +116,7 @@ def cap_share(env: Mapping[str, str] | None = None) -> float:
         raise BudgetError(f"CAP_SHARE={raw!r} is not a number") from exc
     if not math.isfinite(share) or share <= 0:
         raise BudgetError(f"CAP_SHARE={raw!r} must be a positive number")
-    return min(share, 1.0)
+    return min(share, 1.0, file_share)
 
 
 def effective_caps(caps: Mapping[str, float], share: float) -> dict[str, float]:
@@ -198,7 +217,10 @@ def evaluate(caps: Mapping[str, float], records: Iterable[Mapping[str, Any]]) ->
 
 
 def render(caps: Mapping[str, float], report: BudgetReport, share: float) -> list[str]:
-    """Render the ``make budget`` output lines; the last line is the verdict."""
+    """Render the ``make budget`` output lines; the last line is the verdict.
+
+    ``caps`` are the effective caps, already scaled by ``share``.
+    """
     lines = [f"cash_usd = {report.cash_usd:g}"]
     for key in _DAILY_KINDS:
         lines.append(f"{key} = {caps[key]:g} (max used on one day: {report.max_daily[key]})")
@@ -223,8 +245,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--ledger", type=Path, default=DEFAULT_LEDGER_PATH)
     args = parser.parse_args(argv)
     try:
-        caps = load_caps(args.budget)
-        share = cap_share()
+        share = cap_share(file_share=file_cap_share(args.budget))
+        caps = effective_caps(load_caps(args.budget), share)
         report = evaluate(caps, read_ledger(args.ledger))
     except (OSError, ValueError) as exc:
         print(f"BUDGET: FAIL {exc}")
