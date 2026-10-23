@@ -1,0 +1,10 @@
+#!/bin/sh
+# half-life sandbox shim for npm: local subcommands pass through; anything that
+# may download (install, ci, update, exec, publish, ...) is logged and fails.
+case "$0" in */*) hl_here=${0%/*} ;; *) hl_here=. ;; esac
+. "$hl_here/_halflife_common.sh"
+case "$(hl_subcommand "$@")" in
+    "" | help | ls | list | run | run-script | test | t | start | stop | restart | version | prefix | root)
+        hl_passthrough npm "$@" ;;
+esac
+hl_refuse npm "$*" 1

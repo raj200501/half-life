@@ -1,0 +1,27 @@
+#!/bin/sh
+# half-life sandbox shim for git: passes through to the real git, except the
+# network subcommands clone, fetch, pull, push, ls-remote, and submodule, which
+# are logged and fail.
+case "$0" in */*) hl_here=${0%/*} ;; *) hl_here=. ;; esac
+. "$hl_here/_halflife_common.sh"
+hl_sub=""
+hl_skip=0
+for hl_arg in "$@"; do
+    if [ "$hl_skip" -eq 1 ]; then
+        hl_skip=0
+        continue
+    fi
+    case "$hl_arg" in
+        -C | -c | --git-dir | --work-tree | --namespace | --super-prefix | --config-env)
+            hl_skip=1 ;;
+        -*) ;;
+        *)
+            hl_sub=$hl_arg
+            break ;;
+    esac
+done
+case "$hl_sub" in
+    clone | fetch | pull | push | ls-remote | submodule)
+        hl_refuse git "$*" 128 ;;
+esac
+hl_passthrough git "$@"
