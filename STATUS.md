@@ -3,7 +3,7 @@ STATE: ACTIVE
 
 # Status
 
-Updated 2026-10-23 (bootstrap). History lives in docs/LOG.md.
+Updated 2026-10-23 (goal_turn 1). History lives in docs/LOG.md.
 
 ## Gates (full `make ship-check` at 0e1a1f3, 2026-10-23: FAIL 3/14)
 
@@ -29,8 +29,9 @@ Updated 2026-10-23 (bootstrap). History lives in docs/LOG.md.
 - Cloud container, Linux x86_64, 4 CPUs, 15.7 GB RAM, no GPU, 29.9 GB free disk (floor 8 GB).
 - Docker CLI yes, daemon no. Sandboxes: `unshare -rn` only (no bubblewrap).
 - `claude` CLI 2.1.309 present; Claude backend refused by the billing guard (`ANTHROPIC_BASE_URL`, `CLAUDE_CODE_USE_CCR_V2` set by the cloud harness).
-- Local runtimes: none installed (no Ollama, llama.cpp, or transformers).
-- Free tier: not confirmed. `ALLOW_PUSH`: not set (see DECISIONS.md D-001). `CAP_SHARE`: 1.
+- Local runtime: llama-cpp-python 0.3.36 CPU wheel (`make setup-local`); Hugging Face GGUF downloads work through the proxy.
+- Subject sandbox Python: `~/.cache/halflife/subject-venv` (3.12, pytest only, no pip).
+- Free tier: not confirmed. Launch settings (D-009, D-010): `ALLOW_PUSH=1` (push every commit to this branch), `cap_share = 0.2` in budget.toml.
 - Recommended `local_model_max_params_b`: 8 (cap unchanged).
 
 ## Backends and fallbacks
@@ -41,13 +42,13 @@ Updated 2026-10-23 (bootstrap). History lives in docs/LOG.md.
 
 ## Now
 
-Bootstrap (section 10.1) complete; next heartbeat starts the Loop Protocol.
+Phase A and B1 builder workflows are running (one owner per file set): instruments core (workspace, sandbox, tools, scripted runner, detectors), blind E0 seeded cases, integrity tools (prereg, claimcheck, freshness, citecheck, gate mutation tests), stats and SVG plots, model client and pinned local models, citations, mitigation kit, 29 bench templates (three authors), and the E2 Claude Code driver. Written by the owner this turn: schema, design, sessions generator, analysis rows, minimal agent loop, compaction strategies, probes, route checker.
 
 ## Next three actions
 
-1. M1: action-log and session schema, filesystem hashing after every tool call, and the first deterministic detectors with tests.
-2. M1: seeded E0 logs including indirect violations (`sed -i`, scripted writes, `git checkout --`, `cp`) and the detector validation artifact.
-3. Port `prereg.py`, `claimcheck.py`, `freshness.py`, and gate mutation tests from raise-v1-public with attribution.
+1. Integrate phase A: wire make targets, run the E0 seeded cases against the detectors, bank artifacts/e0/detector_validation.json.
+2. Bench verification CLI (`python -m halflife.bench verify`), manifest, compliant routes and reference runs (G6).
+3. Experiment runner over the local backend; family pilot on the 3 pilot templates; E1 preregistration with power analysis.
 
 ## Usage to date
 
@@ -56,7 +57,7 @@ Bootstrap (section 10.1) complete; next heartbeat starts the Loop Protocol.
 ## Needs Raj
 
 1. **Claude backend (blocks E2 in G8, and headless review).** This cloud container sets `ANTHROPIC_BASE_URL` and `CLAUDE_CODE_USE_CCR_V2`, so the billing guard refuses Claude children. To run E2, start a session on a machine where `env | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_)'` prints nothing and `claude` is logged in to the Max plan.
-2. **Push permission (informational).** Commits are pushed to `claude/brave-albattani-c5c7e2` only, per this session's instructions (DECISIONS.md D-001). Say so if you want pushing stopped.
+2. **E2 runs on your machine.** E2 needs the `claude` CLI as a subject with a clean billing guard; docs/E2_RUNBOOK.md (being written) will give the exact commands.
 
 ## Blocked
 
