@@ -1,0 +1,31 @@
+# Never tracked (section 8 and 9 of the brief)
+private/
+runs/
+.env
+.env.*
+*.pem
+*.key
+
+# Model weights and large binaries
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.onnx
+models/
+
+# Python and tool caches
+__pycache__/
+*.py[cod]
+.venv/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.json
+htmlcov/
+dist/
+build/
+*.egg-info/

@@ -1,0 +1,9 @@
+# Caps from section 8 of docs/BUILD_BRIEF.md. Claude may lower a cap and must
+# never raise one. `make budget` fails if any cap is looser than its default.
+cash_usd = 0                        # absolute; never change
+claude_agent_runs_per_day = 30      # multi-turn headless runs used as test subjects
+claude_agent_max_turns = 40         # per headless run (or per subtask message in resumed sessions)
+claude_single_calls_per_day = 300   # short single-turn calls (labeling, judging, extraction)
+claude_review_runs_per_day = 6      # make review
+local_model_max_params_b = 8        # make doctor may lower this to fit RAM
+disk_floor_gb = 8                   # never download if free disk would fall below this
