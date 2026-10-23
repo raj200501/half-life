@@ -803,8 +803,8 @@ def make_targets_pass(ctx: Context, targets: Sequence[str]) -> GateResult:
     outcomes = []
     for target in targets:
         result = ctx.run(target, ["make", target], timeout=900)
-        last = result.output.strip().splitlines()[-1:] or [""]
-        outcomes.append((target, result.returncode, last[0][:80]))
+        lines = [ln for ln in result.output.splitlines() if ln.strip() and "make: ***" not in ln]
+        outcomes.append((target, result.returncode, (lines[-1] if lines else "")[:80]))
     bad = [f"{t} rc={rc} ({line})" for t, rc, line in outcomes if rc != 0]
     if bad:
         return fail("; ".join(bad))
