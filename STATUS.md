@@ -5,24 +5,24 @@ STATE: ACTIVE
 
 Updated 2026-10-23 (bootstrap). History lives in docs/LOG.md.
 
-## Gates (from `python tools/ship_check.py --fast`; fast results do not count)
+## Gates (full `make ship-check` at 0e1a1f3, 2026-10-23: FAIL 3/14)
 
 | Gate | State | Evidence |
 |---|---|---|
-| G1 Build and tests | pending | first fast check runs after the bootstrap commit |
-| G2 Static quality | pending | |
-| G3 CI parity | pending | |
-| G4 Offline demo | pending | |
-| G5 Instrument validity | pending | |
-| G6 Benchmark complete | pending | |
-| G7 Main study | pending | |
-| G8 Ecological and placement arms | pending | |
-| G9 Mitigations shipped | pending | |
-| G10 Claim integrity | pending | |
-| G11 Preregistration integrity | pending | |
-| G12 Independent review | pending | |
-| G13 Documentation | pending | |
-| G14 Hygiene | pending | |
+| G1 Build and tests | PASS | setup ok, 80 tests, core line coverage 98.3% |
+| G2 Static quality | PASS | ruff check, ruff format, mypy --strict clean |
+| G3 CI parity | FAIL | workflow ok; `make ci` fails at the demo placeholder |
+| G4 Offline demo | FAIL | no demo or golden output yet (M2) |
+| G5 Instrument validity | FAIL | no E0 artifacts yet (M1, M4) |
+| G6 Benchmark complete | FAIL | no bench manifest yet (M3) |
+| G7 Main study | FAIL | no E1 artifacts yet (M5) |
+| G8 Ecological and placement arms | FAIL | no E2 or E3 yet (M6; E2 needs Raj) |
+| G9 Mitigations shipped | FAIL | no E4 yet (M7) |
+| G10 Claim integrity | FAIL | no docs/REPORT.md, claimcheck and freshness are placeholders (M8) |
+| G11 Preregistration integrity | FAIL | prereg-verify is a placeholder (M1 port) |
+| G12 Independent review | FAIL | no review banked yet (M9) |
+| G13 Documentation | FAIL | README is still the brief, no docs/REPORT.md (M8) |
+| G14 Hygiene | PASS | secrets clean, cash_usd = 0, caps ok, private/ untracked, tree clean |
 
 ## Environment (`make doctor`, 2026-10-23)
 
