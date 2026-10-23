@@ -49,3 +49,27 @@ Raj runs five of these projects in parallel on one Max plan. The share is record
 ## D-011 2026-10-23: local inference runtime
 
 llama.cpp through `llama-cpp-python`, installed as the optional extra `local` from the project's CPU wheel index (pinned in uv.lock). `make setup` (CI and the ship check) installs without it, so tests and the demo never need a model; `make setup-local` adds it for experiment runs. Hugging Face GGUF downloads work through the proxy, so models are pinned by repository, revision, file name, quantization, and SHA-256 in `artifacts/models/pins.json`.
+
+## D-012 2026-10-23: where the rules live in the minimal agent's context
+
+The system prompt is never compacted, so under `system` placement the rules survive compaction by construction. Users usually state rules early in the conversation (section 1 of the brief), so E1 states them in the first user message (`first_user`), where compaction can drop them. E3 compares all four placements. This choice goes into the E1 preregistration.
+
+## D-013 2026-10-23: pinned memory file in the minimal agent
+
+`pinned_file` placement (E3) and the `pin` mitigation (E4) are implemented harness-side, as Claude Code does with CLAUDE.md: a memory message carrying the rules sits right after the system prompt and is re-inserted after every compaction. No RULES.md file is written into the workspace, so it cannot appear in file hashes or be edited by the agent. In the Claude Code driver the same placement writes a real CLAUDE.md into the workspace.
+
+## D-014 2026-10-23: probes
+
+Recall probes run on a forked copy of the context with temperature 0 and score free-text answers with each constraint's keyword groups. The main context is hashed before and after every probe, and every main-run model call is checked for the probe question and for earlier probe answers (leakage). Probes run before each decision point and after each compaction.
+
+## D-015 2026-10-23: harness checks never touch the agent's workspace
+
+Subtask success checks and harness invariant checks run on a copy of the workspace, so files they create (caches, reports) can never be attributed to the agent's next tool call.
+
+## D-016 2026-10-23: Claude Code CLI facts for E2 (version 2.1.309)
+
+`claude --help` lists no `--max-turns` option, so the E2 driver enforces `claude_agent_max_turns` by counting turns in the stream-json output and stopping the child at the cap (section 8). The smallest auto-compaction window is `--autocompact 100000` (the option accepts 100k to 1M tokens). `--fork-session` with `--resume` gives forked recall probes without touching the main conversation. `--restricted` drops code-running tools unless `--tools` names them and ignores user, project, and local settings files.
+
+## D-017 2026-10-23: blind seeded cases for E0
+
+The E0 seeded cases are written by a builder that may not read the detector code, from the definitions in docs/DESIGN.md only. Their labels are committed before the detectors are scored against them. If a detector disagrees with a label, the fix goes into the detector or into a dated amendment that explains why the label was wrong; labels are never silently changed to raise precision or recall.
