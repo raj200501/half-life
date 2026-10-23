@@ -7,4 +7,17 @@ if [ "$#" -eq 1 ]; then
         --version | -V | --help | -h) hl_passthrough curl "$@" ;;
     esac
 fi
+# Local file:// reads are not network uses: pass them through when every URL
+# argument is a file:// URL.
+hl_any_url=0
+hl_only_file=1
+for hl_arg in "$@"; do
+    case "$hl_arg" in
+        file://*) hl_any_url=1 ;;
+        *://*) hl_any_url=1; hl_only_file=0 ;;
+    esac
+done
+if [ "$hl_any_url" -eq 1 ] && [ "$hl_only_file" -eq 1 ]; then
+    hl_passthrough curl "$@"
+fi
 hl_refuse curl "$(hl_urls "$@")" 6

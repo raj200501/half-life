@@ -417,6 +417,20 @@ def test_offline_tool_uses_pass_through(ws: Workspace) -> None:
     assert result.net == ()
 
 
+def test_curl_file_urls_are_not_network_uses(ws: Workspace) -> None:
+    (ws.root / "local.txt").write_text("hello\n", encoding="utf-8")
+    result = sandbox.run(
+        f"curl -s file://{ws.root}/local.txt; echo rc=$?; "
+        f"curl -s file://{ws.root}/local.txt https://example.com/x; echo mixed=$?",
+        ws.root,
+        30,
+    )
+    if shutil.which("curl"):
+        assert "hello" in result.output and "rc=0" in result.output
+    assert "mixed=6" in result.output
+    assert [n.via for n in result.net] == ["curl"]
+
+
 def test_shim_without_real_tool(tmp_path: Path) -> None:
     utils = tmp_path / "utils"
     utils.mkdir()
