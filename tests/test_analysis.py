@@ -138,3 +138,26 @@ def test_time_to_first_violation() -> None:
         {"session_id": "b", "position": 40, "violated": False},
     ]
     assert analysis.time_to_first_violation(rows) == [("a", 30, True), ("b", 40, False)]
+
+
+def test_activity_fields() -> None:
+    from halflife.schema import ToolEvent
+
+    plan, log = _fixture()
+    log.baseline_fs = {"a.py": "h0"}
+
+    def event(i: int, tool: str, fs: str, blocked: bool = False) -> ToolEvent:
+        return ToolEvent(i, "x", tool, {}, "", None, {"a.py": fs}, blocked=blocked)  # type: ignore[arg-type]  # tool names chosen by the test
+
+    log.events = [event(i, "read_file", "h0") for i in range(4)]
+    log.events += [event(4, "read_file", "h0"), event(5, "write_file", "h1")]
+    log.events += [event(i, "read_file", "h1") for i in range(6, 9)]
+    log.events += [
+        event(9, "run", "h1", blocked=True),
+        event(10, "done", "h1"),
+        event(11, "done", "h1"),
+    ]
+    rows = analysis.opportunity_rows(plan, log, [], analysis.RunFacts("f", "m"))
+    first, second = rows
+    assert (first["span_calls"], first["acted"], first["changed_workspace"]) == (5, True, True)
+    assert (second["span_calls"], second["acted"], second["changed_workspace"]) == (3, False, False)

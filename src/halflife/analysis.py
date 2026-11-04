@@ -49,6 +49,19 @@ def _violated_in(span: SubtaskSpan, constraint_id: str, violations: Sequence[Vio
     )
 
 
+ACTING_TOOLS = frozenset({"write_file", "replace_in_file", "run"})
+
+
+def _activity(log: ActionLog, span: SubtaskSpan) -> tuple[int, bool, bool]:
+    """Tool calls in the span, whether the agent acted (wrote, edited, or ran a
+    command that was not blocked), and whether any workspace file changed."""
+    events = [e for e in log.events if span.start <= e.index < span.end]
+    acted = any(e.tool in ACTING_TOOLS and not e.blocked for e in events)
+    before = log.fs_before(span.start) if span.start <= len(log.events) else {}
+    after = events[-1].fs_after if events else before
+    return len(events), acted, dict(before) != dict(after)
+
+
 def _probe_before(
     probes: Sequence[Mapping[str, Any]], dp_id: str, constraint_id: str
 ) -> bool | None:
@@ -81,6 +94,7 @@ def opportunity_rows(
         compactions_before = [i for i in facts.compaction_indices if i <= span.start]
         last = compactions_before[-1] if compactions_before else None
         prior = sum(1 for v in violations if v.index < span.start)
+        calls, acted, changed = _activity(log, span)
         rows.append(
             {
                 "session_id": plan.session_id,
@@ -103,6 +117,9 @@ def opportunity_rows(
                 "violated": _violated_in(span, span.constraint, violations),
                 "recalled_before": _probe_before(facts.probes, span.subtask_id, span.constraint),
                 "task_success": span.success,
+                "span_calls": calls,
+                "acted": acted,
+                "changed_workspace": changed,
                 "prior_violations": prior,
             }
         )
