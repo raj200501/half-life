@@ -618,6 +618,28 @@ def check_interval(record: dict[str, Any], key: str) -> bool:
     return all(math.isfinite(x) for x in (lo, value, hi)) and lo <= value <= hi
 
 
+def check_half_life(record: dict[str, Any]) -> bool:
+    """A half-life estimate with a valid interval, in one of three forms.
+
+    * finite: ``lo <= half_life <= hi``, all finite;
+    * open upper bound: finite ``lo <= half_life``, ``hi`` null, and an integer
+      ``hi_not_reached_within`` at least ``half_life`` (some bootstrap draws never
+      reached 0.5 within that many tool calls; DECISIONS.md D-028);
+    * not reached: ``half_life`` null and a positive integer ``not_reached_within``.
+    """
+    within = record.get("not_reached_within")
+    if record.get("half_life") is None:
+        return isinstance(within, int) and not isinstance(within, bool) and within > 0
+    open_hi = record.get("hi_not_reached_within")
+    if record.get("hi") is None and isinstance(open_hi, int) and not isinstance(open_hi, bool):
+        try:
+            lo, value = float(record["lo"]), float(record["half_life"])
+        except (KeyError, TypeError, ValueError):
+            return False
+        return math.isfinite(lo) and math.isfinite(value) and lo <= value <= open_hi
+    return check_interval(record, "half_life")
+
+
 def check_prereg_link(clone: Path, prereg: str, artifact: str) -> str | None:
     """Problem text if ``artifact`` does not cite a preregistration committed strictly before it."""
     if not prereg.startswith("prereg/") or not (clone / prereg).is_file():
@@ -673,12 +695,7 @@ def gate_g7(ctx: Context) -> GateResult:
         if not set(reached) <= families:
             return fail(f"{name} lacks estimates for {sorted(set(reached) - families)}")
         for est in estimates:
-            if name == "hazard.json":
-                ok = check_interval(est, "estimate")
-            else:
-                ok = check_interval(est, "half_life") or isinstance(
-                    est.get("not_reached_within"), int
-                )
+            ok = check_interval(est, "estimate") if name == "hazard.json" else check_half_life(est)
             if not ok:
                 return fail(f"{name}: estimate for {est.get('family')} lacks a valid interval")
     km = load_json(base / "km.json")

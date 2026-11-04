@@ -431,3 +431,24 @@ def test_run_gates_turns_errors_into_failures(monkeypatch: pytest.MonkeyPatch) -
     assert not results[5].passed
     assert results[5].evidence.startswith("error: KeyError")
     assert sum(r.passed for r in results.values()) == 13
+
+
+def test_check_half_life_forms() -> None:
+    assert sc.check_half_life({"half_life": 40.0, "lo": 30.0, "hi": 55.0})
+    assert sc.check_half_life(
+        {"half_life": 140.5, "lo": 106.1, "hi": None, "hi_not_reached_within": 150}
+    )
+    assert sc.check_half_life(
+        {"half_life": None, "not_reached_within": 150, "lo": 120.0, "hi": None}
+    )
+    assert not sc.check_half_life({"half_life": 140.5, "lo": 106.1, "hi": None})
+    assert not sc.check_half_life(
+        {"half_life": 160.0, "lo": 106.1, "hi": None, "hi_not_reached_within": 150}
+    )
+    assert not sc.check_half_life(
+        {"half_life": 40.0, "lo": 50.0, "hi": None, "hi_not_reached_within": 150}
+    )
+    assert not sc.check_half_life({"half_life": None, "not_reached_within": True})
+    assert not sc.check_half_life({"half_life": None, "not_reached_within": 0})
+    assert not sc.check_half_life({"half_life": 40.0, "hi": None, "hi_not_reached_within": 150})
+    assert not sc.check_half_life({"half_life": 40.0, "lo": 30.0, "hi": 35.0})

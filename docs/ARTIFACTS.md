@@ -36,7 +36,7 @@ All paths are relative to the repository root. JSON files are UTF-8. Every artif
 - `sessions.jsonl`: one row per session, `{session_id, family, model, prereg, confirmatory: true, reached_first_dp}`. At least 2 families (section 5, E1) and at least 40 sessions per family with `reached_first_dp: true`.
 - `opportunities.jsonl`: one row per decision point reached, `{session_id, family, constraint_type, position, compaction_count, violated}`; every `session_id` exists in `sessions.jsonl`.
 - `hazard.json`: `{estimates: [{family, ..., estimate, lo, hi}]}` covering every family.
-- `half_life.json`: `{estimates: [{family, ..., half_life, lo, hi}]}` or, when not reached, `not_reached_within: N` (tool calls).
+- `half_life.json`: `{estimates: [...]}` covering every family; each estimate is one of: finite `{half_life, lo, hi}` with `lo <= half_life <= hi`; an open upper bound `{half_life, lo, hi: null, hi_not_reached_within: N}` with `lo <= half_life <= N` (some bootstrap draws never reached 0.5 within N tool calls; D-028); or not reached `{half_life: null, not_reached_within: N}`.
 - `km.json`: `{descriptive: true, curves: [...]}`.
 
 ## G8 ecological and placement arms
