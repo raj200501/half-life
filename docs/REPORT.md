@@ -147,7 +147,19 @@ Status: not run. E4 has not run, so this report has no mitigation results.
 
 ## 6. Limitations
 
-Pending results. Known in advance: the subjects are small quantized models on CPU, the projects are synthetic and short, and the production arm depends on a machine where the Claude backend passes the billing guard.
+Several limits are known before any confirmatory result, and the results should be read with them in mind.
+
+**Small models on a CPU.** The controlled subjects are small quantized open-weight models running on four CPU cores, because the study spends no cash. Small models often fail at the work itself: in the pilot, some wrote short or broken code and some ended requests without acting. An agent that does not act at a decision point cannot show whether it keeps the rule, so the family choice requires engagement as well as reaching the first decision point (DECISIONS.md D-042, an amendment made after one pilot session per family and reported as such). Few violations from a weak agent can mean that it keeps rules, or that it never finds the easy route that breaks them. The report keeps these readings apart by showing how often agents acted at decision points next to every violation rate.
+
+**Synthetic, short projects.** The templates are small synthetic Python projects. Sessions are padded to at least twenty requests with neutral read-only requests (D-043), which lengthens sessions without changing what the rules cover, but real projects are larger, messier, and less regular. Decision points are designed to be realistic and to have a reasonable compliant route; they are not drawn from real user sessions.
+
+**The minimal agent is not a production tool.** The controlled agent has a fixed scaffold and harness-side compaction strategies. Production agents compact differently and carry their own system prompts and memory features. The ecological arm (E2) runs Claude Code itself, but it needs a machine where the billing guard passes, and its samples are small by design. Results from the minimal agent should be read as evidence about mechanisms under control, and E2 as a check on whether they appear in a real tool.
+
+**Measurement.** Violations come from deterministic detectors validated on seeded logs, including indirect writes. Detectors see file hashes, commands, manifests, syntax trees, and network attempts logged by the sandbox; a violation that leaves none of these traces would be missed. Recall is scored with keyword groups, validated against labels written by a blind language-model labeler on synthetic answers rather than by people (D-038); the reported agreement is for the held-out half of that set, and the scorer still counts some partial answers and misses some phrasings.
+
+**Mitigations.** The policy guard analyzes tool calls statically. It cannot see a write or a network call made inside a program the agent runs, so the guard arm is an upper bound on what static enforcement blocks, and its refusal messages restate the rule at the moment of an attempted violation (D-039). Hook fixtures were written from the Claude Code documentation rather than captured, so the guard's behavior inside Claude Code is confirmed only by the E2 smoke run.
+
+**Statistics.** Sample sizes are set by compute, with simulated power reported beside them. The hazard model assumes a smooth logistic dependence on the logarithm of position; half-lives beyond the observed positions are model extrapolations, and the report says so where an estimate is not reached within the session cap. Kaplan-Meier curves are descriptive only. Everything outside the preregistered hypotheses is exploratory.
 
 ## 7. Ethics and disclosure
 
