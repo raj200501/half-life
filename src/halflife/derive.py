@@ -265,12 +265,15 @@ def e0_compaction_logs(inputs: Mapping[str, Any], *, source: str) -> dict[str, A
 # --------------------------------------------------------------------------- power
 
 
-def power_e1(inputs: Mapping[str, Any], *, n_sim: int, seed: int) -> dict[str, Any]:
+def power_e1(
+    inputs: Mapping[str, Any], *, n_sim: int, seed: int, families: Sequence[str] | None = None
+) -> dict[str, Any]:
     """The data fields of ``artifacts/power/e1.json`` (``python -m halflife.power``): pilot
-    inputs measured from the banked pilot rows and the simulated power grid."""
+    inputs measured from the banked pilot rows of ``families`` (the E1 families the
+    artifact records; every family when None) and the simulated power grid."""
     sessions = _rows(_input(inputs, "sessions.jsonl"), "pilot sessions")
     opportunities = _rows(_input(inputs, "opportunities.jsonl"), "pilot opportunities")
-    pilot = power.pilot_inputs(sessions, opportunities)
+    pilot = power.pilot_inputs(sessions, opportunities, families)
     return {
         "synthetic": True,
         "pilot": pilot,
@@ -520,7 +523,10 @@ def declare(rel: str, root: Path = ROOT, module: str = DERIVE_MODULE) -> Declara
         if not (isinstance(first, Mapping) and {"n_sim", "seed"} <= set(first)):
             raise DeriveError(f"{rel} records no simulation size and seed")
         inputs, raw = _runner_inputs(pilot, ["sessions.jsonl", "opportunities.jsonl"])
-        params = {"n_sim": first["n_sim"], "seed": first["seed"]}
+        params: dict[str, Any] = {"n_sim": first["n_sim"], "seed": first["seed"]}
+        families = content.get("families") if isinstance(content, Mapping) else None
+        if isinstance(families, list):
+            params["families"] = [str(f) for f in families]
         out.derivations[rel] = _derived(module, "power_e1", inputs, params, POWER_COMPARE)
         out.raw.update(raw)
     elif rel in _OUTPUT_FILES:

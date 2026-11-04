@@ -129,15 +129,92 @@ def test_session_row_without_dps() -> None:
     assert row["ended_reason"] == "tool_cap"
 
 
+def test_recall_is_paired_with_the_compactions_the_probe_saw() -> None:
+    # A compaction at index 9, where dp2 starts, runs after the before_dp:dp2 probe and
+    # before dp2's first call: the hazard counts it (the agent decides in the compacted
+    # context), but the probe that gives recalled_before never saw it.
+    plan, log = _fixture()
+    facts = analysis.RunFacts("fam", "m", compaction_indices=(5, 9), prereg="prereg/0001-e1.md")
+    first, second = analysis.opportunity_rows(plan, log, [], facts)
+    assert first["compaction_count"] == first["compactions_before_probe"] == 0
+    assert second["position"] == 9 and second["compaction_count"] == 2
+    assert second["compactions_before_probe"] == 1
+    assert first["prereg"] == second["prereg"] == "prereg/0001-e1.md"
+
+
+def test_a_reminder_that_rides_on_the_decision_point_request_is_flagged() -> None:
+    import dataclasses
+
+    from halflife.schema import ToolEvent
+
+    # Under reminder placement, a reminder due on the done call that ends the previous
+    # subtask is sent with the decision-point request, after the before_dp probe ran.
+    plan, log = _fixture()
+    plan = dataclasses.replace(plan, placement="reminder", reminder_every=9)
+    log.events = [
+        ToolEvent(i, "x", "done" if i in (3, 8) else "read_file", {}, "", None, {})  # type: ignore[arg-type]  # tool names chosen by the test
+        for i in range(12)
+    ]
+    first, second = analysis.opportunity_rows(plan, log, [], analysis.RunFacts("f", "m"))
+    assert (first["reminder_on_request"], second["reminder_on_request"]) == (False, True)
+    log.events[8] = dataclasses.replace(log.events[8], blocked=True)  # a refused done
+    rows = analysis.opportunity_rows(plan, log, [], analysis.RunFacts("f", "m"))
+    assert rows[1]["reminder_on_request"] is False
+
+
+def test_session_row_records_its_plan_and_every_planned_check() -> None:
+    import dataclasses
+    import hashlib
+    import json
+
+    from halflife.schema import SuccessCheck
+
+    plan, log = _fixture()
+    check = SuccessCheck("true")
+    subtasks = tuple(
+        dataclasses.replace(s, success=check) if s.id in {"dp1", "dp3"} else s
+        for s in plan.subtasks
+    )
+    plan = dataclasses.replace(plan, subtasks=subtasks)
+    row = analysis.session_row(plan, log, [], analysis.RunFacts("f", "m"))
+    canonical = json.dumps(plan.to_dict(), sort_keys=True)
+    assert row["plan_sha256"] == hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    assert row["plan_sha256"] == analysis.plan_sha256(plan)
+    assert row["template_sha256"] == plan.template_sha256
+    # dp3 has a check but the session never reached it: it is planned, not checked.
+    assert row["subtasks_planned_checked"] == 2 and row["subtasks_checked"] == 2
+
+
 def test_time_to_first_violation() -> None:
     rows = [
-        {"session_id": "a", "position": 10, "violated": False},
-        {"session_id": "a", "position": 30, "violated": True},
-        {"session_id": "a", "position": 50, "violated": True},
-        {"session_id": "b", "position": 12, "violated": False},
-        {"session_id": "b", "position": 40, "violated": False},
+        {"family": "f", "session_id": "a", "position": 10, "violated": False},
+        {"family": "f", "session_id": "a", "position": 30, "violated": True},
+        {"family": "f", "session_id": "a", "position": 50, "violated": True},
+        {"family": "f", "session_id": "b", "position": 12, "violated": False},
+        {"family": "f", "session_id": "b", "position": 40, "violated": False},
     ]
-    assert analysis.time_to_first_violation(rows) == [("a", 30, True), ("b", 40, False)]
+    assert analysis.time_to_first_violation(rows) == [
+        (("f", "a"), 30, True),
+        (("f", "b"), 40, False),
+    ]
+
+
+def test_time_to_first_violation_is_per_family_session() -> None:
+    # Both families ran plan p (the same session_id); each session has its own time.
+    rows = [
+        {"family": "fa", "session_id": "p", "position": 5, "violated": True},
+        {"family": "fb", "session_id": "p", "position": 9, "violated": False},
+        {"family": "fb", "session_id": "p", "position": 20, "violated": True},
+        {"family": "fb", "session_id": "q", "position": 7, "violated": False},
+    ]
+    assert analysis.SESSION_KEY == ("family", "session_id")
+    assert analysis.time_to_first_violation(rows) == [
+        (("fa", "p"), 5, True),
+        (("fb", "p"), 20, True),
+        (("fb", "q"), 7, False),
+    ]
+    merged = analysis.time_to_first_violation(rows, by=("session_id",))
+    assert merged == [(("p",), 5, True), (("q",), 7, False)]
 
 
 def test_activity_fields() -> None:

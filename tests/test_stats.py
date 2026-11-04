@@ -8,6 +8,7 @@ simulated datasets are synthetic test fixtures, not model results.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import math
 from collections.abc import Callable, Sequence
@@ -86,6 +87,7 @@ def _simulated_hazard_rows(
             eta = intercept + slope * float(p) + compaction * count + effects[ctype]
             rows.append(
                 {
+                    "family": "syn",
                     "session_id": f"s{s:04d}",
                     "position": int(p),
                     "compaction_count": count,
@@ -94,6 +96,50 @@ def _simulated_hazard_rows(
                 }
             )
     return rows
+
+
+def _two_family_rows(
+    n_plans: int, seed: int, intercept: float = -2.0, slope: float = 0.6
+) -> list[dict[str, Any]]:
+    """Two synthetic families run the same plans, so every session id appears twice.
+
+    Positions and outcomes are drawn per family, from a known log1p(position) hazard;
+    the compaction count rises every 30 tool calls. Not model data.
+    """
+    rng = np.random.default_rng(seed)
+    rows: list[dict[str, Any]] = []
+    for family in ("fa", "fb"):
+        for plan in range(n_plans):
+            positions = np.sort(rng.choice(np.arange(1, 121), size=5, replace=False))
+            for p in positions:
+                eta = intercept + slope * math.log1p(float(p)) - 0.3 * (plan % 2)
+                rows.append(
+                    {
+                        "family": family,
+                        "session_id": f"p{plan:03d}",
+                        "arm": "b" if plan % 2 else "a",
+                        "position": int(p),
+                        "compaction_count": int(p) // 30,
+                        "violated": bool(rng.random() < 1.0 / (1.0 + math.exp(-eta))),
+                        "recalled_before": bool(rng.random() < 0.5),
+                    }
+                )
+    return rows
+
+
+def _manual_risk_set(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Each (family, session_id) in position order up to its first violation (by hand)."""
+    out: list[dict[str, Any]] = []
+    for key in sorted({(r["family"], r["session_id"]) for r in rows}):
+        mine = sorted(
+            (r for r in rows if (r["family"], r["session_id"]) == key),
+            key=lambda r: r["position"],
+        )
+        for row in mine:
+            out.append(dict(row))
+            if row["violated"]:
+                break
+    return out
 
 
 # --------------------------------------------------------------------------- normal
@@ -192,12 +238,12 @@ def test_wilson_interval_rejects_bad_input(k: object, n: object, level: float) -
 
 def test_risk_set_keeps_opportunities_up_to_the_first_violation() -> None:
     rows = [
-        {"session_id": "b", "position": 5, "violated": False},
-        {"session_id": "a", "position": 9, "violated": False, "tag": "tie-first"},
-        {"session_id": "a", "position": 2, "violated": False},
-        {"session_id": "a", "position": 9, "violated": True, "tag": "tie-second"},
-        {"session_id": "a", "position": 12, "violated": True},
-        {"session_id": "b", "position": 1, "violated": np.bool_(False)},
+        {"family": "f", "session_id": "b", "position": 5, "violated": False},
+        {"family": "f", "session_id": "a", "position": 9, "violated": False, "tag": "tie-first"},
+        {"family": "f", "session_id": "a", "position": 2, "violated": False},
+        {"family": "f", "session_id": "a", "position": 9, "violated": True, "tag": "tie-second"},
+        {"family": "f", "session_id": "a", "position": 12, "violated": True},
+        {"family": "f", "session_id": "b", "position": 1, "violated": np.bool_(False)},
     ]
     out = risk_set(rows)
     assert [(r["session_id"], r["position"]) for r in out] == [
@@ -215,25 +261,60 @@ def test_risk_set_keeps_opportunities_up_to_the_first_violation() -> None:
 
 def test_risk_set_groups_by_other_fields_and_handles_empty_input() -> None:
     rows = [
-        {"session_id": "s", "constraint_id": "c1", "position": 1, "violated": True},
-        {"session_id": "s", "constraint_id": "c1", "position": 4, "violated": False},
-        {"session_id": "s", "constraint_id": "c2", "position": 3, "violated": False},
+        {"family": "f", "session_id": "s", "constraint_id": "c1", "position": 1, "violated": True},
+        {"family": "f", "session_id": "s", "constraint_id": "c1", "position": 4, "violated": False},
+        {"family": "f", "session_id": "s", "constraint_id": "c2", "position": 3, "violated": False},
     ]
     assert len(risk_set(rows)) == 1
     assert len(risk_set(rows, by=("session_id", "constraint_id"))) == 2
     assert risk_set([]) == []
 
 
+def _shared_plan_rows() -> list[dict[str, Any]]:
+    """Both synthetic families ran plans p0 and p1; family fa violates at its first
+    decision point of p0, family fb at its second."""
+    return [
+        {"family": "fa", "session_id": "p0", "position": 3, "violated": True},
+        {"family": "fa", "session_id": "p0", "position": 9, "violated": False},
+        {"family": "fb", "session_id": "p0", "position": 4, "violated": False},
+        {"family": "fb", "session_id": "p0", "position": 10, "violated": True},
+        {"family": "fb", "session_id": "p0", "position": 15, "violated": False},
+        {"family": "fa", "session_id": "p1", "position": 2, "violated": False},
+        {"family": "fb", "session_id": "p1", "position": 2, "violated": False},
+    ]
+
+
+def test_risk_set_is_per_family_session_when_families_share_plans() -> None:
+    # Family fa's early violation in plan p0 must not end family fb's session of p0.
+    rows = _shared_plan_rows()
+    assert stats.SESSION_KEY == ("family", "session_id") == analysis.SESSION_KEY
+    out = [(r["family"], r["session_id"], r["position"]) for r in risk_set(rows)]
+    assert out == [
+        ("fa", "p0", 3),
+        ("fa", "p1", 2),
+        ("fb", "p0", 4),
+        ("fb", "p0", 10),
+        ("fb", "p1", 2),
+    ]
+    # Grouping by the plan alone merges the two sessions, which is what the default avoids.
+    merged = [(r["family"], r["position"]) for r in risk_set(rows, by=("session_id",))]
+    assert merged == [("fa", 3), ("fa", 2), ("fb", 2)]
+    with pytest.raises(StatsError, match="no field 'family'"):
+        risk_set([{"session_id": "p0", "position": 1, "violated": True}])
+    with pytest.raises(StatsError, match="at least one field"):
+        risk_set(rows, by=())
+
+
 @pytest.mark.parametrize(
     "row",
     [
-        {"position": 1, "violated": True},
-        {"session_id": "s", "violated": True},
-        {"session_id": "s", "position": 1, "violated": None},
-        {"session_id": "s", "position": 1, "violated": 2},
-        {"session_id": "s", "position": -1, "violated": True},
-        {"session_id": "s", "position": "3", "violated": True},
-        {"session_id": "s", "position": float("inf"), "violated": True},
+        {"family": "f", "position": 1, "violated": True},
+        {"family": "f", "session_id": "s", "violated": True},
+        {"family": "f", "session_id": "s", "position": 1, "violated": None},
+        {"family": "f", "session_id": "s", "position": 1, "violated": 2},
+        {"family": "f", "session_id": "s", "position": -1, "violated": True},
+        {"family": "f", "session_id": "s", "position": "3", "violated": True},
+        {"family": "f", "session_id": "s", "position": float("inf"), "violated": True},
     ],
 )
 def test_risk_set_rejects_malformed_rows(row: dict[str, Any]) -> None:
@@ -512,6 +593,7 @@ def test_fit_hazard_log1p_position_recovers_its_slope() -> None:
             eta = -4.0 + 0.6 * math.log1p(float(p))
             rows.append(
                 {
+                    "family": "syn",
                     "session_id": f"s{s}",
                     "position": int(p),
                     "violated": bool(rng.random() < 1 / (1 + math.exp(-eta))),
@@ -524,6 +606,38 @@ def test_fit_hazard_log1p_position_recovers_its_slope() -> None:
         1 / (1 + math.exp(-fit.linear_predictor(20))), rel=1e-12
     )
     assert fit.curve([0, 20]) == [fit.predict(0), fit.predict(20)]
+
+
+POOLED: dict[str, Any] = {
+    "covariates": ("position", "compaction_count"),
+    "categorical": ("family",),
+    "position_transform": "log1p",
+}
+
+
+def test_pooled_hazard_fits_cut_one_risk_set_per_family_session() -> None:
+    rows = _two_family_rows(60, seed=8)
+    manual = _manual_risk_set(rows)
+    # Grouping by the plan alone would drop one family's later opportunities.
+    assert len(risk_set(rows, by=("session_id",))) < len(manual)
+    reference = fit_hazard(manual, use_risk_set=False, **POOLED)
+    fit = fit_hazard(rows, **POOLED)
+    assert fit.n_rows == len(manual) and fit.n_events == reference.n_events
+    assert fit.n_clusters == 60  # CR1 clusters are plans: both families' sessions of each
+    assert np.allclose(fit.fit.coef, reference.fit.coef, rtol=1e-9, atol=1e-12)
+    found = bootstrap_coefficients(rows, 30, seed=2, **POOLED)
+    for name, interval in found.items():
+        assert interval.estimate == pytest.approx(reference.coefficients[name], rel=1e-9, abs=1e-12)
+        assert interval.n_clusters == 60 and interval.cluster == "session_id"
+    fixed: dict[str, float | str] = {"compaction_count": 1, "family": "fa"}
+    assert bootstrap_half_life(rows, 150, fixed, 20, seed=2, **POOLED).fit.n_rows == len(manual)
+    curve = bootstrap_hazard_curve(rows, [10, 60], fixed, 20, seed=2, **POOLED)
+    assert curve.fit.n_rows == len(manual)
+    # Rows that identify sessions by model tier (E2) name their own session key.
+    tiers = [{("model" if k == "family" else k): v for k, v in r.items()} for r in rows]
+    terms = {k: v for k, v in POOLED.items() if k != "categorical"}
+    by_tier = fit_hazard(tiers, categorical=("model",), session=("model", "session_id"), **terms)
+    assert by_tier.n_rows == len(manual)
 
 
 def test_hazard_predict_validates_covariates() -> None:
@@ -632,6 +746,37 @@ def test_half_life_flat_or_falling_hazard_is_not_reached(slope: float) -> None:
     assert half_life(spec, 150) == NotReached(150)
 
 
+def _log1p_spec(intercept: float, slope: float) -> HazardFit:
+    return HazardFit.from_coefficients(
+        {"intercept": intercept, "log1p(position)": slope},
+        covariates=("position",),
+        position_transform="log1p",
+    )
+
+
+def test_half_life_is_judged_from_the_first_observed_position() -> None:
+    # A falling hazard whose extrapolation to position 0 passes one half, but which is
+    # below one half at every observed position (from 10 on): not reached, never 0.
+    falling = _log1p_spec(2.0, -1.0)
+    assert falling.predict(0) > 0.5 and falling.predict(10) < 0.5
+    assert half_life(falling, 150) == 0.0  # judged at position 0 (the D-029 default)
+    assert half_life(falling, 150, first_position=10) == NotReached(150)
+    # No jump at eta(0) = 0 for a falling hazard: both sides are not reached.
+    for intercept in (-1e-6, 1e-6):
+        assert half_life(_log1p_spec(intercept, -1.0), 150, first_position=10) == NotReached(150)
+    # At or above one half at the first position: the half-life is at or before it.
+    high = _log1p_spec(3.0, -0.5)
+    assert high.predict(10) > 0.5
+    assert half_life(high, 150, first_position=10) == 10.0
+    # A rising hazard keeps its crossing: -3 + log(1 + p) = 0 at p = e^3 - 1.
+    rising = _log1p_spec(-3.0, 1.0)
+    assert half_life(rising, 150, first_position=10) == pytest.approx(math.e**3 - 1.0)
+    assert half_life(rising, 150, first_position=19.5) == 19.5  # already above one half
+    for bad in (-1.0, 151.0, float("nan")):
+        with pytest.raises(StatsError, match="first_position"):
+            half_life(rising, 150, first_position=bad)
+
+
 def test_half_life_on_a_fitted_model_uses_its_coefficients() -> None:
     rows = _simulated_hazard_rows(1500, seed=21, intercept=-2.0, slope=0.03)
     fit = fit_hazard(rows, categorical=())
@@ -683,6 +828,7 @@ def _clustered_rows(n_sessions: int = 30, seed: int = 7) -> list[dict[str, Any]]
         for k in range(int(rng.integers(1, 5))):
             rows.append(
                 {
+                    "family": "syn",
                     "session_id": f"s{s:02d}",
                     "position": int(10 * k + rng.integers(0, 10)),
                     "violated": bool(rng.random() < 0.3),
@@ -848,6 +994,26 @@ def test_cluster_bootstrap_not_reached_draws_sort_above_numbers() -> None:
     )
 
 
+@pytest.mark.parametrize(("not_reached", "open_bound"), [(0, False), (49, False), (50, True)])
+def test_upper_bound_opens_only_when_its_percentile_is_a_not_reached_draw(
+    not_reached: int, open_bound: bool
+) -> None:
+    # 2000 draws; with linear interpolation the 97.5th percentile sits between sorted draws
+    # 1949 and 1950, so it is open exactly when at least 50 draws (2.5%) are not reached.
+    # Fewer such draws leave a finite bound with a share above zero (D-028, D-029).
+    rows = [{"session_id": f"s{i}", "position": 1, "violated": False} for i in range(3)]
+    calls = iter(range(2001))
+
+    def statistic(sample: list[dict[str, Any]]) -> stats.Value:
+        call = next(calls)
+        return NotReached(150) if 0 < call <= not_reached else float(call)
+
+    interval = cluster_bootstrap(rows, statistic, 2000, seed=1)
+    assert interval.n_not_reached == not_reached
+    assert isinstance(interval.hi, NotReached) is open_bound
+    assert interval.share_not_reached == pytest.approx(not_reached / 2000)
+
+
 def test_cluster_bootstrap_every_draw_not_reached() -> None:
     rows = [{"session_id": s, "position": 1, "violated": False} for s in "abc"]
     interval = cluster_bootstrap(rows, lambda s: NotReached(60), 50, seed=1)
@@ -888,6 +1054,27 @@ def test_cluster_bootstrap_on_another_field_relabels_sessions() -> None:
     interval = cluster_bootstrap(rows, n_sessions, 400, seed=9, cluster="template_id")
     assert interval.estimate == 3.0 and interval.lo == 2.0 and interval.hi == 4.0
     assert interval.cluster == "template_id" and interval.n_clusters == 2
+
+
+def test_pooled_bootstrap_draws_hold_both_families_sessions_of_each_plan() -> None:
+    # Clustering on session_id, the plan id both families share, resamples whole plans.
+    rows = _two_family_rows(12, seed=5)
+
+    def complete(sample: list[dict[str, Any]]) -> float:
+        families: dict[str, set[str]] = {}
+        for row in sample:
+            families.setdefault(row["session_id"], set()).add(row["family"])
+        return float(all(found == {"fa", "fb"} for found in families.values()))
+
+    def family_sessions(sample: list[dict[str, Any]]) -> float:
+        return float(len({(r["family"], r["session_id"]) for r in sample}))
+
+    whole = cluster_bootstrap(rows, complete, 200, seed=3)
+    assert whole.estimate == whole.lo == whole.hi == 1.0
+    assert whole.n_clusters == 12 and whole.cluster == "session_id"
+    # A plan drawn twice counts as two sessions per family: always 2 x 12 per draw.
+    counted = cluster_bootstrap(rows, family_sessions, 200, seed=3)
+    assert counted.estimate == counted.lo == counted.hi == 24.0
 
 
 def test_percentile_interpolates_like_numpy_and_into_not_reached() -> None:
@@ -933,6 +1120,7 @@ def test_bootstrap_half_life_not_reached_and_failed_draws() -> None:
     rows = _simulated_hazard_rows(60, seed=8, intercept=-3.0, slope=0.0, compaction=0.0)
     rows += [
         {
+            "family": "syn",
             "session_id": "rare",
             "position": 5,
             "compaction_count": 1,
@@ -940,20 +1128,65 @@ def test_bootstrap_half_life_not_reached_and_failed_draws() -> None:
             "violated": True,
         }
     ]
+    # "rare" holds one violation and nothing else, which separates its term: a half-life
+    # at that level would be set by the ridge, so none is reported.
     result = bootstrap_half_life(
         rows, 150, {"compaction_count": 0, "constraint_type": "rare"}, 100, seed=2
     )
-    # "rare" sits in one session, so draws without it fail instead of guessing.
-    assert result.interval.n_failed > 0
+    assert result.interval.not_estimable == "separation"
+    assert _json_roundtrip(result.to_dict())["half_life"] is None
     flat = bootstrap_half_life(
         rows, 150, {"compaction_count": 0, "constraint_type": "prohibition"}, 100, seed=2
     )
     assert flat.interval.estimate == NotReached(150)
     assert flat.interval.share_not_reached > 0.5
+    # Draws without the rare session lack its level; at another level they still count.
+    assert flat.interval.n_failed == 0
     record = _json_roundtrip(flat.to_dict())
     assert record["half_life"] is None and record["not_reached_within"] == 150
     with pytest.raises(StatsError, match="no level"):
         bootstrap_half_life(rows, 150, {"compaction_count": 0, "constraint_type": "x"}, 10, seed=2)
+
+
+def test_bootstrap_half_life_from_a_separated_fit_is_not_estimable() -> None:
+    # Synthetic: the only violation sits at the largest position, which separates
+    # log1p(position); its crossing of one half would be set by the separating line and
+    # the ridge, so the half-life is written without a number.
+    rows = [dict(r, violated=False) for r in _simulated_hazard_rows(40, seed=3)]
+    last = max(rows, key=lambda r: (r["position"], r["session_id"]))
+    last["violated"] = True
+    result = bootstrap_half_life(
+        rows, 150, {"compaction_count": 1}, 50, seed=1, categorical=(), position_transform="log1p"
+    )
+    assert result.fit.fit.separation and result.fit.n_events == 1
+    assert result.interval.not_estimable == "separation"
+    record = _json_roundtrip(result.to_dict())
+    assert (record["half_life"], record["lo"], record["hi"]) == (None, None, None)
+    assert record["not_estimable"] == "separation" and "not_reached_within" not in record
+    # No violation at all is the boundary answer: the hazard never reaches one half.
+    quiet = [dict(r, violated=False) for r in rows]
+    none = bootstrap_half_life(
+        quiet, 150, {"compaction_count": 1}, 50, seed=1, categorical=(), position_transform="log1p"
+    )
+    assert none.interval.estimate == none.interval.lo == none.interval.hi == NotReached(150)
+    assert none.interval.n_failed == 0 and none.interval.not_estimable is None
+
+
+def test_bootstrap_half_life_searches_from_the_first_position() -> None:
+    # Synthetic: every session violates at its first decision point, so the hazard is at
+    # or above one half from the first observed position on (left-censored there).
+    rows = [dict(r, violated=True) for r in _simulated_hazard_rows(30, seed=5)]
+    first = min(r["position"] for r in rows)
+    result = bootstrap_half_life(rows, 150, {"compaction_count": 0}, 40, seed=1, categorical=())
+    assert result.first_position == first
+    assert result.interval.estimate == result.interval.lo == float(first)
+    assert result.share_at_first == 1.0
+    record = _json_roundtrip(result.to_dict())
+    assert record["first_position"] == first and record["share_at_first"] == 1.0
+    fixed = bootstrap_half_life(
+        rows, 150, {"compaction_count": 0}, 40, seed=1, categorical=(), first_position=25
+    )
+    assert fixed.first_position == 25 and fixed.interval.estimate == 25.0
 
 
 def test_bootstrap_hazard_curve_pointwise_intervals() -> None:
@@ -979,18 +1212,19 @@ def test_bootstrap_hazard_curve_pointwise_intervals() -> None:
 def test_bootstrap_coefficients_with_a_sparse_reference_level() -> None:
     effects = {"invariant": -0.4, "procedure": 0.2}
     rows = _simulated_hazard_rows(200, seed=17, type_effects=effects)
-    rows += [
+    sparse = [
         {
+            "family": "syn",
             "session_id": "zz-only",
             "position": p,
             "compaction_count": 0,
             "constraint_type": "a_sparse",
-            "violated": False,
+            "violated": p == 9,
         }
         for p in (3, 9)
     ]
-    found = bootstrap_coefficients(rows, 120, seed=6)
-    full = fit_hazard(rows)
+    found = bootstrap_coefficients(rows + sparse, 120, seed=6)
+    full = fit_hazard(rows + sparse)
     assert set(found) == {
         "intercept",
         "position",
@@ -998,6 +1232,7 @@ def test_bootstrap_coefficients_with_a_sparse_reference_level() -> None:
         "constraint_type[invariant]",
         "constraint_type[procedure]",
     }
+    assert not found.not_estimable
     for name, interval in found.items():
         assert interval.estimate == pytest.approx(full.coefficients[name], rel=1e-6, abs=1e-9)
     # The sorted-first level "a_sparse" is the reference and sits in one session, so
@@ -1005,6 +1240,96 @@ def test_bootstrap_coefficients_with_a_sparse_reference_level() -> None:
     assert found["intercept"].n_failed > 0
     assert found["constraint_type[procedure]"].n_failed == found["intercept"].n_failed
     assert found["position"].n_failed == 0
+    # A reference level without a violation separates the intercept and every contrast
+    # against it: they are not estimable, while the slopes still are.
+    quiet = [dict(row, violated=False) for row in sparse]
+    separated = bootstrap_coefficients(rows + quiet, 40, seed=6)
+    assert separated.not_estimable == {
+        "intercept": "separation",
+        "constraint_type[invariant]": "separation",
+        "constraint_type[procedure]": "separation",
+    }
+    assert separated["position"].not_estimable is None
+
+
+def _replayed_samples(
+    data: Sequence[dict[str, Any]], n_boot: int, seed: int
+) -> list[list[dict[str, Any]]]:
+    """The rows of every bootstrap draw, replayed with the generator and sorted cluster keys."""
+    clusters: dict[str, list[dict[str, Any]]] = {}
+    for row in data:
+        clusters.setdefault(str(row["session_id"]), []).append(row)
+    keys = sorted(clusters)
+    rng = np.random.default_rng(seed)
+    samples = []
+    for _ in range(n_boot):
+        picks = rng.integers(0, len(keys), size=len(keys))
+        samples.append([dict(row) for pick in picks for row in clusters[keys[int(pick)]]])
+    return samples
+
+
+def test_bootstrap_coefficients_without_a_violation_report_no_number() -> None:
+    # Synthetic rows with no violation: every coefficient is held only by the ridge (the
+    # values move with l2), so no term is estimable and none is reported (D-029).
+    rows = [dict(r, violated=False) for r in _simulated_hazard_rows(60, seed=11)]
+    for l2 in (1e-6, 1e-8):
+        found = bootstrap_coefficients(rows, 40, seed=1, categorical=(), l2=l2)
+        assert set(found) == {"intercept", "position", "compaction_count"}
+        assert found.fit.n_events == 0 and found.fit.fit.separation
+        for interval in found.values():
+            assert interval.not_estimable == "no_violations"
+            record = _json_roundtrip(interval.to_dict())
+            assert (record["estimate"], record["lo"], record["hi"]) == (None, None, None)
+            assert record["not_estimable"] == "no_violations" and record["n_failed"] == 0
+        assert found.not_estimable == dict.fromkeys(found, "no_violations")
+
+
+def test_bootstrap_coefficients_count_draws_without_violations_or_separated_as_failed() -> None:
+    # Synthetic rows whose violations sit in three sessions: a draw that misses all three has
+    # no violation, and a draw with too few of them separates a term. Such draws are left
+    # out of the percentiles and counted, never entered at a ridge-held value.
+    rows = [dict(r, violated=False) for r in _simulated_hazard_rows(40, seed=12)]
+    for sid in ("s0003", "s0017", "s0029"):
+        first = next(r for r in rows if r["session_id"] == sid)
+        first["violated"] = True
+    found = bootstrap_coefficients(rows, 200, seed=4, categorical=())
+    data = risk_set(rows)
+    full = fit_hazard(data, categorical=(), use_risk_set=False)
+    assert not found.not_estimable and full.n_events == 3
+    expected: dict[str, int] = dict.fromkeys(found, 0)
+    for sample in _replayed_samples(data, 200, 4):
+        try:
+            model = fit_hazard(sample, categorical=(), use_risk_set=False)
+        except StatsError:
+            for name in expected:
+                expected[name] += 1
+            continue
+        flagged = set(model.fit.separated_terms) or set(model.fit.names)
+        for name in expected:
+            if model.n_events == 0 or (model.fit.separation and name in flagged):
+                expected[name] += 1
+    assert {name: interval.n_failed for name, interval in found.items()} == expected
+    assert expected["position"] > 0
+    for name, interval in found.items():
+        assert interval.estimate == pytest.approx(full.coefficients[name], rel=1e-9)
+
+
+def test_bootstrap_coefficients_pooled_over_a_family_without_violations() -> None:
+    # Synthetic: family fb never violates. The pooled slopes come from fa alone and stay
+    # estimable; the family term (fb against the reference fa) is separated.
+    rows = [
+        dict(r, violated=False) if r["family"] == "fb" else r for r in _two_family_rows(40, seed=9)
+    ]
+    found = bootstrap_coefficients(rows, 30, seed=2, **POOLED)
+    assert found.not_estimable == {"family[fb]": "separation"}
+    for name in ("log1p(position)", "compaction_count"):
+        assert found[name].not_estimable is None and isinstance(found[name].estimate, float)
+    alone = bootstrap_coefficients(
+        [r for r in rows if r["family"] == "fa"], 30, seed=2, **(POOLED | {"categorical": ()})
+    )
+    assert found["log1p(position)"].estimate == pytest.approx(
+        _num(alone["log1p(position)"].estimate), abs=1e-4
+    )
 
 
 # --------------------------------------------------------------------------- Kaplan-Meier
@@ -1086,11 +1411,11 @@ def test_kaplan_meier_rejects_bad_input(times: list[Any], events: list[Any]) -> 
 
 def test_kaplan_meier_rows_uses_time_to_first_violation() -> None:
     rows = [
-        {"session_id": "a", "position": 4, "violated": False},
-        {"session_id": "a", "position": 9, "violated": True},
-        {"session_id": "b", "position": 3, "violated": False},
-        {"session_id": "b", "position": 12, "violated": False},
-        {"session_id": "c", "position": 2, "violated": True},
+        {"family": "f", "session_id": "a", "position": 4, "violated": False},
+        {"family": "f", "session_id": "a", "position": 9, "violated": True},
+        {"family": "f", "session_id": "b", "position": 3, "violated": False},
+        {"family": "f", "session_id": "b", "position": 12, "violated": False},
+        {"family": "f", "session_id": "c", "position": 2, "violated": True},
     ]
     km = kaplan_meier_rows(rows)
     triples = analysis.time_to_first_violation(rows)
@@ -1100,6 +1425,14 @@ def test_kaplan_meier_rows_uses_time_to_first_violation() -> None:
     with pytest.raises(StatsError, match="no opportunity rows"):
         kaplan_meier_rows([])
     assert isinstance(km, KaplanMeier)
+
+
+def test_kaplan_meier_rows_count_each_family_session_of_a_shared_plan() -> None:
+    # fa: p0 violated at 3, p1 censored at 2; fb: p0 violated at 10, p1 censored at 2.
+    km = kaplan_meier_rows(_shared_plan_rows())
+    assert km.n == 4 and km.n_events == 2
+    assert km.times == (2.0, 3.0, 10.0) and km.n_risk == (4, 2, 1)
+    assert kaplan_meier_rows(_shared_plan_rows(), session=("session_id",)).n == 2
 
 
 # --------------------------------------------------------------------------- contrasts
@@ -1116,6 +1449,7 @@ def _arm_rows() -> list[dict[str, Any]]:
         for i, v in enumerate(outcomes):
             rows.append(
                 {
+                    "family": "syn",
                     "session_id": f"{arm}{i // 2}",
                     "mitigation": arm,
                     "violated": bool(v),
@@ -1123,7 +1457,15 @@ def _arm_rows() -> list[dict[str, Any]]:
                     "constraint_type": "prohibition" if i % 3 else "invariant",
                 }
             )
-    rows.append({"session_id": "x0", "mitigation": "guard", "violated": True, "position": 1})
+    rows.append(
+        {
+            "family": "syn",
+            "session_id": "x0",
+            "mitigation": "guard",
+            "violated": True,
+            "position": 1,
+        }
+    )
     return rows
 
 
@@ -1198,15 +1540,276 @@ def test_rate_contrast_resample_without_one_arm_fails_the_draw() -> None:
     # Arms mixed within the first session only; the second session is all arm a, so
     # unstratified draws of that session twice have no arm b.
     rows = [
-        {"session_id": "s1", "arm": "a", "violated": False, "position": 1},
-        {"session_id": "s1", "arm": "b", "violated": True, "position": 2},
-        {"session_id": "s1", "arm": "a", "violated": True, "position": 3},
-        {"session_id": "s1", "arm": "b", "violated": False, "position": 4},
-        {"session_id": "s2", "arm": "a", "violated": False, "position": 1},
+        {"family": "f", "session_id": "s1", "arm": "a", "violated": False, "position": 1},
+        {"family": "f", "session_id": "s1", "arm": "b", "violated": True, "position": 2},
+        {"family": "f", "session_id": "s1", "arm": "a", "violated": True, "position": 3},
+        {"family": "f", "session_id": "s1", "arm": "b", "violated": False, "position": 4},
+        {"family": "f", "session_id": "s2", "arm": "a", "violated": False, "position": 1},
     ]
     contrast = rate_contrast(rows, "arm", "a", "b", 200, seed=3)
     assert not contrast.stratified
     assert contrast.difference.n_failed > 0
+
+
+def _two_arm_rows(
+    n_sessions: int, rate_a: float, rate_b: float, seed: int, per_session: int = 4
+) -> list[dict[str, Any]]:
+    """Synthetic sessions, alternately in arm a and b, with independent outcomes."""
+    rng = np.random.default_rng(seed)
+    rows = []
+    for s in range(n_sessions):
+        arm = "b" if s % 2 else "a"
+        for j in range(per_session):
+            rows.append(
+                {
+                    "family": "syn",
+                    "session_id": f"s{s:03d}",
+                    "arm": arm,
+                    "position": 5 * j,
+                    "violated": bool(rng.random() < (rate_b if arm == "b" else rate_a)),
+                }
+            )
+    return rows
+
+
+def test_rate_contrast_wald_test_uses_session_clustered_cr1_errors() -> None:
+    rows = _two_arm_rows(200, 0.1, 0.3, seed=4)
+    contrast = rate_contrast(rows, "arm", "a", "b", 50, seed=1)
+    assert contrast.fit.robust_se is not None and contrast.fit.n_clusters == 200
+    wald = contrast.wald
+    assert wald.robust and wald.problem is None and wald.detail is None
+    assert wald.term == "arm[b]" and wald.n_clusters == 200
+    # Independent check: the same logistic fit with session clusters, and the normal tail.
+    reference = fit_logistic(
+        [1.0 if r["arm"] == "b" else 0.0 for r in rows],
+        [int(r["violated"]) for r in rows],
+        names=["arm[b]"],
+        clusters=[r["session_id"] for r in rows],
+    )
+    z = reference.coefficient("arm[b]") / reference.std_error("arm[b]", robust=True)
+    assert wald.z == pytest.approx(z, rel=1e-9)
+    assert wald.std_error == pytest.approx(reference.std_error("arm[b]", robust=True), rel=1e-9)
+    assert wald.p_value == pytest.approx(math.erfc(abs(z) / math.sqrt(2.0)), rel=1e-9)
+    assert wald.p_value < 0.05
+    record = _json_roundtrip(contrast.to_dict())
+    assert record["wald"]["p_value"] == pytest.approx(wald.p_value, rel=1e-9)
+    assert record["wald"]["problem"] is None and record["wald"]["robust"] is True
+
+
+def test_rate_contrast_wald_test_on_a_seeded_null_example() -> None:
+    wald = rate_contrast(_two_arm_rows(200, 0.2, 0.2, seed=12), "arm", "a", "b", 20, seed=1).wald
+    assert wald.problem is None and wald.p_value is not None
+    assert wald.p_value > 0.05
+
+
+def test_wald_test_reports_a_p_value_it_cannot_compute_explicitly() -> None:
+    plain = fit_logistic(TABLE_X, TABLE_Y, names=["arm"])
+    missing = stats.wald_test(plain, "arm")
+    assert missing.p_value is None and missing.z is None and missing.std_error is None
+    assert missing.problem == "no_cluster_robust_se" and missing.detail
+    model_based = stats.wald_test(plain, "arm", robust=False)
+    assert model_based.problem is None and not model_based.robust
+    assert model_based.p_value == pytest.approx(
+        math.erfc(abs(plain.wald_z("arm")) / math.sqrt(2.0)), rel=1e-12
+    )
+    one = fit_logistic(TABLE_X, TABLE_Y, names=["arm"], clusters=["only"] * 12)
+    assert stats.wald_test(one, "arm").problem == "one_cluster"
+    stalled = fit_logistic(
+        TABLE_X,
+        TABLE_Y,
+        names=["arm"],
+        clusters=list(range(12)),
+        max_iter=1,
+        check_separation=False,
+    )
+    assert stats.wald_test(stalled, "arm").problem == "not_converged"
+    twin = fit_logistic(np.column_stack([TABLE_X, TABLE_X]), TABLE_Y, clusters=list(range(12)))
+    assert stats.wald_test(twin, "x1").problem == "rank_deficient"
+    clustered = fit_logistic(TABLE_X, TABLE_Y, names=["arm"], clusters=list(range(12)))
+    assert clustered.robust_se is not None
+    zero = dataclasses.replace(clustered, robust_se=np.zeros_like(clustered.robust_se))
+    assert stats.wald_test(zero, "arm").problem == "zero_se"
+    with pytest.raises(StatsError, match="no term"):
+        stats.wald_test(plain, "missing")
+    record = _json_roundtrip(missing.to_dict())
+    assert record["p_value"] is None and record["problem"] == "no_cluster_robust_se"
+
+
+def test_rate_contrast_under_separation_reports_no_p_value() -> None:
+    # Arm b never violates and arm a violates once in 200: the estimate is held only by the
+    # ridge and its CR1 Wald statistic is spuriously huge, so no p-value is reported.
+    rows = _two_arm_rows(100, 0.0, 0.0, seed=1)
+    rows[0]["violated"] = True  # session s000, arm a
+    contrast = rate_contrast(rows, "arm", "a", "b", 20, seed=1)
+    assert contrast.fit.separation and contrast.fit.robust_se is not None
+    assert abs(contrast.fit.wald_z("arm[b]", robust=True)) > 5.0  # what a Wald test would say
+    assert contrast.wald.p_value is None and contrast.wald.problem == "separation"
+    assert contrast.difference.estimate == pytest.approx(-1 / 200)
+
+
+def _score_by_hand(arm: np.ndarray, y: np.ndarray, cluster: np.ndarray) -> tuple[float, float]:
+    """Score test of the arm at the intercept-only null fit with an exchangeable
+    within-cluster correlation, written out separately: ``(p_value, rho)``."""
+    p0 = y.mean()
+    pq = p0 * (1.0 - p0)
+    xt = arm - arm.mean()
+    e = (y - p0) / math.sqrt(pq)
+    groups = np.unique(cluster)
+    cross = sum(float(e[cluster == g].sum() ** 2 - (e[cluster == g] ** 2).sum()) for g in groups)
+    pairs = sum(int((cluster == g).sum()) * (int((cluster == g).sum()) - 1) for g in groups)
+    rho = min(max(cross / pairs, 0.0), stats.SCORE_RHO_MAX) if pairs else 0.0
+    together = sum(float(xt[cluster == g].sum()) ** 2 for g in groups)
+    variance = pq * ((1.0 - rho) * float(xt @ xt) + rho * together)
+    z = float(xt @ (y - p0)) / math.sqrt(variance)
+    return math.erfc(abs(z) / math.sqrt(2.0)), rho
+
+
+def test_score_test_matches_a_hand_computation_and_handles_edges() -> None:
+    rows = _two_arm_rows(60, 0.2, 0.4, seed=7)
+    arm = np.array([1.0 if r["arm"] == "b" else 0.0 for r in rows])
+    y = np.array([float(r["violated"]) for r in rows])
+    cluster = np.array([r["session_id"] for r in rows])
+    found = stats.score_test(arm, y, list(cluster), term="arm[b]")
+    assert found.problem is None and found.n_clusters == 60
+    p_value, rho = _score_by_hand(arm, y, cluster)
+    assert found.p_value == pytest.approx(p_value, rel=1e-9)
+    assert found.rho == pytest.approx(rho, abs=1e-12)
+    # With a covariate in the null model the residualized score is still computed.
+    adjusted = stats.score_test(
+        arm, y, list(cluster), np.array([float(r["position"]) for r in rows]), term="arm[b]"
+    )
+    assert adjusted.problem is None and 0.0 < (adjusted.p_value or 0.0) < 1.0
+    assert stats.score_test(arm, np.zeros_like(y), list(cluster)).problem == "no_events"
+    assert stats.score_test(arm, np.ones_like(y), list(cluster)).problem == "all_events"
+    assert stats.score_test(arm, y, ["one"] * len(y)).problem == "one_cluster"
+    flat = stats.score_test(np.ones_like(y), y, list(cluster))
+    assert flat.problem == "rank_deficient" and flat.p_value is None
+    record = _json_roundtrip(found.to_dict())
+    assert record["p_value"] == pytest.approx(found.p_value) and "score" in record["test"]
+    assert record["rho"] == pytest.approx(found.rho)
+    with pytest.raises(StatsError, match="outcomes"):
+        stats.score_test(arm, y + 2.0, list(cluster))
+
+
+def _minority_without_violations() -> tuple[np.ndarray, np.ndarray, list[str]]:
+    """Synthetic: 40 plans with three rows of type a and one of type b each; five
+    violations, all of type a, in five different plans."""
+    x, y, cluster = [], [], []
+    for g in range(40):
+        for j in range(4):
+            x.append(1.0 if j == 3 else 0.0)
+            y.append(1.0 if j == 0 and g < 5 else 0.0)
+            cluster.append(f"p{g:02d}")
+    return np.array(x), np.array(y), cluster
+
+
+def test_score_test_with_singleton_clusters_is_the_pearson_chi_square() -> None:
+    # Without within-cluster pairs there is no correlation to estimate, and the score test
+    # at the overall rate is the Pearson chi-square test of the two-by-two table.
+    x, y, _ = _minority_without_violations()
+    found = stats.score_test(x, y, [f"s{i}" for i in range(len(y))])
+    a, b = float((x * y).sum()), float((x * (1 - y)).sum())
+    c, d = float(((1 - x) * y).sum()), float(((1 - x) * (1 - y)).sum())
+    chi2 = len(y) * (a * d - b * c) ** 2 / ((a + b) * (c + d) * (a + c) * (b + d))
+    assert found.rho == 0.0
+    assert found.z is not None and found.z**2 == pytest.approx(chi2, rel=1e-9)
+    assert found.p_value == pytest.approx(math.erfc(math.sqrt(chi2 / 2.0)), rel=1e-9)
+
+
+def test_score_test_does_not_read_a_minority_arm_without_violations_as_a_difference() -> None:
+    # Synthetic: five violations of type a and none of the rarer type b. Fisher's exact test
+    # gives about 0.33. The CR1 variance of the score sums each plan's realized score, so it
+    # sees no variability from type b, where no violation happened, and it gave p of about
+    # 0.027 here (a false difference: in a synthetic null calibration on the E1 plans, the
+    # CR1 score test rejected more than a quarter of the true nulls whose rarer type had no
+    # violation). The exchangeable variance accounts for violations type b could have had.
+    x, y, cluster = _minority_without_violations()
+    found = stats.score_test(x, y, cluster)
+    assert found.problem is None and found.p_value is not None
+    assert found.p_value > 0.15
+    assert found.p_value == pytest.approx(_score_by_hand(x, y, np.array(cluster))[0], rel=1e-9)
+
+
+def test_score_test_variance_grows_with_within_cluster_correlation_of_a_plan_level_arm() -> None:
+    # Synthetic: the arm is fixed per plan (as E3 and E4 randomize), and outcomes are shared
+    # within plans; the exchangeable variance carries the design effect, so the same score
+    # is less significant than if the rows were independent.
+    rng = np.random.default_rng(5)
+    x, y, cluster = [], [], []
+    for g in range(30):
+        shared = rng.random() < 0.3
+        for _ in range(6):
+            x.append(float(g % 2))
+            y.append(float(shared and rng.random() < 0.8))
+            cluster.append(f"p{g}")
+    xs, ys = np.array(x), np.array(y)
+    clustered = stats.score_test(xs, ys, cluster)
+    independent = stats.score_test(xs, ys, [f"s{i}" for i in range(len(ys))])
+    assert clustered.rho is not None and clustered.rho > 0.3
+    assert clustered.p_value is not None and independent.p_value is not None
+    assert clustered.p_value > independent.p_value
+    assert clustered.p_value == pytest.approx(_score_by_hand(xs, ys, np.array(cluster))[0])
+
+
+def test_rate_contrast_score_test_stays_valid_under_separation() -> None:
+    # Arm b never violates and arm a violates at 30 of 200 opportunities: the Wald test is
+    # withheld (separation), but the score test at the null fit needs no finite estimate
+    # under the alternative and gives a valid, small p-value.
+    rows = _two_arm_rows(100, 0.3, 0.0, seed=1)
+    contrast = rate_contrast(rows, "arm", "a", "b", 20, seed=1)
+    assert contrast.wald.problem == "separation" and contrast.wald.p_value is None
+    assert contrast.score.problem is None and contrast.score.p_value is not None
+    assert contrast.score.p_value < 1e-4
+    record = _json_roundtrip(contrast.to_dict())
+    assert record["score"]["p_value"] == pytest.approx(contrast.score.p_value)
+    # Under the null its size is close to nominal (synthetic, seeded).
+    rejected = sum(
+        (
+            rate_contrast(_two_arm_rows(40, 0.2, 0.2, seed=s), "arm", "a", "b", 1, seed=1).score
+        ).p_value
+        < 0.05
+        for s in range(200)
+    )
+    assert 2 <= rejected <= 20
+
+
+def test_rate_contrast_odds_ratio_leaves_out_draws_with_a_one_sided_arm() -> None:
+    # Synthetic: arm b violates in two sessions only, so a draw that misses both has no
+    # finite log odds ratio; it fails for the odds ratio only, and the bounds no longer
+    # move with the ridge.
+    rows = _two_arm_rows(40, 0.3, 0.0, seed=2)
+    hits = 0
+    for row in rows:
+        if row["arm"] == "b" and row["session_id"] in {"s001", "s003"} and hits < 2:
+            row["violated"] = True
+            hits += 1
+    found = {l2: rate_contrast(rows, "arm", "a", "b", 300, seed=3, l2=l2) for l2 in (1e-6, 1e-8)}
+    first, second = found[1e-6], found[1e-8]
+    assert not first.fit.separation and first.log_odds_ratio.not_estimable is None
+    assert first.log_odds_ratio.n_failed > 0 and first.difference.n_failed == 0
+    assert first.log_odds_ratio.lo == pytest.approx(_num(second.log_odds_ratio.lo), abs=1e-3)
+    assert first.difference.lo == second.difference.lo
+    # A full-data arm without violations has no odds ratio at all (not estimable).
+    quiet = [dict(r, violated=False) if r["arm"] == "b" else r for r in rows]
+    separated = rate_contrast(quiet, "arm", "a", "b", 50, seed=3)
+    assert separated.log_odds_ratio.not_estimable == "separation"
+    assert separated.odds_ratio.not_estimable == "separation"
+    record = _json_roundtrip(separated.to_dict())
+    assert record["odds_ratio"]["odds_ratio"] is None and record["odds_ratio"]["lo"] is None
+    assert record["difference"]["difference"] is not None
+
+
+def test_rate_contrast_counts_family_sessions_and_resamples_plans() -> None:
+    rows = _two_family_rows(40, seed=3)
+    contrast = rate_contrast(rows, "arm", "a", "b", 30, seed=1, use_risk_set=True)
+    manual = _manual_risk_set(rows)
+    assert contrast.a.n_opportunities + contrast.b.n_opportunities == len(manual)
+    # 20 plans per arm, each run by both families.
+    assert (contrast.a.n_sessions, contrast.b.n_sessions) == (40, 40)
+    assert contrast.difference.n_clusters == 40 and contrast.difference.strata == "arm"
+    assert contrast.fit.n_clusters == 40 and contrast.wald.n_clusters == 40
+    every = rate_contrast(rows, "arm", "a", "b", 30, seed=1)
+    assert every.a.n_opportunities == 20 * 2 * 5 and every.a.n_sessions == 40
 
 
 # --------------------------------------------------------------------------- recall
@@ -1224,6 +1827,7 @@ def _recall_rows(
             eta = 2.0 + effect * count
             rows.append(
                 {
+                    "family": "syn",
                     "session_id": f"s{s}",
                     "position": int(p),
                     "compaction_count": count,
@@ -1236,11 +1840,11 @@ def _recall_rows(
 
 def test_recall_rows_and_cells_by_compaction_count() -> None:
     rows = [
-        {"session_id": "a", "compaction_count": 0, "recalled_before": True},
-        {"session_id": "a", "compaction_count": 1, "recalled_before": False},
-        {"session_id": "b", "compaction_count": 1, "recalled_before": True},
-        {"session_id": "b", "compaction_count": 1, "recalled_before": None},
-        {"session_id": "c", "compaction_count": 2.0, "recalled_before": False},
+        {"family": "f", "session_id": "a", "compaction_count": 0, "recalled_before": True},
+        {"family": "f", "session_id": "a", "compaction_count": 1, "recalled_before": False},
+        {"family": "f", "session_id": "b", "compaction_count": 1, "recalled_before": True},
+        {"family": "f", "session_id": "b", "compaction_count": 1, "recalled_before": None},
+        {"family": "f", "session_id": "c", "compaction_count": 2.0, "recalled_before": False},
     ]
     assert len(recall_rows(rows)) == 4
     cells = recall_by_compaction(rows)
@@ -1249,6 +1853,12 @@ def test_recall_rows_and_cells_by_compaction_count() -> None:
         (1, 1, 2, 2),
         (2, 0, 1, 1),
     ]
+    # Two families' sessions of one plan are two sessions, not one.
+    shared = [dict(row, family="g") for row in rows] + rows
+    assert [c.n_sessions for c in recall_by_compaction(shared)] == [2, 4, 2]
+    recall = recall_effect(_two_family_rows(30, seed=2), 20, seed=1)
+    assert recall.n_clusters == 30  # clustered on the plan both families ran
+    assert sum(c.recall.n for c in recall.cells) == recall.n_rows == 300
     assert cells[1].recall.lo == wilson_interval(1, 2).lo
     assert "ignores clustering" in _json_roundtrip(cells[0].to_dict())["recall"]["note"]
     with pytest.raises(StatsError, match="no rows with a recall outcome"):
@@ -1259,6 +1869,40 @@ def test_recall_rows_and_cells_by_compaction_count() -> None:
         )
     with pytest.raises(StatsError, match="boolean"):
         recall_rows([{"session_id": "a", "recalled_before": "yes"}])
+
+
+def test_recall_is_grouped_by_the_compactions_the_probe_saw() -> None:
+    # Rows from the runner carry compactions_before_probe: a compaction at the decision
+    # point's start ran after its probe, so that probe's recall belongs with one fewer.
+    rows = [
+        {"family": "f", "session_id": "a", "compaction_count": 1, "recalled_before": True},
+        {"family": "f", "session_id": "a", "compaction_count": 2, "recalled_before": False},
+        {"family": "f", "session_id": "b", "compaction_count": 1, "recalled_before": False},
+    ]
+    probed = [
+        dict(rows[0], compactions_before_probe=0),
+        dict(rows[1], compactions_before_probe=2),
+        dict(rows[2], compactions_before_probe=1),
+    ]
+    cells = recall_by_compaction(probed)
+    assert [(c.compaction_count, c.recall.k, c.recall.n) for c in cells] == [
+        (0, 1, 1),
+        (1, 0, 1),
+        (2, 0, 1),
+    ]
+    assert {c.count_field for c in cells} == {"compactions_before_probe"}
+    assert _json_roundtrip(cells[0].to_dict())["count_field"] == "compactions_before_probe"
+    # Rows banked before the field existed are grouped by compaction_count, and say so.
+    legacy = recall_by_compaction(rows)
+    assert [c.compaction_count for c in legacy] == [1, 2]
+    assert {c.count_field for c in legacy} == {"compaction_count"}
+    effect_rows = [
+        dict(r, compactions_before_probe=r["compaction_count"])
+        for r in _two_family_rows(30, seed=2)
+    ]
+    effect = recall_effect(effect_rows, 20, seed=1)
+    assert effect.term == "compactions_before_probe"
+    assert recall_effect(_two_family_rows(30, seed=2), 20, seed=1).term == "compaction_count"
 
 
 def test_recall_effect_recovers_a_known_compaction_effect() -> None:
@@ -1308,6 +1952,49 @@ def test_power_by_simulation_options_and_unusable_fits() -> None:
     assert sparse.compaction.k == 0
 
 
+def test_power_by_simulation_contrast_arms_can_split_one_familys_sessions() -> None:
+    split = power_by_simulation(1.0, 60, 4, 0.2, 30, 9, arm_sessions=30)
+    whole = power_by_simulation(1.0, 60, 4, 0.2, 30, 9)
+    assert (split.arm_sessions, whole.arm_sessions) == (30, 60)
+    assert split.compaction == whole.compaction  # the hazard design is not affected
+    record = _json_roundtrip(split.to_dict())
+    assert record["inputs"]["arm_sessions"] == 30 and record["inputs"]["n_sessions"] == 60
+    assert record["contrast"]["design"].startswith("30 sessions per arm")
+    for bad in (0, -1, True):
+        with pytest.raises(StatsError, match="arm_sessions"):
+            power_by_simulation(1.0, 60, 4, 0.2, 5, 9, arm_sessions=bad)
+
+
+def test_power_contrast_simulates_h2a_after_a_compaction_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # H2a compares the arms among decision points after at least one compaction, where the
+    # arms can differ; the simulation shifts and fits only those, with log1p(position).
+    rng = np.random.default_rng(1)
+    _, cnt, y, _ = stats._simulate(rng, 30, 6, 100, 1, -30.0, 0.0, 0.0, 0.0, after_shift=60.0)
+    assert np.array_equal(y, (cnt >= 1).astype(float))  # the shift lands only after one
+    fitted: list[int] = []
+    real = stats.fit_logistic
+
+    def spy(x: Any, y: Any, *args: Any, **kwargs: Any) -> stats.LogisticFit:
+        if kwargs.get("names") == ("arm",):
+            fitted.append(len(y))
+        return real(x, y, *args, **kwargs)
+
+    monkeypatch.setattr(stats, "fit_logistic", spy)
+    result = power_by_simulation(
+        0.7, 20, 6, 0.1, 5, seed=3, max_position=100, compactions_per_session=1
+    )
+    # 20 sessions per arm with 6 decision points each; those before a compaction are out.
+    assert fitted and all(n < 2 * 20 * 6 for n in fitted)
+    record = result.to_dict()
+    assert "after at least one compaction" in record["contrast"]["design"]
+    assert record["inputs"]["position_transform"] == "log1p"
+    assert "log1p(position)" in record["compaction"]["design"]
+    linear = power_by_simulation(0.7, 20, 6, 0.1, 2, seed=3, position_transform="linear")
+    assert "terms position and compaction_count" in linear.to_dict()["compaction"]["design"]
+
+
 @pytest.mark.parametrize(
     ("args", "kwargs"),
     [
@@ -1343,3 +2030,15 @@ def test_public_names_exist_and_notes_follow_the_style_rule() -> None:
     for note in (stats.KM_NOTE, stats.POWER_NOTE, stats.NAIVE_NOTE):
         assert "\u2014" not in note
     assert "Synthetic" in stats.POWER_NOTE
+
+
+def test_bootstrap_helpers_check_their_settings_even_without_draws() -> None:
+    # Without a violation nothing is bootstrapped, but bad settings still fail loudly.
+    rows = [dict(r, violated=False) for r in _simulated_hazard_rows(20, seed=2)]
+    for bad in (0, -1):
+        with pytest.raises(StatsError, match="n_boot"):
+            bootstrap_coefficients(rows, bad, seed=1, categorical=())
+        with pytest.raises(StatsError, match="n_boot"):
+            bootstrap_half_life(rows, 150, {"compaction_count": 0}, bad, seed=1, categorical=())
+    with pytest.raises(StatsError, match="explicit seed"):
+        bootstrap_coefficients(rows, 10, categorical=())

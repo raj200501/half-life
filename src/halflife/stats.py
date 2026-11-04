@@ -1,24 +1,41 @@
 """Survival statistics for constraint half-life (RQ1 to RQ5, gate G7).
 
 The input is opportunity rows from :func:`halflife.analysis.opportunity_rows`: one
-mapping per decision point (DP) a session reached, with at least ``session_id``,
-``position`` (the tool call index at which the DP subtask starts) and ``violated``,
-plus whatever covariates a model names (``compaction_count``, ``constraint_type``,
-``placement``, ``mitigation``, ...).
+mapping per decision point (DP) a session reached, with at least ``family``,
+``session_id``, ``position`` (the tool call index at which the DP subtask starts) and
+``violated``, plus whatever covariates a model names (``compaction_count``,
+``constraint_type``, ``placement``, ``mitigation``, ...).
+
+Sessions and clusters. Every model family runs the same plans and ``session_id`` is the
+plan's id, so a session is the pair :data:`SESSION_KEY` ``(family, session_id)``: risk
+sets, times to first violation, and session counts group by that pair (a ``session``
+argument names other fields, such as E2's ``(model, session_id)``). Bootstrap draws and
+CR1 errors cluster on ``session_id`` by default, which is the plan: within one family
+that is the session, and over pooled families it keeps both families' sessions of a plan
+together, since the plan is the unit of randomization.
 
 What is here:
 
 - :func:`risk_set` and :func:`fit_hazard`: the discrete-time hazard of a first
   violation, a logistic model per opportunity on the risk set (RQ1, RQ2, RQ4).
-- :func:`half_life`: the position at which the predicted hazard reaches 0.5, or
-  :class:`NotReached` when it does not within the stated range.
+- :func:`half_life`: the position at which the predicted hazard reaches 0.5, searched
+  from the first observed decision point, or :class:`NotReached` when it does not within
+  the stated range.
 - :func:`cluster_bootstrap` and the ``bootstrap_*`` helpers: percentile intervals
-  that resample whole sessions, so the dependence between opportunities in one
-  session is kept.
+  that resample whole clusters (sessions, or plans when families are pooled), so the
+  dependence between opportunities in one session is kept. No estimate is reported at a
+  value held only by the ridge (D-029): a term the full data cannot estimate (no
+  violation, or separation) gets the not-estimable form of :class:`Interval`, and a draw
+  that cannot estimate it counts as failed (``n_failed``).
 - :func:`kaplan_meier`: time to first violation with Greenwood log-log intervals.
   It is descriptive only, because it depends on how often decision points occur.
 - :func:`rate_contrast` and :func:`recall_effect`: contrasts between arms (RQ3,
   RQ5) and the compaction effect on probe recall (RQ2).
+- :func:`wald_test`: a two-sided Wald test of one term, with cluster-robust (CR1)
+  errors, that names the reason when no valid p-value exists instead of returning one.
+- :func:`score_test`: a two-sided score test of one term at the null fit, clustered
+  through an exchangeable within-cluster correlation, which stays valid under separation
+  (for example an arm without violations).
 - :func:`power_by_simulation`: power for preregistration sizing. Its datasets are
   simulated, and its result is labeled synthetic.
 - :func:`wilson_interval` and :func:`normal_quantile`.
@@ -34,7 +51,7 @@ import dataclasses
 import math
 import numbers
 from collections import Counter
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, Literal, TypeAlias
@@ -42,7 +59,7 @@ from typing import Any, Literal, TypeAlias
 import numpy as np
 import numpy.typing as npt
 
-from halflife.analysis import time_to_first_violation
+from halflife.analysis import SESSION_KEY, time_to_first_violation
 
 FloatArray: TypeAlias = npt.NDArray[np.float64]
 Row: TypeAlias = Mapping[str, Any]
@@ -361,19 +378,38 @@ def wilson_interval(k: int, n: int, level: float = 0.95) -> Proportion:
 # --------------------------------------------------------------------------- risk set
 
 
-def risk_set(rows: Iterable[Row], by: Sequence[str] = ("session_id",)) -> list[dict[str, Any]]:
+def _session_fields(session: Sequence[str]) -> tuple[str, ...]:
+    """The fields that identify a session, checked: at least one, all distinct strings."""
+    fields = (session,) if isinstance(session, str) else tuple(session)
+    if not fields or not all(isinstance(name, str) and name for name in fields):
+        raise StatsError(f"a session key needs at least one field name, got {session!r}")
+    if len(set(fields)) != len(fields):
+        raise StatsError(f"a session key repeats a field: {list(fields)}")
+    return fields
+
+
+def _session_of(row: Row, fields: Sequence[str], index: int) -> tuple[str, ...]:
+    return tuple(str(_field(row, name, index)) for name in fields)
+
+
+def risk_set(rows: Iterable[Row], by: Sequence[str] = SESSION_KEY) -> list[dict[str, Any]]:
     """The discrete-time hazard risk set for a first violation.
 
-    Per session (or per group of the ``by`` fields), opportunities in position order
-    up to and including the first violated one. Ties in position keep their input
-    order. Groups come out in sorted key order; rows are copied.
+    Per session, opportunities in position order up to and including the first
+    violated one. A session is a group of the ``by`` fields, :data:`SESSION_KEY`
+    ``(family, session_id)`` by default: the families run the same plans, so their
+    sessions of one plan share a ``session_id``, and one family's first violation must
+    not end the other family's session. Ties in position keep their input order. Groups
+    come out in sorted key order; rows are copied.
 
     Raises:
-        StatsError: when a row lacks a ``by`` field, ``position``, or ``violated``.
+        StatsError: when a row lacks a ``by`` field, ``position``, or ``violated``, or
+            when ``by`` names no field.
     """
+    fields = _session_fields(by)
     groups: dict[tuple[str, ...], list[tuple[float, int, Row]]] = {}
     for index, row in enumerate(rows):
-        key = tuple(str(_field(row, name, index)) for name in by)
+        key = _session_of(row, fields, index)
         _outcome(row, "violated", index)
         groups.setdefault(key, []).append((_number(row, "position", index), index, row))
     out: list[dict[str, Any]] = []
@@ -676,6 +712,245 @@ def fit_logistic(
     )
 
 
+WALD_PROBLEMS: dict[str, str] = {
+    "not_converged": "the fit did not converge, so the estimate is not a maximum",
+    "rank_deficient": "the design is rank deficient, so the term is not identified",
+    "separation": (
+        "the outcomes are separated (for example an arm with no violations), so no finite "
+        "maximum likelihood estimate exists; the coefficient is held only by the ridge and "
+        "a Wald statistic for it is not valid"
+    ),
+    "one_cluster": "cluster-robust errors need at least two clusters",
+    "no_cluster_robust_se": "the fit has no cluster-robust errors (it was fit without clusters)",
+    "zero_se": "the standard error is zero or not finite",
+}
+"""Why :func:`wald_test` reports no p-value, by problem code."""
+
+
+@dataclass(frozen=True)
+class WaldTest:
+    """A two-sided Wald test of one coefficient against zero.
+
+    When no valid p-value exists, ``p_value`` (and ``z``) are None and ``problem`` holds
+    a code from :data:`WALD_PROBLEMS` with its ``detail``; a missing p-value is never
+    reported as a number such as 1.0.
+    """
+
+    term: str
+    estimate: float
+    std_error: float | None
+    z: float | None
+    p_value: float | None
+    robust: bool
+    n_clusters: int | None
+    problem: str | None = None
+    detail: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """JSON-ready form."""
+        return {
+            "test": "two-sided Wald, " + ("CR1 cluster-robust" if self.robust else "model-based"),
+            "term": self.term,
+            "estimate": _json_float(self.estimate),
+            "std_error": None if self.std_error is None else _json_float(self.std_error),
+            "z": None if self.z is None else _json_float(self.z),
+            "p_value": None if self.p_value is None else _json_float(self.p_value),
+            "robust": self.robust,
+            "n_clusters": self.n_clusters,
+            "problem": self.problem,
+            "detail": self.detail,
+        }
+
+
+def wald_test(fit: LogisticFit, term: str, *, robust: bool = True) -> WaldTest:
+    """Two-sided Wald test of ``term``, with CR1 cluster-robust errors by default.
+
+    ``p = erfc(|z| / sqrt(2))``, which equals ``2 * (1 - Phi(|z|))`` and stays accurate in
+    the far tail. No p-value is reported (``p_value`` None, ``problem`` set) when the fit
+    did not converge, is rank deficient, or shows separation (D-029: flagged coefficients
+    are not interpreted; under separation the CR1 error of the separated term collapses
+    and its Wald statistic is spuriously large), or when the needed standard error is
+    missing, zero, or not finite.
+
+    Raises:
+        StatsError: when ``term`` is not a term of the fit.
+    """
+    estimate = fit.coefficient(term)
+    index = fit.index(term)
+
+    def missing(code: str, se: float | None = None) -> WaldTest:
+        return WaldTest(
+            term, estimate, se, None, None, robust, fit.n_clusters, code, WALD_PROBLEMS[code]
+        )
+
+    if not fit.converged:
+        return missing("not_converged")
+    if "rank_deficient" in fit.warnings:
+        return missing("rank_deficient")
+    if fit.separation:
+        return missing("separation")
+    if robust and fit.robust_se is None:
+        return missing("one_cluster" if "one_cluster" in fit.warnings else "no_cluster_robust_se")
+    errors = fit.robust_se if robust and fit.robust_se is not None else fit.se
+    se = float(errors[index])
+    if not (math.isfinite(se) and se > 0.0):
+        return missing("zero_se", se if math.isfinite(se) else None)
+    z = estimate / se
+    p = math.erfc(abs(z) / math.sqrt(2.0))
+    return WaldTest(term, estimate, se, z, p, robust, fit.n_clusters)
+
+
+SCORE_PROBLEMS: dict[str, str] = {
+    "no_events": "no outcome is a violation, so there is nothing to test",
+    "all_events": "every outcome is a violation, so there is nothing to test",
+    "one_cluster": "a clustered score test needs at least two clusters",
+    "rank_deficient": "the term is collinear with the null model, so it cannot be tested",
+    "zero_variance": "the score has zero or non-finite variance",
+    "null_not_converged": "the null fit did not converge",
+    "null_separation": "the null model is separated, so its fitted values are held by the ridge",
+}
+"""Why :func:`score_test` reports no p-value, by problem code."""
+
+SCORE_RHO_MAX = 0.99
+"""Upper bound of the within-cluster correlation :func:`score_test` uses (its lower bound
+is 0)."""
+SCORE_TEST_NAME = (
+    "two-sided score test at the null fit, variance with an exchangeable within-cluster "
+    "correlation estimated at the null fit"
+)
+
+
+@dataclass(frozen=True)
+class ScoreTest:
+    """A two-sided score (Rao) test of one term at the null fit, clustered (:func:`score_test`).
+
+    ``rho`` is the within-cluster correlation its variance used. ``p_value`` (and ``z``) are
+    None, with a code from :data:`SCORE_PROBLEMS`, when no valid test exists; a missing
+    p-value is never reported as a number.
+    """
+
+    term: str
+    z: float | None
+    p_value: float | None
+    n_clusters: int
+    problem: str | None = None
+    detail: str | None = None
+    rho: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """JSON-ready form."""
+        return {
+            "test": SCORE_TEST_NAME,
+            "term": self.term,
+            "z": None if self.z is None else _json_float(self.z),
+            "p_value": None if self.p_value is None else _json_float(self.p_value),
+            "rho": None if self.rho is None else _json_float(self.rho),
+            "n_clusters": self.n_clusters,
+            "problem": self.problem,
+            "detail": self.detail,
+        }
+
+
+def score_test(
+    x: npt.ArrayLike,
+    y: npt.ArrayLike,
+    clusters: Sequence[object],
+    null_design: npt.ArrayLike | None = None,
+    *,
+    term: str = "x",
+    l2: float = DEFAULT_L2,
+) -> ScoreTest:
+    """Two-sided score test of ``x`` in a logistic model of ``y``, clustered by ``clusters``.
+
+    The null model holds an intercept and the columns of ``null_design`` (none by
+    default). With ``p`` its fitted probabilities and ``w = p (1 - p)``, the score of the
+    tested term is ``U = sum(x~ (y - p))`` with ``x~ = x - Z (Z'WZ)^-1 Z'W x`` (the term
+    residualized on the null design, so estimating the null model leaves its first-order
+    variance unchanged). Its variance treats the outcomes of one cluster as exchangeably
+    correlated under the null:
+    ``V = sum over clusters of (1 - rho) * sum(w x~^2) + rho * (sum(sqrt(w) x~))^2``, where
+    ``rho`` is the moment estimate of the within-cluster correlation of the Pearson residuals
+    ``(y - p) / sqrt(w)`` at the null fit (the sum over clusters of every within-cluster
+    pair's product, over the number of such pairs), kept in ``[0, SCORE_RHO_MAX]``;
+    ``z = U / sqrt(V)`` and ``p = erfc(|z| / sqrt(2))``. With no within-cluster pair
+    ``rho`` is 0 and the test is the Pearson chi-square test of the two-by-two table.
+
+    The test is evaluated at the null fit only, so it stays valid where the model with the
+    term has no finite estimate: an arm with no violations separates that model and leaves
+    no Wald test, yet its score test is defined. Its variance uses the null fit's ``w``
+    for every row, not each cluster's realized score: the CR1 (sandwich) variance of the
+    score sums squared cluster scores, so when the rarer arm has no violations it sees no
+    variability from that arm and the test rejects far too often (in a synthetic null
+    calibration on the E1 plans it rejected more than a quarter of the true nulls whose
+    rarer type had no violation, and about one in eight of all tests at the 0.05 level in
+    the worst setting, while the exchangeable variance stayed near the nominal level).
+    Without a null design the null fit is the overall rate (exact).
+
+    Raises:
+        StatsError: for empty or mismatched input, or outcomes other than 0 and 1.
+    """
+    xx = np.asarray(x, dtype=np.float64).ravel()
+    yy = np.asarray(y, dtype=np.float64).ravel()
+    n = int(yy.shape[0])
+    if n == 0 or xx.shape[0] != n or len(clusters) != n:
+        raise StatsError("score_test needs x, y, and clusters of the same nonzero length")
+    if not bool(np.all((yy == 0.0) | (yy == 1.0))):
+        raise StatsError("outcomes must be 0 or 1")
+    if not bool(np.all(np.isfinite(xx))):
+        raise StatsError("x has non-finite values")
+    unique, labels = np.unique(np.array([str(c) for c in clusters]), return_inverse=True)
+    groups = len(unique)
+
+    def missing(code: str) -> ScoreTest:
+        return ScoreTest(term, None, None, groups, code, SCORE_PROBLEMS[code])
+
+    if groups < 2:
+        return missing("one_cluster")
+    events = float(yy.sum())
+    if events == 0.0:
+        return missing("no_events")
+    if events == float(n):
+        return missing("all_events")
+    if null_design is None:
+        z_mat = np.ones((n, 1))
+        p = np.full(n, events / n)
+    else:
+        extra = np.asarray(null_design, dtype=np.float64).reshape(n, -1)
+        z_mat = np.column_stack([np.ones(n), extra])
+        null = fit_logistic(z_mat, yy, l2, intercept=False)
+        if not null.converged:
+            return missing("null_not_converged")
+        if null.separation:
+            return missing("null_separation")
+        p = _sigmoid(z_mat @ null.coef)
+    w = p * (1.0 - p)
+    gram = (z_mat * w[:, None]).T @ z_mat
+    try:
+        coef = np.linalg.solve(gram, z_mat.T @ (w * xx))
+    except np.linalg.LinAlgError:
+        return missing("rank_deficient")
+    resid_x = xx - z_mat @ coef
+    if float(np.max(np.abs(resid_x))) <= 1e-9 * max(1.0, float(np.max(np.abs(xx)))):
+        return missing("rank_deficient")
+    residual = yy - p
+    root_w = np.sqrt(w)
+    pearson = residual / root_w
+    sizes = np.bincount(labels, minlength=groups).astype(np.float64)
+    pairs = float(sizes @ (sizes - 1.0))
+    rho = 0.0
+    if pairs > 0.0:
+        sum_e = np.bincount(labels, weights=pearson, minlength=groups)
+        sum_e2 = np.bincount(labels, weights=pearson * pearson, minlength=groups)
+        rho = min(max(float((sum_e * sum_e - sum_e2).sum()) / pairs, 0.0), SCORE_RHO_MAX)
+    scaled = root_w * resid_x
+    together = np.bincount(labels, weights=scaled, minlength=groups)
+    variance = (1.0 - rho) * float(scaled @ scaled) + rho * float(together @ together)
+    if not (math.isfinite(variance) and variance > 0.0):
+        return missing("zero_variance")
+    z = float(resid_x @ residual) / math.sqrt(variance)
+    return ScoreTest(term, z, math.erfc(abs(z) / math.sqrt(2.0)), groups, rho=rho)
+
+
 # --------------------------------------------------------------------------- design matrices
 
 
@@ -964,6 +1239,7 @@ def fit_hazard(
     use_risk_set: bool = True,
     l2: float = DEFAULT_L2,
     cluster: str = "session_id",
+    session: Sequence[str] = SESSION_KEY,
     check_separation: bool = True,
 ) -> HazardFit:
     """Fit the discrete-time hazard of a violation per opportunity.
@@ -982,14 +1258,16 @@ def fit_hazard(
             observed levels. Bootstrap loops pass the full-data levels.
         use_risk_set: Cut rows to the risk set first.
         l2: Ridge weight.
-        cluster: Row field for cluster-robust standard errors.
+        cluster: Row field for cluster-robust standard errors (``session_id``, the plan:
+            the session within one family, both families' sessions of it when pooled).
+        session: Fields that identify a session for the risk set (:data:`SESSION_KEY`).
         check_separation: Run the separation test.
 
     Raises:
         StatsError: for no rows, missing fields, a covariate with a single value, or
             a rank-deficient design.
     """
-    data = risk_set(rows) if use_risk_set else [dict(row) for row in rows]
+    data = risk_set(rows, session) if use_risk_set else [dict(row) for row in rows]
     if not data:
         raise StatsError("no opportunity rows to fit")
     design = _build_design(data, covariates, categorical, position_transform, levels)
@@ -1018,42 +1296,77 @@ def fit_hazard(
     )
 
 
-def half_life(fit: HazardFit, max_position: float, /, **fixed: float | str) -> float | NotReached:
-    """The position at which the predicted hazard reaches 0.5.
+def half_life(
+    fit: HazardFit, max_position: float, /, *, first_position: float = 0.0, **fixed: float | str
+) -> float | NotReached:
+    """The position at which the predicted hazard reaches 0.5, searched from ``first_position``.
 
     Every covariate other than position is held at the value given in ``fixed`` (for
     example ``compaction_count=0, constraint_type="prohibition"``). The model has one
     position term, so the crossing is solved exactly: ``g(p) = -eta(0) / b``.
 
+    The search runs over ``[first_position, max_position]``, the positions the data can
+    speak to: ``first_position`` is the first observed decision-point position (the
+    analyses pass it; 0 by default, the D-029 rule). Below it the hazard is never
+    extrapolated, so a falling hazard whose extrapolation passes one half before the first
+    decision point is not reached, not 0.
+
     Returns:
-        ``0.0`` when the hazard is already at least 0.5 at position 0, the crossing
-        position (a float, in tool calls) when it lies in ``[0, max_position]``, and
-        ``NotReached(max_position)`` when the hazard stays below 0.5 there (including
-        a flat or falling hazard).
+        ``float(first_position)`` when the hazard is already at least 0.5 there (the
+        half-life is at or before that position, a left-censored value), the crossing
+        position (a float, in tool calls) when it lies in ``(first_position,
+        max_position]``, and ``NotReached(max_position)`` when the hazard stays below 0.5
+        there (including a flat or falling hazard).
 
     Raises:
-        StatsError: for a negative ``max_position``, a fit that did not converge, or
-            covariates the fit cannot predict for.
+        StatsError: for a negative ``max_position``, a ``first_position`` outside
+            ``[0, max_position]``, a fit that did not converge, or covariates the fit
+            cannot predict for.
     """
     if not (_is_real(max_position) and math.isfinite(max_position) and max_position >= 0):
         raise StatsError(f"max_position must be a finite number >= 0, got {max_position!r}")
+    if not (
+        _is_real(first_position)
+        and math.isfinite(first_position)
+        and 0.0 <= first_position <= max_position
+    ):
+        raise StatsError(
+            f"first_position must be a number in [0, max_position], got {first_position!r}"
+        )
     if not fit.fit.converged:
         raise StatsError("the hazard fit did not converge, so its half-life is undefined")
-    eta0 = fit.linear_predictor(0.0, **fixed)
-    if eta0 >= 0.0:
-        return 0.0
+    first = float(first_position)
+    if fit.linear_predictor(first, **fixed) >= 0.0:
+        return first
     slope = fit.position_coefficient
     if slope <= 0.0:
         return NotReached(max_position)
-    crossing = -eta0 / slope
+    crossing = -fit.linear_predictor(0.0, **fixed) / slope
     if crossing > _position_term(float(max_position), fit.position_transform):
         return NotReached(max_position)
-    if fit.position_transform == "linear":
-        return crossing
-    return min(math.expm1(crossing), float(max_position))
+    value = crossing if fit.position_transform == "linear" else math.expm1(crossing)
+    return min(max(value, first), float(max_position))
 
 
 # --------------------------------------------------------------------------- bootstrap
+
+
+NOT_ESTIMABLE: dict[str, str] = {
+    "no_violations": (
+        "the rows hold no violation, so no coefficient has a finite maximum likelihood "
+        "estimate; the fit is held only by the ridge"
+    ),
+    "all_violations": (
+        "every row is a violation, so no coefficient has a finite maximum likelihood "
+        "estimate; the fit is held only by the ridge"
+    ),
+    "separation": (
+        "the outcomes are separated on this term, so it has no finite maximum likelihood "
+        "estimate and its value is held only by the ridge (D-029: not interpreted)"
+    ),
+    "not_converged": "the fit did not converge, so the estimate is not a maximum",
+}
+"""Why an estimate is not reported (its point and bounds are null), by reason code."""
 
 
 @dataclass(frozen=True)
@@ -1062,7 +1375,9 @@ class Interval:
 
     ``estimate``, ``lo``, and ``hi`` are numbers or :class:`NotReached` bounds. Draws
     on which the statistic was undefined are counted in ``n_failed`` and left out of
-    the percentiles.
+    the percentiles. A statistic with no valid value on the full data is not estimable:
+    ``not_estimable`` holds a code from :data:`NOT_ESTIMABLE`, the three values are nan
+    (written as null), and no draw is made for it.
     """
 
     estimate: Value
@@ -1077,11 +1392,46 @@ class Interval:
     n_clusters: int = 0
     strata: str | None = None
     method: str = _PERCENTILE_METHOD
+    not_estimable: str | None = None
+
+    @classmethod
+    def undefined(
+        cls,
+        reason: str,
+        *,
+        level: float,
+        n_boot: int,
+        seed: int | None,
+        cluster: str = "session_id",
+        n_clusters: int = 0,
+        strata: str | None = None,
+    ) -> Interval:
+        """The not-estimable form: no point, no bounds, and the reason code."""
+        if reason not in NOT_ESTIMABLE:
+            raise StatsError(f"unknown not-estimable reason {reason!r}")
+        nan = math.nan
+        return cls(
+            nan,
+            nan,
+            nan,
+            level,
+            n_boot,
+            seed=seed,
+            cluster=cluster,
+            n_clusters=n_clusters,
+            strata=strata,
+            not_estimable=reason,
+        )
 
     @property
     def n_used(self) -> int:
         """Draws that entered the percentiles."""
         return self.n_boot - self.n_failed
+
+    @property
+    def failed_share(self) -> float:
+        """Share of the draws on which the statistic was undefined (0 when none ran)."""
+        return self.n_failed / self.n_boot if self.n_boot else 0.0
 
     @property
     def share_not_reached(self) -> float:
@@ -1110,7 +1460,9 @@ class Interval:
 
         A ``NotReached`` point estimate becomes ``key: null`` plus
         ``not_reached_within: N``; a ``NotReached`` bound becomes ``lo: null`` or
-        ``hi: null`` plus ``lo_not_reached_within`` or ``hi_not_reached_within``.
+        ``hi: null`` plus ``lo_not_reached_within`` or ``hi_not_reached_within``. A
+        not-estimable interval has null point and bounds and its ``not_estimable`` code;
+        ``failed_share`` is ``n_failed / n_boot``.
         """
         out: dict[str, Any] = {}
         for name, value, extra in (
@@ -1129,11 +1481,13 @@ class Interval:
                 "level": self.level,
                 "n_boot": self.n_boot,
                 "n_failed": self.n_failed,
+                "failed_share": _json_float(self.failed_share),
                 "seed": self.seed,
                 "cluster": self.cluster,
                 "n_clusters": self.n_clusters,
                 "strata": self.strata,
                 "method": self.method,
+                "not_estimable": self.not_estimable,
             }
         )
         return out
@@ -1183,6 +1537,7 @@ def _resample(
     cluster: str,
     level: float,
     strata: str | None,
+    allow_undefined: bool = False,
 ) -> dict[str, Interval]:
     data = [dict(row) for row in rows]
     if not data:
@@ -1256,7 +1611,7 @@ def _resample(
     out: dict[str, Interval] = {}
     for name, estimate in point.items():
         ordered = sorted(draws[name])
-        if not ordered:
+        if not ordered and not allow_undefined:
             raise StatsError(f"the statistic {name!r} was undefined on every resample")
         within = min(bounds[name]) if bounds[name] else 0.0
 
@@ -1265,8 +1620,9 @@ def _resample(
 
         out[name] = Interval(
             estimate=estimate,
-            lo=bound(_percentile(ordered, q)),
-            hi=bound(_percentile(ordered, 1.0 - q)),
+            # Undefined on every draw (allowed): no bounds, and n_failed says why.
+            lo=bound(_percentile(ordered, q)) if ordered else math.nan,
+            hi=bound(_percentile(ordered, 1.0 - q)) if ordered else math.nan,
             level=level,
             n_boot=n_boot,
             n_failed=failed[name],
@@ -1288,14 +1644,17 @@ def cluster_bootstrap(
     level: float = 0.95,
     *,
     strata: str | None = None,
+    allow_undefined: bool = False,
 ) -> Interval:
-    """Percentile interval for a statistic, resampling whole clusters (sessions).
+    """Percentile interval for a statistic, resampling whole clusters.
 
-    Each draw picks as many clusters as there are, with replacement (within each
-    stratum when ``strata`` names a field that is constant within clusters). The rows
-    of the cluster in draw slot ``k`` get ``#k`` appended to their cluster field (and
-    to ``session_id`` when that is a different field), so a cluster drawn twice counts
-    as two sessions, for example in :func:`risk_set`.
+    The default cluster is ``session_id``, the plan: a draw then holds whole sessions
+    within one family and, over pooled families, every family's session of each drawn
+    plan together. Each draw picks as many clusters as there are, with replacement
+    (within each stratum when ``strata`` names a field that is constant within
+    clusters). The rows of the cluster in draw slot ``k`` get ``#k`` appended to their
+    cluster field (and to ``session_id`` when that is a different field), so a cluster
+    drawn twice counts as two sessions of each family, for example in :func:`risk_set`.
 
     The statistic receives a list of row copies and returns a number or a
     :class:`NotReached`. ``NotReached`` sorts above every number: a percentile that
@@ -1309,11 +1668,16 @@ def cluster_bootstrap(
     ``numpy.random.default_rng(seed)``, so a seed fixes the interval exactly. The same
     convention holds for every bootstrap function in this module.
 
+    With ``allow_undefined``, a statistic that is undefined on every resample gets nan
+    bounds (written null) and ``n_failed == n_boot`` instead of an error.
+
     Raises:
         StatsError: for no rows, no seed, a statistic undefined on the full data, or
-            one that is undefined on every resample.
+            one that is undefined on every resample (unless ``allow_undefined``).
     """
-    return _resample(rows, statistic, n_boot, seed, cluster, level, strata)["value"]
+    return _resample(rows, statistic, n_boot, seed, cluster, level, strata, allow_undefined)[
+        "value"
+    ]
 
 
 def cluster_bootstrap_many(
@@ -1325,28 +1689,39 @@ def cluster_bootstrap_many(
     level: float = 0.95,
     *,
     strata: str | None = None,
+    allow_undefined: bool = False,
 ) -> dict[str, Interval]:
     """:func:`cluster_bootstrap` for a statistic that returns several named values.
 
     All values come from the same draws, so their intervals are consistent with each
     other. A ``nan`` value fails that name only.
     """
-    return _resample(rows, statistic, n_boot, seed, cluster, level, strata)
+    return _resample(rows, statistic, n_boot, seed, cluster, level, strata, allow_undefined)
 
 
 @dataclass(frozen=True)
 class HalfLifeResult:
-    """A half-life with its cluster-bootstrap interval and the full-data model."""
+    """A half-life with its cluster-bootstrap interval and the full-data model.
+
+    ``first_position`` is where the search starts (the first observed decision point). A
+    value equal to it, the point or a bound, means the hazard was already at or above one
+    half there: the half-life is at or before it. ``share_at_first`` is the share of used
+    draws with that value.
+    """
 
     interval: Interval
     fit: HazardFit
     max_position: float
     fixed: Mapping[str, float | str]
+    first_position: float = 0.0
+    share_at_first: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-ready form: ``half_life``, ``lo``, ``hi`` (or ``not_reached_within``), model."""
         out = self.interval.to_dict("half_life")
         out["max_position"] = _json_bound(self.max_position)
+        out["first_position"] = _json_bound(self.first_position)
+        out["share_at_first"] = _json_float(self.share_at_first)
         out["fixed"] = dict(self.fixed)
         out["model"] = self.fit.to_dict()
         return out
@@ -1360,6 +1735,7 @@ def _hazard_statistic_fit(
     levels: Mapping[str, Sequence[str]],
     l2: float,
     cluster: str,
+    check_separation: bool = False,
 ) -> HazardFit:
     return fit_hazard(
         sample,
@@ -1370,8 +1746,65 @@ def _hazard_statistic_fit(
         use_risk_set=False,
         l2=l2,
         cluster=cluster,
-        check_separation=False,
+        check_separation=check_separation,
     )
+
+
+def _flagged_terms(fit: LogisticFit) -> set[str]:
+    """Terms a separated fit flags (every term when the test names none)."""
+    if not fit.separation:
+        return set()
+    return set(fit.separated_terms) or set(fit.names)
+
+
+def not_estimable_terms(model: HazardFit, names: Iterable[str]) -> dict[str, str]:
+    """The terms among ``names`` that ``model`` cannot estimate, with a reason code.
+
+    Every term fails when the rows hold no violation or only violations (no coefficient
+    has a finite maximum likelihood estimate), or when the fit did not converge; under
+    separation the flagged terms fail (D-029: flagged coefficients are not interpreted).
+    A fit without the separation check never flags separation, so callers that need the
+    rule fit with ``check_separation=True``.
+    """
+    wanted = list(names)
+    if model.n_events == 0:
+        return dict.fromkeys(wanted, "no_violations")
+    if model.n_events == model.n_rows:
+        return dict.fromkeys(wanted, "all_violations")
+    if not model.fit.converged:
+        return dict.fromkeys(wanted, "not_converged")
+    flagged = _flagged_terms(model.fit)
+    return {name: "separation" for name in wanted if name in flagged}
+
+
+@dataclass(frozen=True, eq=False)
+class HazardCoefficients(Mapping[str, Interval]):
+    """Hazard coefficients with bootstrap intervals, and the full-data model.
+
+    It maps each term to its :class:`Interval`; a term the full data cannot estimate has
+    the not-estimable form (:meth:`Interval.undefined`) and no draws.
+    """
+
+    intervals: Mapping[str, Interval]
+    fit: HazardFit
+
+    def __getitem__(self, name: str) -> Interval:
+        return self.intervals[name]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.intervals)
+
+    def __len__(self) -> int:
+        return len(self.intervals)
+
+    @property
+    def not_estimable(self) -> dict[str, str]:
+        """Not-estimable terms and their reason codes."""
+        return {
+            name: interval.not_estimable
+            for name, interval in self.intervals.items()
+            if interval.not_estimable is not None
+        }
 
 
 def bootstrap_half_life(
@@ -1383,19 +1816,37 @@ def bootstrap_half_life(
     *,
     level: float = 0.95,
     cluster: str = "session_id",
+    session: Sequence[str] = SESSION_KEY,
     covariates: Sequence[str] = DEFAULT_COVARIATES,
     categorical: Sequence[str] = DEFAULT_CATEGORICAL,
     position_transform: PositionTransform = "linear",
     l2: float = DEFAULT_L2,
+    first_position: float | None = None,
 ) -> HalfLifeResult:
     """Half-life from :func:`fit_hazard` with a cluster-bootstrap interval.
 
-    The risk set is formed once (resampling whole sessions keeps it valid), the
-    factor levels are fixed from the full data, and each draw refits the model and
-    solves :func:`half_life`. Draws where the fixed level is absent or the design
-    is rank deficient count as failed.
+    The risk set is formed once, per ``session`` (:data:`SESSION_KEY`); resampling whole
+    clusters keeps it valid, because every session lies inside one cluster (its plan).
+    The factor levels and the search start (``first_position``, by default the smallest
+    position in the rows) are fixed from the full data, and each draw refits the model
+    and solves :func:`half_life` from there.
+
+    A half-life is a function of the fitted coefficients, so it follows D-029 (flagged
+    coefficients are not interpreted). With no violation the hazard never reaches one
+    half (``NotReached``), and with only violations it is at or above one half from the
+    first position on; these boundary answers hold for the full data and for each draw.
+    Otherwise, when the fit separates a term that enters the prediction at ``fixed``
+    (the intercept, the position term, a covariate held at a nonzero value, or the held
+    factor level), the full-data half-life is not estimable (no number and no draws), and
+    such a draw counts as failed, as do draws where the held level is absent or the
+    design is rank deficient.
     """
-    data = risk_set(rows)
+    data = risk_set(rows, session)
+    level = _check_level(level)
+    n_boot = _count(n_boot, "n_boot")
+    if n_boot < 1:
+        raise StatsError("n_boot must be at least 1")
+    seed = _require_seed(seed)
     # risk_set is idempotent, so the full fit can cut ``data`` again and say so.
     full = fit_hazard(
         data,
@@ -1405,17 +1856,79 @@ def bootstrap_half_life(
         use_risk_set=True,
         l2=l2,
         cluster=cluster,
+        session=session,
     )
     levels = dict(full.levels)
+    first = (
+        min(_number(row, "position", i) for i, row in enumerate(data))
+        if first_position is None
+        else float(first_position)
+    )
+    full.linear_predictor(first, **fixed)  # validates the held values before resampling
+    terms = _prediction_terms(full, fixed)
+
+    def boundary(model: HazardFit) -> Value | None:
+        if model.n_events == 0:
+            return NotReached(max_position)
+        if model.n_events == model.n_rows:
+            return first
+        return None
+
+    def undefined(model: HazardFit) -> str | None:
+        if not model.fit.converged:
+            return "not_converged"
+        return "separation" if _flagged_terms(model.fit) & terms else None
+
+    reason = undefined(full) if boundary(full) is None else None
+    if reason is not None:
+        interval = Interval.undefined(
+            reason,
+            level=level,
+            n_boot=n_boot,
+            seed=seed,
+            cluster=cluster,
+            n_clusters=len({str(row[cluster]) for row in data}),
+        )
+        return HalfLifeResult(interval, full, float(max_position), dict(fixed), first, 0.0)
+
+    values: list[Value] = []
 
     def statistic(sample: list[dict[str, Any]]) -> Value:
         model = _hazard_statistic_fit(
-            sample, covariates, categorical, position_transform, levels, l2, cluster
+            sample, covariates, categorical, position_transform, levels, l2, cluster, True
         )
-        return half_life(model, max_position, **fixed)
+        value = boundary(model)
+        if value is None:
+            value = (
+                math.nan
+                if undefined(model)
+                else half_life(model, max_position, first_position=first, **fixed)
+            )
+        values.append(value)
+        return value
 
-    interval = cluster_bootstrap(data, statistic, n_boot, seed=seed, cluster=cluster, level=level)
-    return HalfLifeResult(interval, full, float(max_position), dict(fixed))
+    interval = cluster_bootstrap(
+        data, statistic, n_boot, seed=seed, cluster=cluster, level=level, allow_undefined=True
+    )
+    draws = [v for v in values[1:] if isinstance(v, NotReached) or not math.isnan(v)]
+    at_first = sum(1 for v in draws if not isinstance(v, NotReached) and v == first)
+    share = at_first / len(draws) if draws else 0.0
+    return HalfLifeResult(interval, full, float(max_position), dict(fixed), first, share)
+
+
+def _prediction_terms(model: HazardFit, fixed: Mapping[str, float | str]) -> set[str]:
+    """Terms that enter the predicted hazard with ``fixed`` held (for the half-life)."""
+    terms = {"intercept"}
+    for name in model.covariates:
+        if name == "position":
+            terms.add(_position_name(model.position_transform))
+        elif float(fixed[name]) != 0.0:
+            terms.add(name)
+    for name in model.categorical:
+        held = str(fixed[name])
+        if held != model.reference[name]:
+            terms.add(f"{name}[{held}]")
+    return terms
 
 
 @dataclass(frozen=True)
@@ -1448,15 +1961,26 @@ def bootstrap_hazard_curve(
     *,
     level: float = 0.95,
     cluster: str = "session_id",
+    session: Sequence[str] = SESSION_KEY,
     covariates: Sequence[str] = DEFAULT_COVARIATES,
     categorical: Sequence[str] = DEFAULT_CATEGORICAL,
     position_transform: PositionTransform = "linear",
     l2: float = DEFAULT_L2,
 ) -> HazardCurve:
-    """Predicted hazard at each position with pointwise cluster-bootstrap intervals."""
+    """Predicted hazard at each position with pointwise cluster-bootstrap intervals.
+
+    The risk set is formed once per ``session``, as in :func:`bootstrap_half_life`, and
+    the same separation rule holds: a fit with violations that separates a term entering
+    the prediction has no curve (an error for the full data, a failed draw otherwise),
+    while a fit without violations keeps its near-zero curve.
+
+    Raises:
+        StatsError: for no positions, held values the fit cannot predict for, or a
+            separated full-data fit.
+    """
     if not positions:
         raise StatsError("no positions to predict at")
-    data = risk_set(rows)
+    data = risk_set(rows, session)
     # risk_set is idempotent, so the full fit can cut ``data`` again and say so.
     full = fit_hazard(
         data,
@@ -1466,14 +1990,24 @@ def bootstrap_hazard_curve(
         use_risk_set=True,
         l2=l2,
         cluster=cluster,
+        session=session,
     )
     full.curve(positions, **fixed)  # validates positions and covariates before resampling
     levels = dict(full.levels)
+    terms = _prediction_terms(full, fixed)
+
+    def separated(model: HazardFit) -> bool:
+        return 0 < model.n_events < model.n_rows and bool(_flagged_terms(model.fit) & terms)
+
+    if separated(full):
+        raise StatsError("the hazard fit is separated, so its curve is not estimable (D-029)")
 
     def statistic(sample: list[dict[str, Any]]) -> dict[str, Value]:
         model = _hazard_statistic_fit(
-            sample, covariates, categorical, position_transform, levels, l2, cluster
+            sample, covariates, categorical, position_transform, levels, l2, cluster, True
         )
+        if separated(model):
+            return {str(i): math.nan for i in range(len(positions))}
         return {str(i): model.predict(p, **fixed) for i, p in enumerate(positions)}
 
     found = cluster_bootstrap_many(data, statistic, n_boot, seed=seed, cluster=cluster, level=level)
@@ -1492,19 +2026,32 @@ def bootstrap_coefficients(
     *,
     level: float = 0.95,
     cluster: str = "session_id",
+    session: Sequence[str] = SESSION_KEY,
     covariates: Sequence[str] = DEFAULT_COVARIATES,
     categorical: Sequence[str] = DEFAULT_CATEGORICAL,
     position_transform: PositionTransform = "linear",
     l2: float = DEFAULT_L2,
-) -> dict[str, Interval]:
+) -> HazardCoefficients:
     """Hazard coefficients (log odds) with cluster-bootstrap intervals.
 
     Factor terms are effects against the declared reference level, and
     ``intercept`` is the log odds at position 0 with numeric covariates at 0 and
-    factors at their references. A term whose level or reference is absent from a
-    resample fails for that draw.
+    factors at their references. The risk set is formed once per ``session``, as in
+    :func:`bootstrap_half_life`.
+
+    No term is reported at a value held only by the ridge (D-029). A term that the
+    full-data fit cannot estimate (:func:`not_estimable_terms`: no violation, only
+    violations, no convergence, or a separated term) gets the not-estimable form and no
+    draws. Every draw is refit with the separation check, and a term fails for that draw
+    (it is left out of the percentiles and counted in ``n_failed``) when the draw has no
+    violation or only violations, separates the term, or lacks its level or reference.
     """
-    data = risk_set(rows)
+    data = risk_set(rows, session)
+    level = _check_level(level)
+    n_boot = _count(n_boot, "n_boot")
+    if n_boot < 1:
+        raise StatsError("n_boot must be at least 1")
+    seed = _require_seed(seed)
     # risk_set is idempotent, so the full fit can cut ``data`` again and say so.
     full = fit_hazard(
         data,
@@ -1514,6 +2061,7 @@ def bootstrap_coefficients(
         use_risk_set=True,
         l2=l2,
         cluster=cluster,
+        session=session,
     )
     levels = dict(full.levels)
     factor_terms = [
@@ -1522,6 +2070,11 @@ def bootstrap_coefficients(
         for level in full.levels[name][1:]
         if full.level_counts is not None and full.level_counts[name][level] > 0
     ]
+    names = ["intercept"]
+    names += [_position_name(position_transform) if c == "position" else c for c in covariates]
+    names += [f"{name}[{level}]" for name, level in factor_terms]
+    undefined = not_estimable_terms(full, names)
+    estimable = [name for name in names if name not in undefined]
 
     def summarize(model: HazardFit) -> dict[str, Value]:
         out: dict[str, Value] = {}
@@ -1540,13 +2093,30 @@ def bootstrap_coefficients(
         return out
 
     def statistic(sample: list[dict[str, Any]]) -> dict[str, Value]:
-        return summarize(
-            _hazard_statistic_fit(
-                sample, covariates, categorical, position_transform, levels, l2, cluster
-            )
+        model = _hazard_statistic_fit(
+            sample, covariates, categorical, position_transform, levels, l2, cluster, True
         )
+        values = summarize(model)
+        failed = not_estimable_terms(model, estimable)
+        return {name: math.nan if name in failed else values[name] for name in estimable}
 
-    return cluster_bootstrap_many(data, statistic, n_boot, seed=seed, cluster=cluster, level=level)
+    found: dict[str, Interval] = {}
+    if estimable:
+        found = cluster_bootstrap_many(
+            data,
+            statistic,
+            n_boot,
+            seed=seed,
+            cluster=cluster,
+            level=level,
+            allow_undefined=True,
+        )
+    n_clusters = len({str(row[cluster]) for row in data})
+    for name, reason in undefined.items():
+        found[name] = Interval.undefined(
+            reason, level=level, n_boot=n_boot, seed=seed, cluster=cluster, n_clusters=n_clusters
+        )
+    return HazardCoefficients({name: found[name] for name in names}, full)
 
 
 # --------------------------------------------------------------------------- Kaplan-Meier
@@ -1715,13 +2285,20 @@ def kaplan_meier(times: Times, events: Flags, level: float = 0.95) -> KaplanMeie
     )
 
 
-def kaplan_meier_rows(rows: Iterable[Row], level: float = 0.95) -> KaplanMeier:
+def kaplan_meier_rows(
+    rows: Iterable[Row], level: float = 0.95, *, session: Sequence[str] = SESSION_KEY
+) -> KaplanMeier:
     """:func:`kaplan_meier` of time to first violation per session from opportunity rows.
 
     Times come from :func:`halflife.analysis.time_to_first_violation`: the position of
-    the first violated opportunity, or of the last one reached (censored).
+    the first violated opportunity, or of the last one reached (censored), per session
+    as the ``session`` fields identify it (:data:`SESSION_KEY`).
     """
-    triples = time_to_first_violation(list(rows))
+    data = list(rows)
+    fields = _session_fields(session)
+    for index, row in enumerate(data):
+        _session_of(row, fields, index)
+    triples = time_to_first_violation(data, fields)
     if not triples:
         raise StatsError("no opportunity rows")
     return kaplan_meier([t for _, t, _ in triples], [e for _, _, e in triples], level)
@@ -1732,7 +2309,8 @@ def kaplan_meier_rows(rows: Iterable[Row], level: float = 0.95) -> KaplanMeier:
 
 @dataclass(frozen=True)
 class ArmSummary:
-    """Per-opportunity violation rate in one arm."""
+    """Per-opportunity violation rate in one arm; ``n_sessions`` counts sessions by the
+    contrast's session key (each family's session of a plan counts once)."""
 
     arm: str
     n_sessions: int
@@ -1755,7 +2333,16 @@ class ArmSummary:
 
 @dataclass(frozen=True)
 class RateContrast:
-    """Arm ``b`` against reference arm ``a``: rate difference and odds ratio."""
+    """Arm ``b`` against reference arm ``a``: rate difference and odds ratio.
+
+    ``wald`` is the two-sided Wald test of the arm term with CR1 errors clustered like
+    the bootstrap (by ``cluster``); its ``p_value`` is None, with a reason, when no
+    valid test exists (for example under separation). ``score`` is the two-sided score
+    test of the same term at the null fit (:func:`score_test`), clustered the same way
+    through an exchangeable within-cluster correlation, which stays valid under
+    separation; the analyses decide by it. The odds ratio is not estimable (no number)
+    when the full-data arm term has no finite estimate.
+    """
 
     arm_key: str
     a: ArmSummary
@@ -1769,6 +2356,10 @@ class RateContrast:
     used_risk_set: bool
     covariates: tuple[str, ...]
     categorical: tuple[str, ...]
+    wald: WaldTest
+    score: ScoreTest
+    session: tuple[str, ...] = SESSION_KEY
+    cluster: str = "session_id"
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-ready form."""
@@ -1781,8 +2372,12 @@ class RateContrast:
             "odds_ratio": self.odds_ratio.to_dict("odds_ratio"),
             "odds_ratio_term": self.term,
             "separation": self.fit.separation,
+            "wald": self.wald.to_dict(),
+            "score": self.score.to_dict(),
             "stratified_by_arm": self.stratified,
             "used_risk_set": self.used_risk_set,
+            "session_key": list(self.session),
+            "cluster": self.cluster,
             "covariates": list(self.covariates),
             "categorical": list(self.categorical),
             "fit": self.fit.to_dict(),
@@ -1799,6 +2394,7 @@ def rate_contrast(
     *,
     level: float = 0.95,
     cluster: str = "session_id",
+    session: Sequence[str] = SESSION_KEY,
     covariates: Sequence[str] = (),
     categorical: Sequence[str] = (),
     position_transform: PositionTransform = "linear",
@@ -1811,22 +2407,26 @@ def rate_contrast(
     other arms are ignored. Reported: each arm's rate, the difference ``b - a``, and
     the odds ratio from a logistic fit of ``violated`` on an indicator of arm ``b``
     (plus optional covariates), all with cluster-bootstrap intervals from the same
-    draws. When every cluster sits in one arm, clusters are resampled within arms so
-    arm sizes stay fixed. The odds-ratio interval is the exponential of the log
+    draws, and a Wald test of the arm term (:func:`wald_test`) with CR1 errors over the
+    same clusters. When every cluster sits in one arm, clusters are resampled within
+    arms so arm sizes stay fixed. The odds-ratio interval is the exponential of the log
     odds-ratio interval. By default every opportunity counts (``use_risk_set``
-    False), so the rate is the share of decision points with a violation.
+    False), so the rate is the share of decision points with a violation; with
+    ``use_risk_set`` the rows are cut per ``session`` first. Sessions per arm are
+    counted by ``session`` (:data:`SESSION_KEY`).
 
     Raises:
         StatsError: for equal arms, a row without ``arm_key``, or an arm with no rows.
     """
     if arm_a == arm_b:
         raise StatsError("arm_a and arm_b must differ")
+    fields = _session_fields(session)
     data = [dict(row) for row in rows]
     for index, row in enumerate(data):
         _field(row, arm_key, index)
     selected = [row for row in data if row[arm_key] == arm_a or row[arm_key] == arm_b]
     if use_risk_set:
-        selected = risk_set(selected)
+        selected = risk_set(selected, fields)
     for arm in (arm_a, arm_b):
         if not any(row[arm_key] == arm for row in selected):
             raise StatsError(f"no opportunities in arm {arm!r} of {arm_key!r}")
@@ -1834,40 +2434,83 @@ def rate_contrast(
     levels: Mapping[str, Sequence[str]] | None = None
     if categorical:
         levels = _build_design(selected, covariates, categorical, position_transform, None).levels
+    adjusted = bool(covariates or categorical)
 
-    def model(sample: Sequence[Row], check: bool) -> tuple[float, float, LogisticFit]:
+    def arms_of(sample: Sequence[Row]) -> tuple[FloatArray, FloatArray]:
         indicator = np.array([1.0 if row[arm_key] == arm_b else 0.0 for row in sample])
         y = np.array([_outcome(row, "violated", i) for i, row in enumerate(sample)], dtype=float)
         n_b = float(indicator.sum())
         if n_b in (0.0, float(len(sample))):
             raise StatsError("a resample has no opportunities in one arm")
+        return indicator, y
+
+    def covariate_matrix(sample: Sequence[Row]) -> tuple[FloatArray, tuple[str, ...]]:
+        design = _build_design(sample, covariates, categorical, position_transform, levels)
+        return design.matrix, design.names
+
+    def model(
+        sample: Sequence[Row], check: bool, labels: Sequence[str] | None = None
+    ) -> LogisticFit:
+        indicator, y = arms_of(sample)
         x = indicator.reshape(-1, 1)
         names: tuple[str, ...] = (term,)
-        if covariates or categorical:
-            design = _build_design(sample, covariates, categorical, position_transform, levels)
-            x = np.column_stack([indicator, design.matrix])
-            names = (term, *design.names)
-        fit = fit_logistic(x, y, l2, names=names, check_separation=check)
+        if adjusted:
+            matrix, extra = covariate_matrix(sample)
+            x = np.column_stack([indicator, matrix])
+            names = (term, *extra)
+        fit = fit_logistic(x, y, l2, names=names, clusters=labels, check_separation=check)
         if "rank_deficient" in fit.warnings:
             raise StatsError("the contrast design is rank deficient")
-        rate_a = float(y[indicator == 0.0].mean())
-        rate_b = float(y[indicator == 1.0].mean())
-        return rate_a, rate_b, fit
+        return fit
 
-    _, _, full_fit = model(selected, True)
+    def one_sided(indicator: FloatArray, y: FloatArray) -> bool:
+        """An arm with no violations or only violations: no finite log odds ratio."""
+        for mask in (indicator == 0.0, indicator == 1.0):
+            k = float(y[mask].sum())
+            if k == 0.0 or k == float(mask.sum()):
+                return True
+        return False
+
+    # The full-data fit carries CR1 errors over the bootstrap's clusters, for the Wald
+    # test; resample fits only need their coefficient, so they skip the sandwich.
+    labels = [str(_field(row, cluster, index)) for index, row in enumerate(selected)]
+    full_fit = model(selected, True, labels)
+    wald = wald_test(full_fit, term, robust=True)
+    indicator, outcomes = arms_of(selected)
+    score = score_test(
+        indicator,
+        outcomes,
+        labels,
+        covariate_matrix(selected)[0] if adjusted else None,
+        term=term,
+        l2=l2,
+    )
+    or_missing: str | None = None
+    if full_fit.n_events in (0, full_fit.n):
+        or_missing = "no_violations" if full_fit.n_events == 0 else "all_violations"
+    elif term in _flagged_terms(full_fit):
+        or_missing = "separation"
     clusters: dict[str, set[bool]] = {}
-    for index, row in enumerate(selected):
-        clusters.setdefault(str(_field(row, cluster, index)), set()).add(row[arm_key] == arm_b)
+    for label, row in zip(labels, selected, strict=True):
+        clusters.setdefault(label, set()).add(row[arm_key] == arm_b)
     stratified = all(len(arms) == 1 for arms in clusters.values())
 
     def statistic(sample: list[dict[str, Any]]) -> dict[str, Value]:
-        a, b, fit = model(sample, False)
-        return {
-            "rate_a": a,
-            "rate_b": b,
-            "difference": b - a,
-            "log_odds_ratio": fit.coefficient(term),
-        }
+        arm, y = arms_of(sample)
+        rate_a, rate_b = float(y[arm == 0.0].mean()), float(y[arm == 1.0].mean())
+        out: dict[str, Value] = {"rate_a": rate_a, "rate_b": rate_b, "difference": rate_b - rate_a}
+        if or_missing is None:
+            # A draw whose log odds ratio has no finite estimate (an arm with no or only
+            # violations, or a separated arm term) fails for the odds ratio only.
+            if not adjusted:
+                out["log_odds_ratio"] = (
+                    math.nan if one_sided(arm, y) else model(sample, False).coefficient(term)
+                )
+            else:
+                fit = model(sample, True)
+                flagged = fit.n_events in (0, fit.n) or term in _flagged_terms(fit)
+                out["log_odds_ratio"] = math.nan if flagged else fit.coefficient(term)
+        return out
 
     found = cluster_bootstrap_many(
         selected,
@@ -1882,7 +2525,7 @@ def rate_contrast(
     def summary(arm: object, rate: Interval) -> ArmSummary:
         arm_rows = [row for row in selected if row[arm_key] == arm]
         k = sum(_outcome(row, "violated", i) for i, row in enumerate(arm_rows))
-        sessions = {str(row[cluster]) for row in arm_rows}
+        sessions = {_session_of(row, fields, i) for i, row in enumerate(arm_rows)}
         return ArmSummary(
             str(arm),
             len(sessions),
@@ -1892,7 +2535,18 @@ def rate_contrast(
             wilson_interval(k, len(arm_rows), level),
         )
 
-    log_or = found["log_odds_ratio"]
+    if or_missing is None:
+        log_or = found["log_odds_ratio"]
+    else:
+        log_or = Interval.undefined(
+            or_missing,
+            level=found["difference"].level,
+            n_boot=found["difference"].n_boot,
+            seed=found["difference"].seed,
+            cluster=cluster,
+            n_clusters=found["difference"].n_clusters,
+            strata=found["difference"].strata,
+        )
     return RateContrast(
         arm_key=arm_key,
         a=summary(arm_a, found["rate_a"]),
@@ -1906,6 +2560,10 @@ def rate_contrast(
         used_risk_set=use_risk_set,
         covariates=tuple(covariates),
         categorical=tuple(categorical),
+        wald=wald,
+        score=score,
+        session=fields,
+        cluster=cluster,
     )
 
 
@@ -1923,47 +2581,76 @@ def recall_rows(rows: Iterable[Row]) -> list[dict[str, Any]]:
     return out
 
 
+RECALL_COUNT_FIELD = "compactions_before_probe"
+"""Compactions the before-DP probe saw (:func:`halflife.analysis.opportunity_rows`)."""
+
+
+def recall_count_field(rows: Sequence[Row]) -> str:
+    """The compaction count recall is grouped by: the one the probe saw, when every row has it.
+
+    A compaction at a decision point's start index runs after that point's probe, so the
+    probe's recall belongs with :data:`RECALL_COUNT_FIELD`; rows banked before that field
+    existed fall back to ``compaction_count``, and the outputs name the field used.
+    """
+    return (
+        RECALL_COUNT_FIELD
+        if all(RECALL_COUNT_FIELD in row for row in rows)
+        else ("compaction_count")
+    )
+
+
 @dataclass(frozen=True)
 class RecallCell:
-    """Probe recall among opportunities with one compaction count."""
+    """Probe recall among opportunities with one compaction count (``count_field``)."""
 
     compaction_count: int
     n_sessions: int
     recall: Proportion
+    count_field: str = "compaction_count"
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-ready form."""
         return {
             "compaction_count": self.compaction_count,
+            "count_field": self.count_field,
             "n_sessions": self.n_sessions,
             "recall": {**self.recall.to_dict(), "note": NAIVE_NOTE},
         }
 
 
 def recall_by_compaction(
-    rows: Iterable[Row], level: float = 0.95, cluster: str = "session_id"
+    rows: Iterable[Row],
+    level: float = 0.95,
+    session: Sequence[str] = SESSION_KEY,
+    count_field: str | None = None,
 ) -> list[RecallCell]:
     """Recall rate before each decision point, by compaction count (descriptive).
+
+    The count is ``count_field``, by default the compactions the probe saw
+    (:func:`recall_count_field`). ``n_sessions`` counts sessions by the ``session``
+    fields (:data:`SESSION_KEY`).
 
     Raises:
         StatsError: when no row has a recall outcome, or a compaction count is not
             a whole number.
     """
+    fields = _session_fields(session)
     data = recall_rows(rows)
     if not data:
         raise StatsError("no rows with a recall outcome (recalled_before)")
+    name = count_field or recall_count_field(data)
     cells: dict[int, list[dict[str, Any]]] = {}
     for index, row in enumerate(data):
-        count = _number(row, "compaction_count", index)
+        count = _number(row, name, index)
         if not count.is_integer() or count < 0:
-            raise StatsError(f"row {index}: compaction_count must be a whole number >= 0")
+            raise StatsError(f"row {index}: {name} must be a whole number >= 0")
         cells.setdefault(int(count), []).append(row)
     out = []
     for count in sorted(cells):
         group = cells[count]
         k = sum(_outcome(row, "recalled_before", i) for i, row in enumerate(group))
-        sessions = {str(_field(row, cluster, i)) for i, row in enumerate(group)}
-        out.append(RecallCell(count, len(sessions), wilson_interval(k, len(group), level)))
+        sessions = {_session_of(row, fields, i) for i, row in enumerate(group)}
+        out.append(RecallCell(count, len(sessions), wilson_interval(k, len(group), level), name))
     return out
 
 
@@ -2006,18 +2693,23 @@ def recall_effect(
     *,
     level: float = 0.95,
     cluster: str = "session_id",
+    session: Sequence[str] = SESSION_KEY,
     covariates: Sequence[str] = DEFAULT_COVARIATES,
     categorical: Sequence[str] = (),
     position_transform: PositionTransform = "linear",
     l2: float = DEFAULT_L2,
+    count_field: str | None = None,
 ) -> RecallEffect:
     """Logistic model of probe recall on compaction count (RQ2).
 
     Every opportunity with a probe counts (recall is not absorbing, so there is no
     risk set). With randomized compaction timing and ``position`` among the
-    covariates, the ``compaction_count`` coefficient compares opportunities at the
-    same position that saw different numbers of compactions. The interval is a
-    cluster bootstrap over sessions; the per-count table uses naive Wilson intervals.
+    covariates, the compaction coefficient compares opportunities at the same position
+    that saw different numbers of compactions. The count is ``count_field``, by default
+    the compactions the probe saw (:func:`recall_count_field`); it replaces
+    ``compaction_count`` among the covariates. The interval is a cluster bootstrap over
+    ``cluster`` (plans by default, so pooled families stay together); the per-count
+    table counts sessions by ``session`` and uses naive Wilson intervals.
 
     Raises:
         StatsError: when no row has a recall outcome or ``compaction_count`` is not a
@@ -2028,6 +2720,8 @@ def recall_effect(
     data = recall_rows(rows)
     if not data:
         raise StatsError("no rows with a recall outcome (recalled_before)")
+    count = count_field or recall_count_field(data)
+    covariates = tuple(count if name == "compaction_count" else name for name in covariates)
     design = _build_design(data, covariates, categorical, position_transform, None)
     y = np.array([_outcome(r, "recalled_before", i) for i, r in enumerate(data)], dtype=float)
     labels = [str(_field(row, cluster, i)) for i, row in enumerate(data)]
@@ -2042,13 +2736,13 @@ def recall_effect(
         fit = fit_logistic(
             sample_design.matrix, outcome, l2, names=sample_design.names, check_separation=False
         )
-        return fit.coefficient("compaction_count")
+        return fit.coefficient(count)
 
     log_or = cluster_bootstrap(data, statistic, n_boot, seed=seed, cluster=cluster, level=level)
     return RecallEffect(
-        cells=tuple(recall_by_compaction(data, level, cluster)),
+        cells=tuple(recall_by_compaction(data, level, session, count)),
         fit=full,
-        term="compaction_count",
+        term=count,
         log_odds_ratio=log_or,
         odds_ratio=log_or.transformed(_safe_exp),
         covariates=tuple(covariates),
@@ -2069,7 +2763,7 @@ class PowerResult:
     ``compaction``: rejection rate of a two-sided Wald test (cluster-robust CR1
     errors) of the compaction coefficient in the hazard model on the risk set, with
     ``n_sessions`` sessions. ``contrast``: the same test of the arm coefficient in a
-    per-opportunity logistic model with ``n_sessions`` sessions in each of two arms.
+    per-opportunity logistic model with ``arm_sessions`` sessions in each of two arms.
     Simulations whose fit was unusable (separation, no convergence, rank deficiency,
     one cluster) count as non-rejections and are tallied in ``*_unusable``.
     Intervals are Wilson intervals for the Monte Carlo error.
@@ -2090,6 +2784,8 @@ class PowerResult:
     contrast: Proportion
     compaction_unusable: int
     contrast_unusable: int
+    arm_sessions: int
+    position_transform: PositionTransform = "log1p"
     synthetic: bool = True
     note: str = POWER_NOTE
 
@@ -2101,6 +2797,7 @@ class PowerResult:
             "inputs": {
                 "effect_log_odds": self.effect,
                 "n_sessions": self.n_sessions,
+                "arm_sessions": self.arm_sessions,
                 "opportunities_per_session": self.opportunities_per_session,
                 "base_rate": self.base_rate,
                 "n_sim": self.n_sim,
@@ -2109,18 +2806,28 @@ class PowerResult:
                 "max_position": self.max_position,
                 "compactions_per_session": self.compactions_per_session,
                 "position_slope": self.position_slope,
+                "position_transform": self.position_transform,
                 "session_sd": self.session_sd,
             },
             "test": "two-sided Wald test, cluster-robust (CR1) standard errors",
             "compaction": {
                 **self.compaction.to_dict(),
                 "unusable": self.compaction_unusable,
-                "design": "risk set to first violation; terms position and compaction_count",
+                "design": (
+                    "risk set to first violation; terms "
+                    f"{_position_name(self.position_transform)} and compaction_count (the "
+                    "E1 factors are not simulated); CR1 Wald test in place of the bootstrap "
+                    "interval that decides H2b"
+                ),
             },
             "contrast": {
                 **self.contrast.to_dict(),
                 "unusable": self.contrast_unusable,
-                "design": "n_sessions sessions per arm; every opportunity; term arm",
+                "design": (
+                    f"{self.arm_sessions} sessions per arm; decision points after at least "
+                    "one compaction, where the arms differ, as in H2a; term arm; CR1 Wald "
+                    "test in place of the bootstrap interval that decides H2a"
+                ),
             },
         }
 
@@ -2135,15 +2842,30 @@ def _simulate(
     position_slope: float,
     compaction_effect: float,
     session_sd: float,
+    *,
+    after_shift: float = 0.0,
+    transform: PositionTransform = "linear",
 ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
-    """Positions, compaction counts, outcomes, and session ids (sessions by opportunities)."""
+    """Positions, compaction counts, outcomes, and session ids (sessions by opportunities).
+
+    ``after_shift`` adds to the log odds of opportunities after at least one compaction
+    only (an arm effect that, as in H2a, exists only once a compaction has happened), and
+    ``position_slope`` multiplies the position term under ``transform``.
+    """
     positions = np.sort(
         np.argsort(rng.random((n_sessions, max_position + 1)), axis=1)[:, :opportunities], axis=1
     ).astype(np.float64)
     events = np.argsort(rng.random((n_sessions, max_position)), axis=1)[:, :compactions] + 1
     counts = (events[:, None, :] <= positions[:, :, None]).sum(axis=2).astype(np.float64)
     frailty = rng.normal(0.0, session_sd, size=(n_sessions, 1)) if session_sd > 0 else 0.0
-    eta = intercept + position_slope * positions + compaction_effect * counts + frailty
+    term = positions if transform == "linear" else np.log1p(positions)
+    eta = (
+        intercept
+        + position_slope * term
+        + compaction_effect * counts
+        + after_shift * (counts >= 1.0)
+        + frailty
+    )
     outcomes = (rng.random(positions.shape) < _sigmoid(eta)).astype(np.float64)
     sessions = np.repeat(np.arange(n_sessions, dtype=np.float64)[:, None], opportunities, axis=1)
     return positions, counts, outcomes, sessions
@@ -2172,25 +2894,36 @@ def power_by_simulation(
     compactions_per_session: int = 2,
     position_slope: float = 0.0,
     session_sd: float = 0.0,
+    arm_sessions: int | None = None,
     l2: float = DEFAULT_L2,
+    position_transform: PositionTransform = "log1p",
 ) -> PowerResult:
     """Simulated power for the compaction coefficient and for a two-arm contrast.
+
+    The hazard design has ``n_sessions`` sessions. The contrast design has
+    ``arm_sessions`` sessions in each arm (``n_sessions`` when None); a contrast between
+    two arms that one family's ``n`` sessions are randomized to passes ``n // 2``.
 
     Each simulated session has ``opportunities_per_session`` decision points at
     distinct positions drawn uniformly from ``0..max_position`` and
     ``compactions_per_session`` compaction events at distinct indices drawn from
     ``1..max_position``; an opportunity's compaction count is the number of events at
     or before its position. The hazard is
-    ``logit h = logit(base_rate) + position_slope * position + effect * count + u``
-    with ``u ~ Normal(0, session_sd)`` per session. ``effect`` is a log odds ratio:
-    per compaction event in the first design, and for arm ``b`` against arm ``a`` in
-    the second. In the second design compaction has no effect on the hazard (the
-    term is 0 in both arms), only the arm shifts the log odds, and the fitted model
-    has only the arm term. Each design draws from its own child of ``seed``.
+    ``logit h = logit(base_rate) + position_slope * g(position) + effect * count + u``
+    with ``g`` the ``position_transform`` (``log1p`` by default, as the E1 hazard model)
+    and ``u ~ Normal(0, session_sd)`` per session. ``effect`` is a log odds ratio: per
+    compaction event in the first design, fitted with ``g(position)`` and the count (the
+    E1 model without its factors). In the second design, as in H2a, the arms differ only
+    after a compaction: arm ``b`` adds ``effect`` to the log odds of its opportunities
+    with at least one compaction before them, compaction has no other effect, and the
+    arm term is fitted on those opportunities only. Both designs decide by a CR1 Wald
+    test (the E1 analysis decides H2a and H2b by bootstrap intervals, which a simulation
+    of this size cannot afford). Each design draws from its own child of ``seed``.
 
     Raises:
         StatsError: for out-of-range inputs, including no compaction events.
     """
+    _check_transform(position_transform)
     if not (0.0 < base_rate < 1.0):
         raise StatsError("base_rate must be strictly between 0 and 1")
     if not (0.0 < alpha < 1.0):
@@ -2206,6 +2939,9 @@ def power_by_simulation(
     seed = _count(seed, "seed")
     max_position = _count(max_position, "max_position")
     compactions = _count(compactions_per_session, "compactions_per_session")
+    per_arm = n_sessions if arm_sessions is None else _count(arm_sessions, "arm_sessions")
+    if per_arm < 1:
+        raise StatsError("arm_sessions must be at least 1")
     if n_sessions < 2 or n_sim < 1 or opportunities < 1:
         raise StatsError("need n_sessions >= 2, n_sim >= 1, and opportunities_per_session >= 1")
     if opportunities > max_position + 1 or compactions > max_position:
@@ -2217,7 +2953,7 @@ def power_by_simulation(
     rng_compaction, rng_contrast = (
         np.random.default_rng(child) for child in np.random.SeedSequence(seed).spawn(2)
     )
-    names = ("position", "compaction_count")
+    names = (_position_name(position_transform), "compaction_count")
     hits = unusable = 0
     for _ in range(n_sim):
         pos, cnt, y, ses = _simulate(
@@ -2230,9 +2966,11 @@ def power_by_simulation(
             position_slope,
             effect,
             session_sd,
+            transform=position_transform,
         )
         keep = (np.cumsum(y, axis=1) - y) == 0
-        x = np.column_stack([pos[keep], cnt[keep]])
+        term = pos[keep] if position_transform == "linear" else np.log1p(pos[keep])
+        x = np.column_stack([term, cnt[keep]])
         fit = fit_logistic(x, y[keep], l2, names=names, clusters=list(ses[keep]))
         verdict = _rejects(fit, "compaction_count", critical)
         unusable += verdict is None
@@ -2244,17 +2982,23 @@ def power_by_simulation(
         for arm, shift in enumerate((0.0, effect)):
             pos, cnt, y, ses = _simulate(
                 rng_contrast,
-                n_sessions,
+                per_arm,
                 opportunities,
                 max_position,
                 compactions,
-                intercept + shift,
+                intercept,
                 position_slope,
                 0.0,
                 session_sd,
+                after_shift=shift,
+                transform=position_transform,
             )
-            outcomes.append(y.ravel())
-            session_ids.append(ses.ravel() + arm * n_sessions)
+            after = cnt >= 1.0
+            outcomes.append(y[after])
+            session_ids.append(ses[after] + arm * per_arm)
+        if not (outcomes[0].size and outcomes[1].size):
+            arm_unusable += 1  # no decision point after a compaction in one arm
+            continue
         y_all = np.concatenate(outcomes)
         indicator = np.concatenate([np.zeros(outcomes[0].size), np.ones(outcomes[1].size)])
         sessions = np.concatenate(session_ids)
@@ -2278,6 +3022,8 @@ def power_by_simulation(
         contrast=wilson_interval(arm_hits, n_sim),
         compaction_unusable=unusable,
         contrast_unusable=arm_unusable,
+        arm_sessions=per_arm,
+        position_transform=position_transform,
     )
 
 
@@ -2296,11 +3042,19 @@ __all__ = [
     "DEFAULT_L2",
     "KM_NOTE",
     "NAIVE_NOTE",
+    "NOT_ESTIMABLE",
     "POSITION_TRANSFORMS",
     "POWER_NOTE",
+    "RECALL_COUNT_FIELD",
+    "SCORE_PROBLEMS",
+    "SCORE_RHO_MAX",
+    "SCORE_TEST_NAME",
     "SEPARATION_DRIFT",
+    "SESSION_KEY",
+    "WALD_PROBLEMS",
     "ArmSummary",
     "HalfLifeResult",
+    "HazardCoefficients",
     "HazardCurve",
     "HazardFit",
     "Interval",
@@ -2312,7 +3066,9 @@ __all__ = [
     "RateContrast",
     "RecallCell",
     "RecallEffect",
+    "ScoreTest",
     "StatsError",
+    "WaldTest",
     "bootstrap_coefficients",
     "bootstrap_half_life",
     "bootstrap_hazard_curve",
@@ -2326,11 +3082,15 @@ __all__ = [
     "kaplan_meier_rows",
     "normal_cdf",
     "normal_quantile",
+    "not_estimable_terms",
     "power_by_simulation",
     "rate_contrast",
     "recall_by_compaction",
+    "recall_count_field",
     "recall_effect",
     "recall_rows",
     "risk_set",
+    "score_test",
+    "wald_test",
     "wilson_interval",
 ]

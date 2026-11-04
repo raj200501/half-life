@@ -1,12 +1,19 @@
 """E1 power analysis by simulation, banked before the E1 preregistration.
 
 Reads banked pilot rows (``sessions.jsonl`` and ``opportunities.jsonl`` from
-:func:`halflife.experiment.bank_runs`) for the observed per-opportunity violation rate,
-decision points reached per session, session length, and compactions per session, then
+:func:`halflife.experiment.bank_runs`) of the families E1 uses (``family_choice.json``,
+when banked) under the E1 analysis-set exclusions, for the observed per-opportunity
+violation rate, decision points per session, session length, and compactions per
+session (the unpadded pilot shape, :data:`SHAPE_NOTE`), then
 runs :func:`halflife.stats.power_by_simulation` over a grid of sessions per family,
 effect sizes (log odds ratios), and base rates. A pilot of a few sessions estimates the
 base rate poorly, so the grid also holds fixed planning rates. Every simulated number is
 synthetic and labeled so; the artifact records the pilot inputs it used.
+
+Sessions per family: the hazard design (as in H2b) simulates all ``n`` sessions of a
+family; the two-arm contrast (as in H2a, which compares the two compaction arms a
+family's sessions are randomized to) puts ``n // 2`` sessions in each arm, so both
+designs describe one family of ``n`` sessions.
 """
 
 from __future__ import annotations
@@ -31,27 +38,72 @@ DEFAULT_N_SIM = 400
 DEFAULT_SEED = 20261105
 
 
+SHAPE_NOTE = (
+    "Session shape from the exploratory pilot, whose plans are not padded to 20 subtasks "
+    "and force 1 to 3 compactions in [8, 120); E1 pads plans (D-043) and forces 1 or 2 "
+    "compactions in [8, 70) (D-047), so its sessions are longer and see more compactions "
+    "before their decision points (unpadded pilot shape), which raises the power for the "
+    "compaction effect. The simulation also places compactions at uniformly random times, "
+    "while E1's token-budget compactions recur at nearly regular intervals, which ties the "
+    "compaction count to position and lowers that power, so the simulated compaction power "
+    "can be too high or too low for E1."
+)
+
+
+def _key(row: Mapping[str, Any]) -> tuple[str, str]:
+    return str(row.get("family", "")), str(row["session_id"])
+
+
 def pilot_inputs(
-    sessions: Sequence[Mapping[str, Any]], opportunities: Sequence[Mapping[str, Any]]
+    sessions: Sequence[Mapping[str, Any]],
+    opportunities: Sequence[Mapping[str, Any]],
+    families: Sequence[str] | None = None,
 ) -> dict[str, Any]:
-    """Simulation inputs measured in the pilot, with the observed violation rate."""
-    reached = [s for s in sessions if s.get("reached_first_dp") is True]
-    k = sum(1 for o in opportunities if o["violated"])
-    n = len(opportunities)
+    """Simulation inputs measured in the pilot, with the observed violation rate.
+
+    Only the ``families`` E1 uses count (the pilot's family choice, D-042; every family
+    when None), and the E1 analysis-set exclusions apply: sessions that reached their
+    first decision point without a probe leak, and their decision points with at least
+    one tool call in the span. A session is ``(family, session_id)``, since every family
+    runs the same plans.
+    """
+    present = sorted({str(s.get("family", "")) for s in sessions})
+    used = sorted(set(families)) if families is not None else present
+    mine = [s for s in sessions if str(s.get("family", "")) in used]
+    reached = [s for s in mine if s.get("reached_first_dp") is True and not s.get("probe_leaks")]
+    keys = {_key(s) for s in reached}
+    kept = [o for o in opportunities if _key(o) in keys and int(o.get("span_calls", 1)) > 0]
+    k = sum(1 for o in kept if o["violated"])
+    n = len(kept)
     if not reached or n == 0:
         raise stats.StatsError("the pilot has no session that reached a decision point")
+    per_session = {key: 0 for key in keys}
+    for row in kept:
+        per_session[_key(row)] += 1
     return {
-        "sessions": len(sessions),
+        "families": used,
+        "families_excluded": [f for f in present if f not in used],
+        "shape_note": SHAPE_NOTE,
+        "sessions": len(mine),
         "sessions_reaching_first_dp": len(reached),
         "violations": k,
         "opportunities": n,
         "violation_rate": stats.wilson_interval(k, n).to_dict(),
-        "opportunities_per_session": max(1, round(statistics.median(len_dps(reached)))),
+        "opportunities_per_session": max(1, round(statistics.median(per_session.values()))),
         "max_position": max(2, round(statistics.median(int(s["n_tool_calls"]) for s in reached))),
         "compactions_per_session": max(
             1, round(statistics.median(int(s["n_compactions"]) for s in reached))
         ),
     }
+
+
+def chosen_families(pilot_dir: Path) -> list[str] | None:
+    """The E1 families banked in ``family_choice.json`` (D-042), or None before it exists."""
+    path = pilot_dir / "family_choice.json"
+    if not path.is_file():
+        return None
+    chosen = json.loads(path.read_text(encoding="utf-8")).get("chosen")
+    return [str(f) for f in chosen] if isinstance(chosen, list) else None
 
 
 def len_dps(sessions: Sequence[Mapping[str, Any]]) -> list[int]:
@@ -86,6 +138,7 @@ def grid(
             compactions_per_session=min(
                 int(inputs["compactions_per_session"]), int(inputs["max_position"])
             ),
+            arm_sessions=max(1, n_sessions // 2),
         )
         out.append({"pilot_rate": rate == observed} | result.to_dict())
     return out
@@ -111,8 +164,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--n-sim", type=int, default=DEFAULT_N_SIM)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     args = parser.parse_args(argv)
+    families = chosen_families(args.pilot)
     inputs = pilot_inputs(
-        load_jsonl(args.pilot / "sessions.jsonl"), load_jsonl(args.pilot / "opportunities.jsonl")
+        load_jsonl(args.pilot / "sessions.jsonl"),
+        load_jsonl(args.pilot / "opportunities.jsonl"),
+        families,
     )
     rows = grid(inputs, n_sim=args.n_sim, seed=args.seed)
     root = Path(__file__).resolve().parents[2]
@@ -120,6 +176,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "synthetic": True,
         "description": "Simulated power for E1 sizing; inputs measured in the exploratory pilot.",
         "pilot_dir": args.pilot.as_posix(),
+        "families": families,
         "pilot": inputs,
         "grid": rows,
         "command": "python -m halflife.power " + " ".join(argv or sys.argv[1:]),

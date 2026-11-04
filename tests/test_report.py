@@ -196,6 +196,36 @@ def test_full_synthetic_repo_passes_claimcheck_and_freshness(full_repo: Path) ->
     assert "Holm p" in text and "Tokens per session" in text and "halflife-guard took" in text
     assert "Status: synthetic." in text and "(pilot)" in text
     plain_text = claimcheck.strip_markers(text)
+    # synthetic_e1 drops the first decision point of sessions 0, 11, and 22 in each family;
+    # both families share those plan ids, so counting by session_id alone would give 27.
+    assert "0 of those were excluded for a probe leak and 6 did not reach" in plain_text
+    assert "(did not reach a decision point, probe leak): syn-a 3 and 0; syn-b 3 and 0." in (
+        plain_text
+    )
+    assert "resamples of whole plans" in plain_text and "a p-value of one" in plain_text
+    # The open-bound rule as the code applies it (D-028): the upper percentile decides.
+    assert "the upper percentile of the bootstrap draws falls among draws that never" in (
+        plain_text
+    )
+    assert "searched from each family's first decision point" in plain_text
+    # Analyses the preregistrations list as exploratory say so inside confirmatory sections.
+    e1_part = plain_text.split("### 5.5 ")[1].split("### 5.6 ")[0]
+    assert "Rate when the agent acted (exploratory)" in e1_part
+    assert e1_part.count("exploratory, not preregistered") >= 4  # acted, recall, KM twice
+    e3_part = plain_text.split("### 5.7 ")[1].split("### 5.8 ")[0]
+    assert "Recall before (exploratory)" in e3_part
+    assert "pooled hazard model (exploratory, not preregistered;" in e3_part
+    e4_part = plain_text.split("### 5.8 ")[1]
+    assert "**Overhead of the shipped tools (exploratory, not preregistered).**" in e4_part
+    # E3 and E4 report their analysis sets, as E1 does.
+    for part in (e3_part, e4_part):
+        assert "The analysis set kept " in part and "excluded for a probe leak" in part
+    assert "Costs use every confirmatory session (D-040)" in e4_part
+    # The ecological arm is in the abstract, labeled.
+    abstract = claimcheck.strip_markers(text.split("<!-- report:begin abstract -->")[1])
+    abstract = abstract.split("<!-- report:end abstract -->")[0]
+    assert "In E2 (ecological, exploratory, synthetic data)" in abstract
+    assert "sessions per family by column, split equally between the two arms" in plain_text
     assert "| syn-a | 3 | 3 | 9 | 6 | qualifies |" in plain_text
     assert "| syn-b | 3 | 2 | 6 | 4 | does not qualify |" in plain_text
     assert "`artifacts/pilot/family_choice.json`" in text and "it names syn-a." in text
@@ -214,6 +244,30 @@ def test_full_synthetic_repo_passes_claimcheck_and_freshness(full_repo: Path) ->
     report.generate(full_repo, module=shim)
     after = {p: p.read_bytes() for p in sorted(full_repo.rglob("*")) if p.is_file()}
     assert before == after  # deterministic: a second run changes nothing
+
+
+def test_check_reports_a_report_written_before_its_artifacts_changed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A report generated before E3 ran still says E3 has not run: --check catches it."""
+    root = tmp_path / "repo"
+    root.mkdir()
+    base_repo(root)
+    copy_real_e0_and_bench(root)
+    report.generate(root)
+    assert report.stale_parts(root) == []
+    assert report.main(["--root", str(root), "--check"]) == 0
+    assert "REPORT: CURRENT" in capsys.readouterr().out
+    monkeypatch.chdir(root)
+    bank_experiment(root, "e3", synthetic_arms("e3", E3_ARMS), "prereg/0002-e3.md")
+    assert arms_analysis.main(["e3", "--dir", "artifacts/e3", "--n-boot", "5", "--seed", "7"]) == 0
+    stale = report.stale_parts(root)
+    assert "docs/REPORT.md block results" in stale and "docs/REPORT.md block abstract" in stale
+    assert "artifacts/claims.json" in stale
+    assert report.main(["--root", str(root), "--check"]) == 1
+    assert "REPORT: STALE" in capsys.readouterr().out
+    report.generate(root)
+    assert report.stale_parts(root) == []
 
 
 def test_missing_experiments_render_one_plain_sentence_each(tmp_path: Path) -> None:
@@ -341,6 +395,31 @@ def test_half_life_forms_render_as_d028_requires(tmp_path: Path) -> None:
             "share_not_reached": 0.9,
         },
         {"family": "blank", "half_life": None, "lo": None, "hi": None, "share_not_reached": 1.0},
+        {
+            "family": "separated",
+            "half_life": None,
+            "lo": None,
+            "hi": None,
+            "share_not_reached": 0.0,
+            "not_estimable": "separation",
+        },
+        {
+            "family": "early",
+            "half_life": 12.0,
+            "lo": 12.0,
+            "hi": 40.5,
+            "first_position": 12,
+            "share_at_first": 0.6,
+            "share_not_reached": 0.0,
+            "unstable": True,
+        },
+        {
+            "family": "finite-share",
+            "half_life": 30.0,
+            "lo": 22.5,
+            "hi": 95.0,
+            "share_not_reached": 0.017,
+        },
     ]
     write_json(
         tmp_path,
@@ -357,6 +436,16 @@ def test_half_life_forms_render_as_d028_requires(tmp_path: Path) -> None:
     assert plain[3][1:3] == ["not estimable", "[not estimable, not estimable]"]
     assert claimcheck.strip_markers(phrases[2]) == "not reached within 150 tool calls for never"
     assert claimcheck.strip_markers(phrases[1]) == "80.0 tool calls [50.0, >150] for open"
+    # A separated fit gives no number: the reason, not an estimate.
+    assert plain[4][1:3] == ["not estimable (separation)", "no interval"]
+    assert claimcheck.strip_markers(phrases[4]) == "not estimable (separation) for separated"
+    # Already at or above one half at the first decision point: at or before it.
+    assert plain[5][1:3] == [
+        "at or before 12.0 tool calls (unstable: too many failed draws)",
+        "[at or before 12.0, 40.5]",
+    ]
+    # A finite upper bound with some draws that never reach one half is still finite.
+    assert plain[6] == ["finite-share", "30.0 tool calls", "[22.5, 95.0]", "1.7%"]
     claims = b.led.claims
     assert claims["e1.halflife.open.hi"]["field"] == "/hi_not_reached_within"
     assert claims["e1.halflife.never.within"]["field"] == "/not_reached_within"
@@ -585,6 +674,161 @@ def test_edge_cases_render_plainly(tmp_path: Path) -> None:
     assert claimcheck.strip_markers(rendered) == "not estimable [-0.2, -0.1]"
 
 
+def test_h3_readings_follow_the_preregistered_holm_decision(tmp_path: Path) -> None:
+    """Synthetic E1 rows where two rule types never break (one pair has no event)."""
+    sessions, opportunities = synthetic_e1()
+    for row in opportunities:
+        if row["constraint_type"] in {"resource_limit", "procedure"}:
+            row["violated"] = False
+    outputs = e1_analysis.analyze(sessions, opportunities, e1_analysis.Settings(n_boot=5, seed=1))
+    write_json(tmp_path, "artifacts/e1/contrasts.json", outputs["contrasts"])
+    store = report.Store(tmp_path)
+    b = report.Build(store, report.Ledger(store))
+    text = plain(report.h3_tables(b, "artifacts/e1/contrasts.json"))
+    rows = {line.split(" | ")[0].lstrip("| "): line for line in text.splitlines() if " vs " in line}
+    pairs = {p["pair"]: p for p in outputs["contrasts"]["h3_pairs"]}
+    # Separated (one type without violations): no odds ratio, but a valid score test.
+    separated = rows["invariant vs resource_limit"]
+    assert "| not estimable (separation) |" in separated
+    assert "not computed" not in separated
+    assert f"{pairs['invariant vs resource_limit']['p_holm']:.3f}" in separated
+    # Neither type broke a rule: nothing to test, and it never reads as a difference.
+    quiet = rows["procedure vs resource_limit"]
+    assert quiet.count("not computed (no violations in either arm)") == 2
+    assert quiet.endswith("| not tested (no violations in either arm) |")
+    for pair, line in rows.items():
+        verdict = pairs[pair]["verdict"]
+        if verdict == "supported":
+            assert "| differs at the 0.05 level after Holm adjustment: " in line
+        elif verdict == "not supported":
+            assert line.endswith("| does not differ at the 0.05 level after Holm adjustment |")
+        assert "interval above zero" not in line and "interval below zero" not in line
+    at = report.At(
+        "artifacts/e1/contrasts.json", "/h3_pairs", {"pair": "procedure vs resource_limit"}
+    )
+    figure = report.forest_row(b.led, at, "procedure vs resource_limit", "pooled")
+    assert figure.text == "Holm p not computed"
+
+
+def test_a_pair_whose_interval_excludes_zero_without_holm_support_does_not_differ(
+    tmp_path: Path,
+) -> None:
+    """Synthetic: the unadjusted interval excludes zero but the Holm p is above alpha."""
+    sessions, opportunities = synthetic_e1()
+    outputs = e1_analysis.analyze(sessions, opportunities, e1_analysis.Settings(n_boot=5, seed=1))
+    pair = outputs["contrasts"]["h3_pairs"][0]
+    pair["difference"].update(difference=0.105, lo=0.004, hi=0.214)
+    pair.update(p_value=0.0638, p_holm=0.3826, verdict="not supported", not_tested=None)
+    write_json(tmp_path, "artifacts/e1/contrasts.json", outputs["contrasts"])
+    store = report.Store(tmp_path)
+    b = report.Build(store, report.Ledger(store))
+    text = plain(report.h3_tables(b, "artifacts/e1/contrasts.json"))
+    line = next(row for row in text.splitlines() if row.startswith(f"| {pair['pair']} |"))
+    assert "+0.105 [+0.004, +0.214]" in line
+    assert line.endswith("| does not differ at the 0.05 level after Holm adjustment |")
+
+
+def hazard_row(text: str, family: str) -> str:
+    return next(line for line in text.splitlines() if line.startswith(f"| {family} |"))
+
+
+def test_hazard_terms_not_estimable_or_not_tested_never_read_as_findings(tmp_path: Path) -> None:
+    """Synthetic E1 rows where syn-b never violates: its H1 and H2b are not tested."""
+    sessions, opportunities = synthetic_e1()
+    for row in opportunities:
+        if row["family"] == "syn-b":
+            row["violated"] = False
+    outputs = e1_analysis.analyze(sessions, opportunities, e1_analysis.Settings(n_boot=20, seed=3))
+    write_json(tmp_path, "artifacts/e1/hazard.json", outputs["hazard"])
+    store = report.Store(tmp_path)
+    b = report.Build(store, report.Ledger(store))
+    text = plain(report.e1_tables(b, ["syn-a", "syn-b"]))
+    row = hazard_row(text, "syn-b")
+    assert row.count("not estimable (no violations)") == 2 and row.count("not tested") == 2
+    assert "hazard falls" not in row and "hazard rises" not in row
+    assert "syn-b had no violations, so the pooled slopes come from syn-a alone" in text
+    # An unstable estimate (more than a tenth of its draws failed) is not tested either,
+    # and a fit with too few violations leaves its slopes untested.
+    hazard = outputs["hazard"]
+    for entry in hazard["estimates"]:
+        if (entry["family"], entry["term"]) == ("syn-a", "compaction_count"):
+            entry.update(unstable=True, not_tested="unstable", verdict="not tested")
+        if (entry["family"], entry["term"]) == ("syn-a", e1_analysis.POSITION_TERM):
+            entry.update(not_tested="few_violations", verdict="not tested")
+    write_json(tmp_path, "artifacts/e1/hazard.json", hazard)
+    store = report.Store(tmp_path)
+    b = report.Build(store, report.Ledger(store))
+    row = hazard_row(plain(report.e1_tables(b, ["syn-a", "syn-b"])), "syn-a")
+    minimum = hazard["settings"]["min_events"]
+    assert f"not tested (fewer than {minimum} violations in the risk set)" in row
+    assert "unstable (too many failed draws), not tested" in row
+    assert "interval" not in row.split("|")[3] and "interval" not in row.split("|")[5]
+
+
+def bank_arm_outputs(root: Path, kind: str, outputs: dict[str, Any], prereg: str | None) -> None:
+    for stem, data in outputs.items():
+        write_json(root, f"artifacts/{kind}/{stem}.json", data)
+    provenance(root / "artifacts" / kind, kind, prereg)
+
+
+def test_e3_and_e4_readings_and_abstracts_state_the_holm_decision(tmp_path: Path) -> None:
+    """Synthetic E3 and E4 rows (labeled synthetic); the guard arm never violates."""
+    e3_sessions, e3_opportunities = synthetic_arms("e3", E3_ARMS, families=("syn-a", "syn-b"))
+    for row in e3_opportunities:
+        if row["placement"] == "reminder":
+            row["violated"] = False  # separates its hazard term: no estimate is shown
+    e3 = arms_analysis.analyze_e3(
+        e3_sessions, e3_opportunities, e1_analysis.Settings(n_boot=20, seed=7)
+    )
+    bank_arm_outputs(tmp_path, "e3", e3, "prereg/0002-e3.md")
+    sessions, opportunities = synthetic_arms("e4", E4_ARMS)
+    for row in opportunities:
+        if row["mitigation"] == "guard":
+            row["violated"] = False
+    e4 = arms_analysis.analyze_e4(sessions, opportunities, e1_analysis.Settings(n_boot=20, seed=7))
+    bank_arm_outputs(tmp_path, "e4", e4, "prereg/0003-e4.md")
+    store = report.Store(tmp_path)
+    b = report.Build(store, report.Ledger(store))
+    e3_lines, e3_abstract = report.e3_section(b)
+    e4_lines, e4_abstract = report.e4_section(b)
+    for lines, abstract in ((e3_lines, e3_abstract), (e4_lines, e4_abstract)):
+        text = plain(lines)
+        assert "| syn-a (exploratory) |" in text and "the per-family rows are exploratory" in text
+        sentence = plain(abstract)
+        assert "(confirmatory, synthetic data)" in sentence and "Holm p" in sentence
+        assert "interval above zero" not in sentence and "interval below zero" not in sentence
+    hazard_row = next(
+        line for line in plain(e3_lines).splitlines() if line.startswith("| `placement[reminder]`")
+    )
+    assert hazard_row == "| `placement[reminder]` | not estimable (separation) | no reading |"
+    pooled = next(f for f in e4["contrasts"]["by_family"] if f["family"] == "pooled")
+    guard = next(c for c in pooled["mitigation"] if c["mitigation"] == "guard")
+    assert guard["p_value"] is not None and guard["wald"]["problem"] == "separation"
+    assert "guard" in plain(e4_abstract) and "Holm p not computed" not in plain(e4_abstract)
+
+
+def test_power_section_states_its_inputs_and_never_claims_a_missing_pilot_row(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Synthetic pilot without a violation: its rate (zero) cannot be simulated."""
+    synthetic_pilot(tmp_path)
+    rows = [
+        dict(r, violated=False)
+        for r in report.Store(tmp_path).rows("artifacts/pilot/opportunities.jsonl")
+    ]
+    write_rows(tmp_path / "artifacts/pilot/opportunities.jsonl", rows)
+    write_json(tmp_path, "artifacts/pilot/family_choice.json", {"chosen": ["syn-a"]})
+    monkeypatch.chdir(tmp_path)
+    args = ["--pilot", "artifacts/pilot", "--out", "artifacts/power/e1.json"]
+    assert power.main([*args, "--n-sim", "2", "--seed", "5"]) == 0
+    store = report.Store(tmp_path)
+    text = plain(report.power_section(report.Build(store, report.Ledger(store))))
+    assert "(pilot)" not in text and "plus the pilot rate" not in text
+    assert "only the fixed planning rates are simulated" in text
+    assert "from syn-a, the family E1 uses" in text and "unpadded" in text
+    assert "counting only the decision points after a compaction, as H2a does" in text
+
+
 def test_e2_counts_before_its_analysis_and_e4_without_costs(tmp_path: Path) -> None:
     sessions, _ = synthetic_arms("e2", [{}], families=("haiku",), model_key="model")
     write_rows(tmp_path / "artifacts/e2/sessions.jsonl", sessions)
@@ -598,7 +842,9 @@ def test_e2_counts_before_its_analysis_and_e4_without_costs(tmp_path: Path) -> N
     text = plain(e2_lines)
     assert "has not been run on these rows, so only counts are shown" in text
     assert "| haiku | 4 | 4 | not estimable | not estimable |" in text
-    assert e2_abstract == ["E2 (ecological, exploratory) ran; its counts are in section 5.6."]
+    assert e2_abstract == [
+        "E2 (ecological, exploratory, synthetic data) ran; its counts are in section 5.6."
+    ]
     e4_text = plain(report.e4_section(b)[0])
     assert "not measured" in e4_text and "Not measured yet." in e4_text
     assert "held-out templates" not in e4_text  # no summary.json, so no scope sentence

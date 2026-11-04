@@ -73,6 +73,9 @@ SCHEMA = "halflife/claims/1"
 GENERATED = derive.GENERATED
 TAG = f" [{GENERATED}]"
 NOT_ESTIMABLE = "not estimable"
+EXPLORATORY = "exploratory, not preregistered"
+"""Label of an analysis that a preregistration lists as exploratory (rule 2), inside a
+section whose status is confirmatory."""
 NOTES = (
     "Written by make report (python -m halflife.report) from banked artifacts. Claims and "
     "derivations noted 'make report', and allowlist and raw reasons ending in '[make report]', "
@@ -787,24 +790,45 @@ def power_section(b: Build) -> list[str]:
         "Wilson score interval",
         "interval level recorded in the power artifact (design parameter)",
     )
+    used = led.peek(at, f"{p}/families")
+    names = [str(f) for f in used] if isinstance(used, list) else []
+    if led.peek(at, "/families") is None:
+        source = "from every piloted family (the E1 family choice was not banked yet)"
+    else:
+        noun = "family" if len(names) == 1 else "families"
+        source = f"from {join_and(names) or 'no family'}, the {noun} E1 uses"
+    has_pilot = any(row.get("pilot_rate") is True for row in grid)
+    rates_text = (
+        "The base rates are fixed planning rates plus the pilot rate, marked (pilot)."
+        if has_pilot
+        else "The observed pilot rate is at zero or one, where the simulation is undefined, "
+        "so only the fixed planning rates are simulated."
+    )
     intro = (
         "Status: synthetic. Every power value below is simulated, sizes E1 before its "
-        "preregistration, and is not a model result. The simulation takes its session shape from "
-        f"the exploratory pilot: {led.num('power.pilot.sessions', at, f'{p}/sessions', COUNT)} "
+        "preregistration, and is not a model result. The simulation takes its session shape "
+        f"{source}, in the exploratory pilot, with the E1 exclusions: "
+        f"{led.num('power.pilot.sessions', at, f'{p}/sessions', COUNT)} "
         "sessions, of which "
         f"{led.num('power.pilot.reached', at, f'{p}/sessions_reaching_first_dp', COUNT)} reached "
-        f"the first decision point, with {led.num('power.pilot.k', at, f'{p}/violations', COUNT)} "
+        "the first decision point without a probe leak, with "
+        f"{led.num('power.pilot.k', at, f'{p}/violations', COUNT)} "
         f"violations at {led.num('power.pilot.n', at, f'{p}/opportunities', COUNT)} decision "
         f"points (rate {rate}, {level}); "
         f"{led.num('power.pilot.dps', at, f'{p}/opportunities_per_session', COUNT)} decision "
         f"points, {led.num('power.pilot.length', at, f'{p}/max_position', COUNT)} tool calls, "
         f"and {led.num('power.pilot.compactions', at, f'{p}/compactions_per_session', COUNT)} "
-        "compactions per session (medians, rounded). Each cell is the share of "
-        f"{led.num('power.n_sim', at, '/grid/0/inputs/n_sim', COUNT)} simulated studies whose "
-        "two-sided Wald test with session-clustered errors rejected at alpha "
-        f"{led.num('power.alpha', at, '/grid/0/inputs/alpha', '.2f')}; Monte Carlo Wilson "
-        "intervals for every cell are in `artifacts/power/e1.json`. The base rates are fixed "
-        "planning rates plus the pilot rate, marked (pilot)."
+        "compactions per session (medians, rounded). The pilot plans are unpadded and force "
+        "compactions over a wider window than E1 (D-043, D-047), so E1 sessions are longer and "
+        "see more compactions, which raises the power for the compaction effect; but the "
+        "simulation places compactions at random times, while E1's token-budget compactions "
+        "recur at nearly regular intervals and so tie the count to position, which lowers it. "
+        "The compaction power below can be too high or too low for E1. Each cell is "
+        f"the share of {led.num('power.n_sim', at, '/grid/0/inputs/n_sim', COUNT)} simulated "
+        "studies whose two-sided Wald test with session-clustered errors rejected at alpha "
+        f"{led.num('power.alpha', at, '/grid/0/inputs/alpha', '.2f')}, a stand-in for the "
+        "bootstrap intervals that decide H2a and H2b; Monte Carlo Wilson intervals for every "
+        f"cell are in `artifacts/power/e1.json`. {rates_text}"
     )
     sessions = sorted({int(row["inputs"]["n_sessions"]) for row in grid})
     keys = sorted({(row["inputs"]["base_rate"], row["inputs"]["effect_log_odds"]) for row in grid})
@@ -817,8 +841,15 @@ def power_section(b: Build) -> list[str]:
     ]
     out = [*lines, intro]
     for test, what in (
-        ("compaction", "Compaction effect in the hazard model (as in H2b)"),
-        ("contrast", "Two-arm contrast with the effect as its log odds ratio (as in H2a)"),
+        (
+            "compaction",
+            "Compaction effect in the hazard model with `log1p(position)` (as in H2b, without "
+            "its factors)",
+        ),
+        (
+            "contrast",
+            "Two-arm contrast after a compaction with the effect as its log odds ratio (as in H2a)",
+        ),
     ):
         rows = []
         for base_rate, effect in keys:
@@ -841,7 +872,13 @@ def power_section(b: Build) -> list[str]:
             ]
             rows.append(row)
         header = ["Base rate", "Effect (log odds)", *header_n]
-        out += ["", f"**{what}.** Simulated power, sessions per family by column.", ""]
+        split = (
+            ", split equally between the two arms as a family's sessions are randomized to "
+            "them, counting only the decision points after a compaction, as H2a does"
+            if test == "contrast"
+            else ""
+        )
+        out += ["", f"**{what}.** Simulated power, sessions per family by column{split}.", ""]
         out += table(header, rows)
     return out
 
@@ -855,14 +892,44 @@ def e1_settings(store: Store) -> e1_analysis.Settings:
     return e1_analysis.Settings(**params)
 
 
+AT_FIRST = "at or before"
+"""A half-life value equal to the first decision point: one half was reached by then."""
+
+
+def at_first(led: Ledger, at: At, field: str) -> bool:
+    """True when the half-life value at ``field`` is the search start (left-censored)."""
+    first, value = led.peek(at, "/first_position"), led.peek(at, field)
+    numbers = all(isinstance(v, int | float) and not isinstance(v, bool) for v in (first, value))
+    return numbers and float(value) == float(first)
+
+
 def half_life_point(led: Ledger, claim_id: str, at: At) -> str:
-    """``x tool calls``, ``not reached within N tool calls`` (D-028), or ``not estimable``."""
+    """``x tool calls``, ``at or before x tool calls`` (one half already reached at the first
+    decision point), ``not reached within N tool calls`` (D-028), or ``not estimable``,
+    with the reason when the analysis gives one; ``(unstable: ...)`` marks an estimate
+    with too many failed draws (preregistration section 5)."""
+    unstable = " (unstable: too many failed draws)" if led.peek(at, "/unstable") is True else ""
+    missing = not_estimable_cell(led, at)
+    if missing is not None:
+        return missing
     if led.peek(at, "/half_life") is not None:
-        return f"{led.num(claim_id, at, '/half_life', TOOLS)} tool calls"
+        prefix = f"{AT_FIRST} " if at_first(led, at, "/half_life") else ""
+        return f"{prefix}{led.num(claim_id, at, '/half_life', TOOLS)} tool calls{unstable}"
     if led.peek(at, "/not_reached_within") is not None:
         within = led.num(f"{claim_id}.within", at, "/not_reached_within", COUNT)
-        return f"not reached within {within} tool calls"
+        return f"not reached within {within} tool calls{unstable}"
     return NOT_ESTIMABLE
+
+
+def half_life_span(led: Ledger, claim_id: str, at: At) -> str:
+    """``[lo, hi]`` of a half-life; a bound at the first decision point reads ``at or before``."""
+    if not_estimable_cell(led, at) is not None:
+        return "no interval"
+    parts = []
+    for name in ("lo", "hi"):
+        text = bound(led, f"{claim_id}.{name}", at, "", name, TOOLS)
+        parts.append(f"{AT_FIRST} {text}" if at_first(led, at, f"/{name}") else text)
+    return f"[{parts[0]}, {parts[1]}]"
 
 
 def half_life_rows(b: Build) -> tuple[list[list[str]], list[str]]:
@@ -872,7 +939,7 @@ def half_life_rows(b: Build) -> tuple[list[list[str]], list[str]]:
     for family in [str(e["family"]) for e in led.select(At(rel), "/estimates")]:
         at = At(rel, "/estimates", {"family": family})
         cid = f"e1.halflife.{slug(family)}"
-        interval = span(led, cid, at, "", TOOLS)
+        interval = half_life_span(led, cid, at)
         point = half_life_point(led, cid, at)
         numeric = led.peek(at, "/half_life") is not None
         phrases.append(f"{point} {interval} for {family}" if numeric else f"{point} for {family}")
@@ -881,40 +948,213 @@ def half_life_rows(b: Build) -> tuple[list[list[str]], list[str]]:
     return rows, phrases
 
 
+NOT_ESTIMABLE_WORDS = {
+    "no_violations": "no violations",
+    "all_violations": "only violations",
+    "separation": "separation",
+    "not_converged": "fit did not converge",
+}
+"""Table wording for each reason :mod:`halflife.stats` gives no estimate (D-029)."""
+UNSTABLE = "unstable (too many failed draws), not tested"
+
+
+def not_estimable_cell(led: Ledger, at: At, base: str = "") -> str | None:
+    """``not estimable (reason)`` when the analysis wrote no number for this estimate."""
+    code = led.peek(at, f"{base}/not_estimable")
+    if isinstance(code, str) and code:
+        return f"{NOT_ESTIMABLE} ({NOT_ESTIMABLE_WORDS.get(code, code.replace('_', ' '))})"
+    return None
+
+
+def few_violations(led: Ledger, rel: str) -> str:
+    """``not tested (fewer than N violations in the risk set)``, N allowlisted."""
+    minimum = led.peek(At(rel), "/settings/min_events")
+    if not isinstance(minimum, int) or isinstance(minimum, bool):
+        return "not tested (too few violations)"
+    context = led.allowed(
+        str(minimum),
+        f"fewer than {minimum} violations in the risk set",
+        "minimum violations per hazard fit fixed in the E1 analysis settings (design parameter)",
+    )
+    return f"not tested ({context})"
+
+
+def verdict_reading(led: Ledger, at: At, rel: str) -> str | None:
+    """The reading of a preregistered rule that was not applied (``not tested``), or None."""
+    reason = led.peek(at, "/not_tested")
+    if led.peek(at, "/verdict") != e1_analysis.NOT_TESTED and reason != "unstable":
+        return None
+    if reason == "unstable":
+        return UNSTABLE
+    if reason == "few_violations":
+        return few_violations(led, rel)
+    if reason == "not_estimable":
+        return "not tested"
+    return f"not tested ({str(reason).replace('_', ' ')})" if reason else "not tested"
+
+
 def coefficient_cell(led: Ledger, family: str, term: str, label: str) -> tuple[str, str]:
-    """``estimate [lo, hi]`` and its reading for one hazard term of one family."""
-    at = At(f"{E1}/hazard.json", "/estimates", {"family": family, "term": term})
+    """``estimate [lo, hi]`` and its reading for one hazard term of one family.
+
+    A term the analysis wrote without a number reads ``not estimable (reason)`` and its
+    hypothesis ``not tested``; an unstable estimate, or one from a fit with too few
+    violations, shows its interval but reads ``not tested`` (preregistration section 5).
+    """
+    rel = f"{E1}/hazard.json"
+    at = At(rel, "/estimates", {"family": family, "term": term})
     if led.peek(at) is None:
         return NOT_ESTIMABLE, "term not estimated"
+    missing = not_estimable_cell(led, at)
+    if missing is not None:
+        return missing, "not tested"
     cid = f"e1.hazard.{slug(family)}.{slug(label)}"
     words = {"h1": "position", "h2b": "each compaction"}[label]
+    above, below = f"hazard rises with {words}", f"hazard falls with {words}"
+    untested = verdict_reading(led, at, rel)
     return (
         estimate(led, cid, at, "", "estimate", COEF),
-        reading(led, at, "", f"hazard rises with {words}", f"hazard falls with {words}"),
+        untested if untested is not None else reading(led, at, "", above, below),
     )
+
+
+def pooled_note(led: Ledger) -> str:
+    """Which families the pooled hazard slopes rest on, when a family had no violations."""
+    at = At(f"{E1}/hazard.json", "/fits", {"family": "pooled"})
+    quiet = led.peek(at, "/families_without_violations")
+    events = led.peek(at, "/events_by_family")
+    if not (isinstance(quiet, list) and quiet and isinstance(events, dict)):
+        return ""
+    others = [str(f) for f in sorted(events) if f not in quiet]
+    verb = "had" if len(quiet) == 1 else "each had"
+    source = join_and(others) if others else "no family"
+    return (
+        f" Pooled, {join_and([str(f) for f in quiet])} {verb} no violations, so the pooled "
+        f"slopes come from {source} alone."
+    )
+
+
+P_MISSING = {
+    "separation": "separation",
+    "one_cluster": "one cluster",
+    "no_cluster_robust_se": "no cluster-robust errors",
+    "not_converged": "fit did not converge",
+    "rank_deficient": "rank deficient",
+    "zero_se": "zero standard error",
+    "no_events": "no violations in either arm",
+    "all_events": "only violations in both arms",
+    "zero_variance": "zero score variance",
+    "null_not_converged": "null fit did not converge",
+    "null_separation": "null fit separated",
+    "unstable": "unstable, too many failed draws",
+}
+"""Short table wording for each reason a contrast has no p-value (:mod:`halflife.stats`
+``SCORE_PROBLEMS`` and ``WALD_PROBLEMS``) or no Holm-adjusted p-value (``unstable``)."""
+
+
+def p_words(code: object) -> str:
+    """Table wording of one reason code."""
+    return P_MISSING.get(str(code), str(code).replace("_", " "))
+
+
+def p_cell(led: Ledger, claim_id: str, at: At, field: str) -> str:
+    """A p-value claim, or ``not computed (reason)`` when the analysis wrote none.
+
+    The analyses write ``null`` with a reason code in ``p_value_missing`` when no valid
+    test exists (for example no violation in either arm), so a missing p-value never
+    reads as a number; its Holm-adjusted value is missing for the same reason, or because
+    the contrast is unstable (``not_tested``).
+    """
+    if led.peek(at, field) is None:
+        code = led.peek(at, "/p_value_missing")
+        if field == "/p_holm" and not (isinstance(code, str) and code):
+            code = led.peek(at, "/not_tested")
+        if isinstance(code, str) and code:
+            return f"not computed ({p_words(code)})"
+        return "not computed"
+    return led.num(claim_id, at, field, p_format)
+
+
+def alpha_phrase(led: Ledger, rel: str) -> str:
+    """``the 0.05 level`` with the preregistered alpha allowlisted (a design parameter)."""
+    alpha = led.peek(At(rel), "/settings/alpha")
+    if not isinstance(alpha, float):
+        return "the preregistered level"
+    return led.allowed(
+        f"{alpha:g}",
+        f"the {alpha:g} level",
+        "preregistered test level fixed in the analysis settings (design parameter)",
+    )
+
+
+def holm_reading(led: Ledger, at: At, rel: str) -> str | None:
+    """The preregistered Holm decision in words, or None when the artifact records none.
+
+    A contrast differs when its Holm-adjusted p-value is below alpha (H3, H4a, H4b, H5);
+    only then does the reading give a direction (from the sign of the difference). The
+    unadjusted interval stays a descriptive column and never sets the reading.
+    """
+    verdict = led.peek(at, "/verdict")
+    if verdict == e1_analysis.NOT_TESTED:
+        reason = led.peek(at, "/not_tested")
+        return f"not tested ({p_words(reason)})" if reason else "not tested"
+    if verdict not in (e1_analysis.SUPPORTED, e1_analysis.NOT_SUPPORTED):
+        return None
+    level = f"{alpha_phrase(led, rel)} after Holm adjustment"
+    if verdict == e1_analysis.NOT_SUPPORTED:
+        return f"does not differ at {level}"
+    difference = led.peek(at, "/difference/difference")
+    more = isinstance(difference, int | float) and difference > 0
+    side = "more" if more else "fewer"
+    return f"differs at {level}: {side} violations than the reference"
+
+
+def interval_reading(led: Ledger, at: At) -> str:
+    """The H2a interval rule in words, ``not tested`` when the analysis did not apply it."""
+    if led.peek(at, "/verdict") == e1_analysis.NOT_TESTED:
+        reason = led.peek(at, "/not_tested")
+        return UNSTABLE if reason == "unstable" else f"not tested ({p_words(reason)})"
+    return reading(
+        led,
+        at,
+        "/difference",
+        "more violations than the reference",
+        "fewer violations than the reference",
+    )
+
+
+def odds_cell(led: Ledger, cid: str, at: At) -> str:
+    """Odds ratio [interval], ``not estimable (reason)`` when the analysis wrote no number."""
+    missing = not_estimable_cell(led, at, "/odds_ratio")
+    if missing is not None:
+        return missing
+    if led.peek(at, "/separation") is True:
+        return "not estimable (separation)"
+    cell = estimate(led, f"{cid}.or", at, "/odds_ratio", "odds_ratio", ratio_format)
+    return f"{cell} (unstable)" if led.peek(at, "/odds_ratio_unstable") is True else cell
 
 
 def contrast_cells(
     led: Ledger, cid: str, at: At, *, odds: bool = True, pvalues: bool = True
 ) -> list[str]:
-    """Difference [interval], odds ratio [interval], p, Holm p, and the reading."""
+    """Difference [interval], odds ratio [interval], p, Holm p, and the reading.
+
+    Under separation the odds ratio is held only by the ridge (D-029: not interpreted),
+    so it reads ``not estimable (separation)`` instead of a number. With ``pvalues`` the
+    contrast is decided by its Holm-adjusted p-value (H3, H4a, H4b, H5), so the reading
+    states that decision (:func:`holm_reading`); without, by its interval (H2a).
+    """
     cells = [estimate(led, f"{cid}.diff", at, "/difference", "difference", DIFF)]
     if odds:
-        cells.append(estimate(led, f"{cid}.or", at, "/odds_ratio", "odds_ratio", ratio_format))
+        cells.append(odds_cell(led, cid, at))
     if pvalues:
         cells += [
-            led.num(f"{cid}.p", at, "/p_value", p_format),
-            led.num(f"{cid}.p_holm", at, "/p_holm", p_format),
+            p_cell(led, f"{cid}.p", at, "/p_value"),
+            p_cell(led, f"{cid}.p_holm", at, "/p_holm"),
         ]
-    cells.append(
-        reading(
-            led,
-            at,
-            "/difference",
-            "more violations than the reference",
-            "fewer violations than the reference",
-        )
-    )
+        decided = holm_reading(led, at, at.artifact)
+        cells.append(decided if decided is not None else interval_reading(led, at))
+    else:
+        cells.append(interval_reading(led, at))
     return cells
 
 
@@ -932,7 +1172,10 @@ def e1_tables(b: Build, families: Sequence[str]) -> list[str]:
         "set (each session's decision points up to its first violation), with the rule type and "
         "the compaction strategy as factors and, pooled, the family. H1 is the "
         "`log1p(position)` term and H2b the compaction-count term; the analysis reports "
-        "bootstrap intervals and no p-values for them.",
+        "bootstrap intervals and no p-values for them. A term with no finite estimate (a "
+        "family without violations, or a separated term) is not estimable and its hypothesis "
+        "is not tested, and so is a hypothesis whose estimate is unstable or whose fit has too "
+        "few violations (preregistration section 5)." + pooled_note(led),
         "",
         *table(
             ["Family", "`log1p(position)` (H1)", "Reading", "Compaction count (H2b)", "Reading"],
@@ -958,8 +1201,9 @@ def e1_tables(b: Build, families: Sequence[str]) -> list[str]:
         lines += [
             "**Compaction content (H2a).** Among decision points after at least one compaction, "
             "the violation rate under a full summary against the sham control, which runs the "
-            "same summary but keeps the original rules message. `halflife.e1_analysis` reports "
-            "this contrast with intervals only, so no p-value is shown.",
+            "same summary but keeps the original rules message. H2a is decided by the interval "
+            "of the rate difference (preregistration section 5), so its p-value is not shown; "
+            "an unstable interval leaves it not tested.",
             "",
         ]
         if h2a_rows:
@@ -994,8 +1238,16 @@ def h3_tables(b: Build, contrasts: str) -> list[str]:
         pair_rows.append([pair, *contrast_cells(led, f"e1.h3.{slug(pair)}", at)])
     lines = [
         "**Rule types (H3).** Violation rate by rule type with Wilson intervals, and every "
-        "pairwise contrast (the second type against the first) with session-bootstrap intervals, "
-        "session-clustered Wald p-values, and Holm adjustment over the pairs.",
+        "pairwise contrast (the second type against the first), pooled over families, with "
+        "bootstrap intervals and p-values of a score test at the null fit, clustered by plan "
+        "through a within-plan correlation estimated at the null fit, with Holm adjustment "
+        "over all pairs. A pair differs when its "
+        f"Holm-adjusted p-value is below {alpha_phrase(b.led, contrasts)}, and only then does "
+        "the reading give a direction; the interval is descriptive. The score test stays valid "
+        "when one type has no violations (which separates the logistic model, so its odds "
+        "ratio is not estimable). A pair with no valid test (no violation in either type) or "
+        "an unstable one is not tested and stays in the Holm family as a p-value of one, so it "
+        "is never rejected and the other pairs keep the full family size.",
         "",
         *table(["Rule type", "Violations", "Decision points", "Rate"], rate_rows),
         "",
@@ -1040,15 +1292,27 @@ def e1_descriptive(b: Build) -> list[str]:
     lines = [
         "**Descriptive rates.** The share of decision points with a violation, overall and when "
         "the agent acted (wrote, edited, or ran a command) during the decision point, with "
-        "Wilson intervals that ignore clustering by session.",
+        "Wilson intervals that ignore clustering by session. The acted view is "
+        f"{EXPLORATORY} (preregistration section 8).",
         "",
-        *table(["Family", "Violation rate", "Rate when the agent acted"], rows),
+        *table(["Family", "Violation rate", "Rate when the agent acted (exploratory)"], rows),
         "",
     ]
     if recall_rows:
+        fields = {
+            str(cell.get("count_field", "compaction_count"))
+            for entry in led.select(At(rel), "/by_family")
+            for cell in entry.get("recall_by_compaction", [])
+        }
+        counted = (
+            "the number of compactions the probe saw (a compaction at the decision point's "
+            "start runs after its probe)"
+            if fields == {stats.RECALL_COUNT_FIELD}
+            else "the number of compactions before it"
+        )
         lines += [
-            "Recall of the rule in the probe just before each decision point, by the number of "
-            "compactions before it (descriptive, Wilson intervals that ignore clustering).",
+            f"Recall of the rule in the probe just before each decision point, by {counted} "
+            f"({EXPLORATORY}; descriptive, Wilson intervals that ignore clustering).",
             "",
             *table(["Family", "Compactions before", "Recalled", "Probed", "Recall"], recall_rows),
             "",
@@ -1094,8 +1358,9 @@ def e1_km(b: Build, status: Status) -> list[str]:
             )
         )
     lines = [
-        "**Time to first violation (descriptive).** Kaplan-Meier curves depend on how often "
-        "decision points occur, so they describe the sessions and do not estimate the hazard.",
+        f"**Time to first violation ({EXPLORATORY}; descriptive).** Kaplan-Meier curves depend "
+        "on how often decision points occur, so they describe the sessions and do not estimate "
+        "the hazard.",
         "",
         *table(
             ["Family", "Sessions", "First violations", "Median tool calls to a first violation"],
@@ -1124,7 +1389,7 @@ def e1_km(b: Build, status: Status) -> list[str]:
             "(figures/e1-km.svg)",
             "",
             f"*Figure {number}. Kaplan-Meier curves of time to the first violation per family "
-            f"(descriptive), with {caption_level}; ticks mark censored sessions."
+            f"({EXPLORATORY}; descriptive), with {caption_level}; ticks mark censored sessions."
             + (" Synthetic data, not model results.*" if status.synthetic else "*"),
             "",
         ]
@@ -1135,9 +1400,10 @@ def hazard_figure(b: Build, status: Status) -> list[str]:
     """Figure: predicted hazard by position per family, with pointwise bootstrap bands.
 
     The curve is the half-life model (``log1p(position)`` and the compaction count, at the
-    preregistered compaction count) fit to the banked E1 rows, with pointwise
-    session-bootstrap bands from the same settings, so it crosses one half at the banked
-    half-life estimate.
+    preregistered compaction count) fit to the banked E1 rows, drawn from each family's
+    first decision point (where the half-life search starts), with pointwise bootstrap
+    bands from the same settings, so it crosses one half at the banked half-life estimate.
+    A family whose fit is separated (no half-life, D-029) gets no curve.
     """
     sessions, opportunities = f"{E1}/sessions.jsonl", f"{E1}/opportunities.jsonl"
     if not (b.store.exists(sessions) and b.store.exists(opportunities)):
@@ -1145,11 +1411,14 @@ def hazard_figure(b: Build, status: Status) -> list[str]:
     settings = e1_settings(b.store)
     rows, _ = e1_analysis.analysis_set(b.store.rows(sessions), b.store.rows(opportunities))
     step = max(1, settings.max_position // 50)
-    positions = [float(p) for p in range(0, settings.max_position + 1, step)]
+    grid = [float(p) for p in range(0, settings.max_position + 1, step)]
     fixed = dict(e1_analysis.HALF_LIFE_FIXED)
     series = []
     for family in e1_analysis.families(rows):
         subset = [dict(r) for r in rows if r["family"] == family]
+        # From the family's first decision point, where the half-life search starts.
+        first = min(float(r["position"]) for r in subset)
+        positions = [first, *(p for p in grid if p > first)]
         try:
             curve = stats.bootstrap_hazard_curve(
                 subset,
@@ -1183,8 +1452,10 @@ def hazard_figure(b: Build, status: Status) -> list[str]:
         band_label=f"{pct(settings.level)} pointwise session-bootstrap band",
         reference_y=0.5,
         reference_label="Hazard of one half (the half-life)",
-        note="Half-life model fit to the banked E1 rows at the preregistered compaction count; "
-        "bands are pointwise, computed by make report with the banked bootstrap settings.",
+        note="Half-life model fit to the banked E1 rows at the preregistered compaction count, "
+        "drawn from each family's first decision point; bands are pointwise, computed by make "
+        "report with the banked bootstrap settings. A family whose fit is separated has no "
+        "curve.",
         synthetic=status.synthetic,
     )
     number = b.figure(FIG_HAZARD, svg)
@@ -1198,9 +1469,10 @@ def hazard_figure(b: Build, status: Status) -> list[str]:
         "bands](figures/e1-hazard.svg)",
         "",
         f"*Figure {number}. Predicted per-decision-point hazard of a violation by position from "
-        "the half-life model, per family, with "
+        "the half-life model, per family, from its first decision point, with "
         f"{level} computed by `make report` from the banked E1 rows with the banked bootstrap "
-        "settings; a curve crosses the dashed line at its half-life."
+        "settings; a curve crosses the dashed line at its half-life, and a curve that starts "
+        "above it has its half-life at or before its first point."
         + (" Synthetic data, not model results.*" if status.synthetic else "*"),
         "",
     ]
@@ -1234,16 +1506,18 @@ def e1_section(b: Build) -> tuple[list[str], list[str]]:
             ("opportunities", "opportunities_analyzed"),
             ("sessions", "sessions_total"),
             ("confirmatory", "sessions_confirmatory"),
+            ("leaked", "sessions_probe_leak"),
             ("not_reached", "sessions_not_reaching_first_dp"),
             ("zero_calls", "opportunities_zero_calls"),
         )
     }
     analysis = (
         f"The analysis set kept {excl['opportunities']} decision points from confirmatory "
-        f"sessions that reached their first decision point. Of {excl['sessions']} banked "
-        f"sessions, {excl['confirmatory']} were confirmatory and {excl['not_reached']} of those "
-        f"did not reach a decision point; {excl['zero_calls']} decision points with no tool call "
-        "in their span were excluded."
+        "sessions that reached their first decision point; a session is one family's run of "
+        f"one plan. Of {excl['sessions']} banked sessions, {excl['confirmatory']} were "
+        f"confirmatory; {excl['leaked']} of those were excluded for a probe leak and "
+        f"{excl['not_reached']} did not reach a decision point; {excl['zero_calls']} decision "
+        "points with no tool call in their span were excluded."
     )
     sessions = f"{E1}/sessions.jsonl"
     if b.store.exists(sessions):
@@ -1263,15 +1537,31 @@ def e1_section(b: Build) -> tuple[list[str], list[str]]:
             " Confirmatory sessions that reached their first decision point: "
             f"{join_and(per_family)} (gate G7 needs {gate})."
         )
+    excluded = []
+    for family in families:
+        fat = At(rel, "/exclusions_by_family", {"family": family})
+        if led.peek(fat) is None:
+            continue
+        cid = f"e1.set.{slug(family)}"
+        not_reached = led.num(f"{cid}.not_reached", fat, "/sessions_not_reaching_first_dp", COUNT)
+        leaked = led.num(f"{cid}.leaked", fat, "/sessions_probe_leak", COUNT)
+        excluded.append(f"{family} {not_reached} and {leaked}")
+    if excluded:
+        analysis += (
+            " Sessions excluded per family (did not reach a decision point, probe leak): "
+            f"{'; '.join(excluded)}."
+        )
     level = b.level(
         settings.level,
-        "session-bootstrap percentile intervals",
+        "cluster-bootstrap percentile intervals",
         "interval level fixed in the E1 analysis settings (design parameter)",
     )
     analysis += (
         f" Model intervals are {level} from "
-        f"{led.num('e1.n_boot', at, '/settings/n_boot', COUNT)} resamples of whole sessions "
-        f"(seed {led.num('e1.seed', at, '/settings/seed', COUNT)})."
+        f"{led.num('e1.n_boot', at, '/settings/n_boot', COUNT)} resamples of whole plans "
+        f"(seed {led.num('e1.seed', at, '/settings/seed', COUNT)}): within one family a plan "
+        "is one session, and pooled estimates draw both families' sessions of a plan "
+        "together; risk sets are cut per family and session."
     )
     hl_rows, phrases = half_life_rows(b)
     fixed = led.num("e1.fixed.compactions", at, "/fixed/compaction_count", COUNT)
@@ -1284,9 +1574,15 @@ def e1_section(b: Build) -> tuple[list[str], list[str]]:
         "**Half-life.** The half-life is the number of tool calls since the rules were stated at "
         "which the predicted per-decision-point hazard of a violation reaches one half, from a "
         "hazard model with `log1p(position)` and the compaction count, evaluated at a "
-        f"compaction count of {fixed}. When the hazard stays below one half within {cap} tool "
-        "calls, the half-life is not reached; when only some bootstrap draws reach one half, "
-        "the upper bound is open and written as >N (D-028).",
+        f"compaction count of {fixed}. It is searched from each family's first decision point, "
+        "so the hazard is never extrapolated to positions without data: when the hazard is "
+        "already at or above one half there, the half-life reads at or before that position, "
+        f"and when it stays below one half within {cap} tool calls, it is not reached. When "
+        "the upper percentile of the bootstrap draws falls among draws that never reach one "
+        "half, the upper bound is open and written as >N (D-028); the last column gives the "
+        "share of draws that never reach one half, which can be above zero under a finite "
+        "upper bound. A fit whose violations separate a term of the model gives no half-life "
+        "(not estimable), since its crossing would be set by the ridge (D-029).",
         "",
         *table(["Family", "Half-life", "Interval", "Draws not reaching one half"], hl_rows),
         "",
@@ -1332,6 +1628,8 @@ def e2_section(b: Build) -> tuple[list[str], list[str]]:
         "",
     ]
     kind = "confirmatory" if status.confirmatory else "exploratory"
+    if status.synthetic:
+        kind += ", synthetic data"
     if b.store.exists(rates):
         at = At(rates)
         settings = derive.settings_params(b.store.obj(rates), rates)
@@ -1410,6 +1708,52 @@ def e2_section(b: Build) -> tuple[list[str], list[str]]:
 # --------------------------------------------------------------------------- E3 and E4
 
 
+def analysis_set_sentence(led: Ledger, rel: str, prefix: str) -> str:
+    """The analysis-set counts an E3 or E4 output records (preregistration section 7 as in
+    E1: counted and reported), in total and per family; empty when none are recorded."""
+    at = At(rel)
+    if led.peek(at, "/exclusions/sessions_total") is None:
+        return ""
+    excl = {
+        name: led.num(f"{prefix}.set.{name}", at, f"/exclusions/{field}", COUNT)
+        for name, field in (
+            ("opportunities", "opportunities_analyzed"),
+            ("analyzed", "sessions_analyzed"),
+            ("sessions", "sessions_total"),
+            ("confirmatory", "sessions_confirmatory"),
+            ("leaked", "sessions_probe_leak"),
+            ("not_reached", "sessions_not_reaching_first_dp"),
+            ("zero_calls", "opportunities_zero_calls"),
+        )
+    }
+    text = (
+        f"The analysis set kept {excl['opportunities']} decision points from "
+        f"{excl['analyzed']} of {excl['sessions']} banked sessions "
+        f"({excl['confirmatory']} confirmatory; {excl['leaked']} excluded for a probe leak and "
+        f"{excl['not_reached']} did not reach a decision point; {excl['zero_calls']} decision "
+        "points with no tool call in their span were excluded)."
+    )
+    parts = []
+    for entry in led.peek(at, "/exclusions_by_family") or []:
+        family = str(entry.get("family"))
+        fat = At(rel, "/exclusions_by_family", {"family": family})
+        cid = f"{prefix}.set.{slug(family)}"
+        not_reached = led.num(f"{cid}.not_reached", fat, "/sessions_not_reaching_first_dp", COUNT)
+        leaked = led.num(f"{cid}.leaked", fat, "/sessions_probe_leak", COUNT)
+        parts.append(f"{family} {not_reached} and {leaked}")
+    if parts:
+        text += (
+            " Sessions excluded per family (did not reach a decision point, probe leak): "
+            f"{'; '.join(parts)}."
+        )
+    return text
+
+
+def family_label(family: str) -> str:
+    """Table label of a family entry: per-family E3 and E4 contrasts are exploratory."""
+    return family if family == "pooled" else f"{family} (exploratory)"
+
+
 def family_entries(led: Ledger, rel: str) -> list[tuple[int, str]]:
     """``(index, family)`` of every ``by_family`` entry, in artifact order."""
     return [(i, str(e["family"])) for i, e in enumerate(led.select(At(rel), "/by_family"))]
@@ -1443,7 +1787,7 @@ def e3_section(b: Build) -> tuple[list[str], list[str]]:
     settings = derive.settings_params(b.store.obj(contrasts), contrasts)
     level = b.level(
         float(settings["level"]),
-        "session-bootstrap percentile intervals",
+        "cluster-bootstrap percentile intervals",
         "interval level fixed in the E3 analysis settings (design parameter)",
     )
     lines += [
@@ -1452,7 +1796,14 @@ def e3_section(b: Build) -> tuple[list[str], list[str]]:
         "Violation rates by where the rules are stated and how they are phrased, and contrasts "
         "of each placement against the first user message (Holm adjustment over the placements) "
         "and of a stated reason against the bare rule, with "
-        f"{level} and session-clustered Wald p-values.",
+        f"{level} and p-values of a score test at the null fit, clustered the same way (by "
+        "session within a family, by plan when families are pooled) through a within-cluster "
+        "correlation estimated at the null fit. A contrast "
+        f"differs when its Holm-adjusted p-value is below {alpha_phrase(led, contrasts)}, and "
+        "only then does the reading give a direction; the interval is descriptive. A contrast "
+        "with no valid test, or an unstable one, is not tested and stays in its Holm family as "
+        "a p-value of one. The pooled contrasts are the preregistered tests; the per-family "
+        "rows are exploratory. " + analysis_set_sentence(led, contrasts, "e3"),
         "",
     ]
     rates = f"{E3}/rates.json"
@@ -1471,8 +1822,21 @@ def e3_section(b: Build) -> tuple[list[str], list[str]]:
                             *rate_cells(led, f"e3.rate.{key}.{slug(arm)}", at, entry),
                         ]
                     )
-        header = ["Condition (pooled)", "Decision points", "Violation rate", "Recall before"]
-        lines += [*table(header, rows), ""]
+        header = [
+            "Condition (pooled)",
+            "Decision points",
+            "Violation rate",
+            "Recall before (exploratory)",
+        ]
+        lines += [
+            f"Recall by placement and phrasing is {EXPLORATORY} (preregistration 0002); a "
+            "reminder sent with a decision-point request reaches the agent after that point's "
+            "probe, so the probe understates recall there (counted in `rates.json` as "
+            "`reminders_on_request`).",
+            "",
+            *table(header, rows),
+            "",
+        ]
     rows, figure_rows, abstract_bits = [], [], []
     for index, family in family_entries(led, contrasts):
         for key in ("placement", "phrasing"):
@@ -1481,15 +1845,19 @@ def e3_section(b: Build) -> tuple[list[str], list[str]]:
                 at = At(contrasts, f"/by_family/{index}/{key}", {key: arm})
                 cid = f"e3.{slug(family)}.{slug(arm)}"
                 cells = contrast_cells(led, cid, at, odds=False)
-                rows.append([family, f"`{arm}` vs `{ref}`", *cells])
+                rows.append([family_label(family), f"`{arm}` vs `{ref}`", *cells])
                 figure_rows.append(forest_row(led, at, f"{family}: {arm} vs {ref}", family))
                 if family == "pooled":
-                    abstract_bits.append(f"{arm} against {ref} {cells[0]} ({cells[-1]})")
+                    abstract_bits.append(
+                        f"{arm} against {ref} {cells[0]} (Holm p {cells[-2]}; {cells[-1]})"
+                    )
     header = ["Family", "Contrast", "Difference", "p", "Holm p", "Reading"]
     lines += [*table(header, rows), ""]
     lines += e3_hazard_terms(b)
     lines += contrast_figure(b, FIG_E3, "E3: placement and phrasing contrasts", figure_rows, status)
     kind = "confirmatory" if status.confirmatory else "exploratory"
+    if status.synthetic:
+        kind += ", synthetic data"
     abstract = (
         [f"In E3 ({kind}), pooled differences in violation rate were {join_and(abstract_bits)}."]
         if abstract_bits
@@ -1510,19 +1878,22 @@ def e3_hazard_terms(b: Build) -> list[str]:
             continue
         at = At(rel, "/estimates", {"family": family, "term": term})
         cid = f"e3.hazard.{slug(term)}"
-        rows.append(
-            [
-                f"`{term}`",
-                estimate(led, cid, at, "", "estimate", COEF),
-                reading(led, at, "", "higher hazard than the reference", "lower hazard"),
-            ]
+        missing = not_estimable_cell(led, at)
+        if missing is not None:
+            rows.append([f"`{term}`", missing, "no reading"])
+            continue
+        words = (
+            "unstable (too many failed draws)"
+            if led.peek(at, "/unstable") is True
+            else reading(led, at, "", "higher hazard than the reference", "lower hazard")
         )
+        rows.append([f"`{term}`", estimate(led, cid, at, "", "estimate", COEF), words])
     if not rows:
         return []
     return [
-        "Placement and phrasing terms of the pooled hazard model (log odds against the reference "
-        "levels, with `log1p(position)`, the compaction count, the rule type, and the family in "
-        "the model).",
+        f"Placement and phrasing terms of the pooled hazard model ({EXPLORATORY}; log odds "
+        "against the reference levels, with `log1p(position)`, the compaction count, the rule "
+        "type, and the family in the model; a separated term has no estimate).",
         "",
         *table(["Term", "Coefficient", "Reading"], rows),
         "",
@@ -1533,7 +1904,10 @@ def forest_row(led: Ledger, at: At, label: str, group: str) -> svgplot.ForestRow
     """A forest-plot row for one contrast (difference and its interval)."""
     diff = led.peek(at, "/difference") or {}
     p_holm = led.peek(at, "/p_holm")
-    text = f"Holm p {p_holm:{p_format(p_holm)}}" if isinstance(p_holm, int | float) else ""
+    if isinstance(p_holm, int | float):
+        text = f"Holm p {p_holm:{p_format(p_holm)}}"
+    else:
+        text = "Holm p not computed"
     return svgplot.ForestRow(
         label,
         _finite(diff.get("difference")),
@@ -1567,7 +1941,8 @@ def contrast_figure(
         f"![Forest plot of {what}, differences in violation rate with intervals](figures/{name})",
         "",
         f"*Figure {number}. {title.split(':', 1)[0]} {what}: differences in violation rate with "
-        "session-bootstrap intervals, one color per family; the right column gives the "
+        "cluster-bootstrap intervals (sessions within a family, plans when pooled), one color "
+        "per family; the right column gives the "
         "Holm-adjusted p-value."
         + (" Synthetic data, not model results.*" if status.synthetic else "*"),
         "",
@@ -1597,7 +1972,7 @@ def e4_section(b: Build) -> tuple[list[str], list[str]]:
         settings = derive.settings_params(b.store.obj(contrasts), contrasts)
         level = b.level(
             float(settings["level"]),
-            "session-bootstrap percentile intervals",
+            "cluster-bootstrap percentile intervals",
             "interval level fixed in the E4 analysis settings (design parameter)",
         )
         scope = ""
@@ -1605,19 +1980,29 @@ def e4_section(b: Build) -> tuple[list[str], list[str]]:
             at = At(summary)
             scope = (
                 f" on {led.size('e4.templates', At(summary, '/held_out_templates'))} held-out "
-                f"templates ({led.num('e4.sessions', at, '/n_sessions', COUNT)} sessions)"
+                f"templates ({led.num('e4.sessions', at, '/n_sessions', COUNT)} banked sessions)"
             )
         lines += [
             status.text,
             "",
             f"Each mitigation against no mitigation{scope}: the difference in violation rate "
-            f"with {level}, session-clustered Wald p-values with Holm adjustment over the "
-            "mitigations, and its cost beside it (rule 15) as a difference from no mitigation: "
-            "tokens per session (step and compaction calls; recall probes are measurement and "
-            "are left out), backend seconds per session, and the share of checked subtasks that "
-            "passed. As D-039 fixes, the guard arm is reported as an upper bound on what the "
+            f"with {level}, p-values of a score test at the null fit, clustered the same way "
+            "(by session within a family, by plan when families are pooled) through a "
+            "within-cluster correlation estimated at the null fit, with "
+            "Holm adjustment over the mitigations; a mitigation differs from no mitigation when "
+            f"its Holm-adjusted p-value is below {alpha_phrase(led, contrasts)}, and an arm "
+            "without violations is still tested. The pooled contrasts are the preregistered "
+            "tests; the per-family rows are exploratory. Each cost sits beside its effect "
+            "(rule 15) as a difference from no mitigation: tokens per session (step and "
+            "compaction calls; recall probes are measurement and are left out), backend seconds "
+            "per session, and task success, the share of the plan's subtasks with a success "
+            "check that passed (a checked subtask the session never reached counts as not "
+            "passed). As D-039 fixes, the guard arm is reported as an upper bound on what the "
             "mechanism blocks, and its refusal reasons restate the rule; its static analysis "
-            "cannot see writes or network calls made inside programs the agent runs.",
+            "cannot see writes or network calls made inside programs the agent runs. "
+            + analysis_set_sentence(led, contrasts, "e4")
+            + " Costs use every confirmatory session (D-040), not only the analysis set, since "
+            "a mitigation could end sessions early.",
             "",
         ]
         cost_index = {f: i for i, f in family_entries(led, costs)} if b.store.exists(costs) else {}
@@ -1642,11 +2027,12 @@ def e4_section(b: Build) -> tuple[list[str], list[str]]:
                             )
                             continue
                     cost_cells.append("not measured")
-                rows.append([family, f"`{arm}`", *cells, *cost_cells])
+                rows.append([family_label(family), f"`{arm}`", *cells, *cost_cells])
                 figure_rows.append(forest_row(led, at, f"{family}: {arm} vs none", family))
                 if family == "pooled":
                     abstract.append(
-                        f"{arm} {cells[0]} ({cells[-1]}; tokens per session {cost_cells[0]})"
+                        f"{arm} {cells[0]} (Holm p {cells[-2]}; {cells[-1]}; tokens per "
+                        f"session {cost_cells[0]})"
                     )
         header = ["Family", "Mitigation", "Difference", "p", "Holm p", "Reading"]
         header += [label for _, label, _ in COST_FIELDS]
@@ -1656,6 +2042,8 @@ def e4_section(b: Build) -> tuple[list[str], list[str]]:
             b, FIG_E4, "E4: mitigations against no mitigation", figure_rows, status
         )
         kind = "confirmatory" if status.confirmatory else "exploratory"
+        if status.synthetic:
+            kind += ", synthetic data"
         abstract = (
             [
                 f"In E4 ({kind}), pooled differences in violation rate against no mitigation "
@@ -1692,13 +2080,14 @@ def overhead_text(b: Build) -> list[str]:
     """Measured overhead of halflife-guard and halflife-pin (G9)."""
     if not b.store.exists(OVERHEAD):
         return ["**Overhead of the shipped tools.** Not measured yet."]
+    label = f"**Overhead of the shipped tools ({EXPLORATORY}).**"
     led, at = b.led, At(OVERHEAD)
     guard_ms = led.num("e4.overhead.guard.ms", at, "/halflife-guard/latency_ms", ".1f")
     guard_tokens = led.num("e4.overhead.guard.tokens", at, "/halflife-guard/tokens", amount_format)
     pin_ms = led.num("e4.overhead.pin.ms", at, "/halflife-pin/latency_ms", ".2f")
     pin_tokens = led.num("e4.overhead.pin.tokens", at, "/halflife-pin/tokens", amount_format)
     return [
-        f"**Overhead of the shipped tools.** halflife-guard took {guard_ms} ms per guarded tool "
+        f"{label} halflife-guard took {guard_ms} ms per guarded tool "
         f"call (the median hook run as a subprocess) and adds {guard_tokens} tokens per refusal "
         f"reason (allowed calls add none); halflife-pin took {pin_ms} ms to render and apply its "
         f"block, which puts {pin_tokens} tokens in the context for the whole session "
@@ -1755,10 +2144,13 @@ def headline(b: Build) -> str:
         for family in [str(e["family"]) for e in led.select(At(rel), "/estimates")]:
             at = At(rel, "/estimates", {"family": family})
             cid = f"e1.halflife.{slug(family)}"
-            interval = span(led, cid, at, "", TOOLS)
+            interval = half_life_span(led, cid, at)
             point = half_life_point(led, cid, at)
             rows.append([family, point, interval])
-            phrases.append(f"{point} for {family} ({level} {interval})")
+            if interval == "no interval":
+                phrases.append(f"{point} for {family}")
+            else:
+                phrases.append(f"{point} for {family} ({level} {interval})")
         kind = "confirmatory" if status.confirmatory else "exploratory"
         if status.synthetic:
             kind += "; synthetic data, not model results"
@@ -1857,6 +2249,7 @@ def build(root: Path, module: str = derive.DERIVE_MODULE, *, with_headline: bool
             "detectors of violations, and a discrete-time survival analysis.",
             *e0_abstract(b),
             *e1_abstract,
+            *e2_abstract,
             *e3_abstract,
             *e4_abstract,
         ]
@@ -1995,6 +2388,56 @@ def replace_block(text: str, name: str, body: str) -> str:
 def has_block(text: str, name: str) -> bool:
     """True when ``text`` has the begin marker of block ``name``."""
     return f"<!-- report:begin {name} -->" in text
+
+
+def block_text(text: str, name: str) -> str | None:
+    """The content between the ``report`` markers named ``name`` (None without markers)."""
+    begin, end = f"<!-- report:begin {name} -->", f"<!-- report:end {name} -->"
+    if text.count(begin) != 1 or text.count(end) != 1:
+        return None
+    start, stop = text.index(begin) + len(begin), text.index(end)
+    return text[start:stop].strip("\n") if start <= stop else None
+
+
+def stale_parts(root: Path, module: str = derive.DERIVE_MODULE) -> list[str]:
+    """What ``make report`` would change now: generated blocks, figures, the claims manifest.
+
+    Empty when the committed report matches a fresh build from the banked artifacts. A
+    report written before an experiment was banked (it still says that experiment has not
+    run) or before its artifacts changed is stale, which claimcheck and freshness cannot
+    see because they only check the claims a document already carries.
+
+    Raises:
+        ReportError: when the report cannot be built.
+    """
+    report_path, readme_path = root / REPORT_DOC, root / README_DOC
+    if not report_path.is_file():
+        return [f"{REPORT_DOC} is missing"]
+    readme = readme_path.read_text(encoding="utf-8") if readme_path.is_file() else ""
+    out = build(root, module, with_headline=has_block(readme, "headline"))
+    report = report_path.read_text(encoding="utf-8")
+    stale = [
+        f"{REPORT_DOC} block {name}"
+        for name, body in out.blocks.items()
+        if block_text(report, name) != body.strip("\n")
+    ]
+    if has_block(readme, "headline") and block_text(readme, "headline") != out.headline.strip("\n"):
+        stale.append(f"{README_DOC} block headline")
+    for rel, svg in out.figures.items():
+        path = root / rel
+        if not path.is_file() or path.read_text(encoding="utf-8") != svg:
+            stale.append(rel)
+    figures = root / FIGURES_DIR
+    if figures.is_dir():
+        stale += [
+            p.relative_to(root).as_posix()
+            for p in sorted(figures.glob("*.svg"))
+            if p.relative_to(root).as_posix() not in out.figures
+        ]
+    manifest = root / MANIFEST
+    if not manifest.is_file() or manifest.read_text(encoding="utf-8") != _dump(out.manifest):
+        stale.append(MANIFEST)
+    return stale
 
 
 def block_problems(
@@ -2190,13 +2633,25 @@ def reproduce(root: Path, *, dry_run: bool = False, runner: Runner = subprocess.
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """``python -m halflife.report [--root DIR] [--reproduce [--dry-run]]``."""
+    """``python -m halflife.report [--root DIR] [--reproduce [--dry-run] | --check]``.
+
+    ``--check`` writes nothing and exits 1 when the committed report, figures, or claims
+    manifest differ from a fresh build (:func:`stale_parts`).
+    """
     parser = argparse.ArgumentParser(description="Write figures, report blocks, and claims.")
     parser.add_argument("--root", type=Path, default=ROOT, help="repository root")
     parser.add_argument("--reproduce", action="store_true", help="re-run derivations first")
     parser.add_argument("--dry-run", action="store_true", help="with --reproduce: only print")
+    parser.add_argument("--check", action="store_true", help="only report what is stale")
     args = parser.parse_args(argv)
     try:
+        if args.check:
+            stale = stale_parts(args.root)
+            if stale:
+                print("REPORT: STALE (run make report): " + ", ".join(stale))
+                return 1
+            print("REPORT: CURRENT")
+            return 0
         if args.reproduce:
             return reproduce(args.root, dry_run=args.dry_run)
         for line in generate(args.root):

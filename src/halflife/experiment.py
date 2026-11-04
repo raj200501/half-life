@@ -25,6 +25,7 @@ import datetime as dt
 import hashlib
 import json
 import random
+import re
 import shutil
 import subprocess
 import sys
@@ -147,6 +148,123 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+class BankError(ValueError):
+    """Raised when finished runs cannot be banked as asked (nothing is written then)."""
+
+
+SESSION_FILES = ("plan.json", "action_log.json", "violations.json")
+"""Session outputs whose SHA-256 every banked session row records."""
+
+
+def _line_sha256(data: Any) -> str:
+    """SHA-256 of one canonical JSON line (the plans-file form of a plan)."""
+    return hashlib.sha256(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _log_hashes(path: Path) -> set[str]:
+    """The hashes a run may have recorded for a compaction log: of the file's bytes (the E2
+    driver) and of its canonical JSON without the final newline
+    (``halflife.compaction.CompactionEvent.sha256``)."""
+    raw = path.read_bytes()
+    found = {hashlib.sha256(raw).hexdigest()}
+    try:
+        parsed = json.loads(raw)
+    except ValueError:
+        return found
+    canonical = json.dumps(parsed, sort_keys=True, indent=2).encode("utf-8")
+    return found | {hashlib.sha256(canonical).hexdigest()}
+
+
+def _read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+
+
+def run_record(run_dir: Path) -> dict[str, Any]:
+    """A run's ``run.json`` (None when missing) and every ``invocations.jsonl`` line."""
+    invocations = run_dir / "invocations.jsonl"
+    lines = invocations.read_text(encoding="utf-8").splitlines() if invocations.is_file() else []
+    return {
+        "run": _read_json(run_dir / "run.json"),
+        "invocations": [json.loads(line) for line in lines if line.strip()],
+    }
+
+
+def _run_plans(root: Path, record: Mapping[str, Any]) -> tuple[dict[str, str] | None, str]:
+    """``session_id -> plan line SHA-256`` of the plans file a run's ``run.json`` names.
+
+    The second value names a problem (an empty string when there is none): no run record,
+    a missing plans file, or a plans file whose hash differs from the one the run recorded.
+    """
+    run = record.get("run")
+    if not isinstance(run, Mapping):
+        return None, "no run.json, so its sessions cannot be checked against their plans file"
+    path = Path(str(run.get("plans", "")))
+    path = path if path.is_absolute() else root / path
+    if not path.is_file():
+        return None, f"its plans file is missing ({run.get('plans')!r})"
+    if _sha256(path) != run.get("plans_sha256"):
+        return None, f"its plans file changed since the run ({run.get('plans')!r})"
+    plans: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            data = json.loads(line)
+            plans[str(data["session_id"])] = _line_sha256(data)
+    return plans, ""
+
+
+def bank_problems(
+    found: Sequence[tuple[Path, dict[str, Any]]],
+    records: Mapping[str, Mapping[str, Any]],
+    root: Path,
+    *,
+    experiment: str,
+    prereg: str | None,
+) -> list[str]:
+    """Why these finished sessions cannot be banked under ``experiment`` and ``prereg``.
+
+    Each session must have run under the preregistration it is banked under (the tag
+    ``experiment run --prereg`` recorded, never rewritten here) and belong to the banked
+    experiment; its stored plan must be the plan the run's plans file holds for it (a
+    resumed run cannot mix plan versions); and every compaction log must still have the
+    hash its session recorded. A confirmatory bank also needs each run's ``run.json``.
+    """
+    problems: list[str] = []
+    plans: dict[str, tuple[dict[str, str] | None, str]] = {
+        run_id: _run_plans(root, record) for run_id, record in records.items()
+    }
+    for session_dir, record in found:
+        session = record["session"]
+        run_id, sid = str(record["run_id"]), str(session["session_id"])
+        where = f"{run_id}/{sid}"
+        recorded = session.get("prereg")
+        if recorded != prereg:
+            problems.append(
+                f"{where} ran under preregistration {recorded!r}, not {prereg!r} "
+                "(experiment run --prereg records it; banking never changes it)"
+            )
+        if session.get("experiment") != experiment:
+            problems.append(f"{where} is a session of experiment {session.get('experiment')!r}")
+        stored = _read_json(session_dir / "plan.json")
+        plan_hash = _line_sha256(stored) if stored is not None else None
+        if plan_hash is None:
+            problems.append(f"{where} has no plan.json")
+        elif session.get("plan_sha256") not in (None, plan_hash):
+            problems.append(f"{where}: plan.json changed after the session ran")
+        expected, problem = plans.get(run_id, (None, "no run record"))
+        if expected is None:
+            if prereg is not None:
+                problems.append(f"run {run_id}: {problem}")
+        elif sid not in expected:
+            problems.append(f"{where} is not in the run's plans file")
+        elif plan_hash is not None and expected[sid] != plan_hash:
+            problems.append(f"{where} ran a different plan than the run's plans file holds")
+        for event in record["compactions"]:
+            path = session_dir / event["log_path"]
+            if not path.is_file() or event.get("log_sha256") not in _log_hashes(path):
+                problems.append(f"{where}: compaction log changed since its session")
+    return sorted(set(problems))
+
+
 def collect(run_dirs: Sequence[Path]) -> list[tuple[Path, dict[str, Any]]]:
     """Every finished session's directory and result record, sorted by session id."""
     found = []
@@ -174,26 +292,44 @@ def bank_runs(
     Writes ``sessions.jsonl``, ``opportunities.jsonl``, ``probes.jsonl``,
     ``compaction_logs.json`` with every compaction log copied under
     ``compactions/``, and ``provenance.json``. Returns the provenance record.
+
+    Nothing is written when :func:`bank_problems` finds a session that did not run as it
+    would be banked (its run-time preregistration tag, experiment, or plan) or a
+    compaction log that changed. Rows keep the run-time preregistration tag (opportunity
+    rows get their session's when they lack one), and each session row records the
+    SHA-256 of its plan, action log, and violations, its run settings, and the run-time
+    ``run_meta.json`` (git SHA, dirty flag, times) when ``experiment run`` wrote one;
+    provenance records every run's ``run.json`` and ``invocations.jsonl``.
+
+    Raises:
+        BankError: with every problem found.
     """
+    found = collect(run_dirs)
+    records = {run_dir.name: run_record(run_dir) for run_dir in run_dirs}
+    problems = bank_problems(found, records, root, experiment=experiment, prereg=prereg)
+    if problems:
+        raise BankError(f"refusing to bank {len(problems)} problem(s): " + "; ".join(problems))
     out_dir.mkdir(parents=True, exist_ok=True)
     sessions: list[dict[str, Any]] = []
     opportunities: list[dict[str, Any]] = []
     probes: list[dict[str, Any]] = []
     events: list[dict[str, Any]] = []
-    for session_dir, record in collect(run_dirs):
+    for session_dir, record in found:
         sid = record["session"]["session_id"]
         row = dict(record["session"]) | {"run_id": record["run_id"]}
         row["probe_leaks"] = list(record.get("summary", {}).get("leaks", []))
-        usage_file = session_dir / "usage.json"
-        row["usage"] = (
-            json.loads(usage_file.read_text(encoding="utf-8")) if usage_file.exists() else None
-        )
-        if prereg is not None:
-            row["prereg"] = prereg
+        row["usage"] = _read_json(session_dir / "usage.json")
+        row["run_meta"] = _read_json(session_dir / "run_meta.json")
+        row["run_settings"] = record.get("settings")
+        row["files_sha256"] = {
+            name: _sha256(session_dir / name) if (session_dir / name).is_file() else None
+            for name in SESSION_FILES
+        }
         sessions.append(row)
-        opportunities.extend(
-            dict(o) | {"run_id": record["run_id"]} for o in record["opportunities"]
-        )
+        for opportunity in record["opportunities"]:
+            banked = dict(opportunity) | {"run_id": record["run_id"]}
+            banked.setdefault("prereg", record["session"].get("prereg"))
+            opportunities.append(banked)
         for probe in json.loads((session_dir / "probes.json").read_text(encoding="utf-8")):
             probes.append({"session_id": sid, "run_id": record["run_id"], **probe})
         for event in record["compactions"]:
@@ -207,6 +343,7 @@ def bank_runs(
                 | {
                     "log_path": (out_dir / target_rel).relative_to(root).as_posix(),
                     "log_sha256": _sha256(target),
+                    "run_log_sha256": event.get("log_sha256"),
                 }
             )
 
@@ -229,6 +366,7 @@ def bank_runs(
         "design": design_path.relative_to(root).as_posix() if design_path else None,
         "design_sha256": _sha256(design_path) if design_path else None,
         "runs": sorted({str(r["run_id"]) for r in sessions}),
+        "run_records": {run_id: records[run_id] for run_id in sorted(records)},
         "models": list(models),
         "n_sessions": len(sessions),
         "n_opportunities": len(opportunities),
@@ -379,6 +517,71 @@ def check_plans(
     return problems
 
 
+PREREG_PATH_RE = re.compile(r"prereg/\d{4}-[A-Za-z0-9][A-Za-z0-9_-]*\.md")
+"""The naming rule of ``make prereg-verify`` (and gate G7) for a preregistration file."""
+
+
+def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(root), *args], capture_output=True, text=True, check=False
+    )
+
+
+def prereg_problem(root: Path, prereg: str | None, plans: Sequence[SessionPlan]) -> str | None:
+    """Why these plans may not run under ``prereg`` (rule 2), or None.
+
+    Confirmatory plans need ``--prereg`` naming a ``prereg/NNNN-slug.md`` file that is
+    committed and unchanged at HEAD, so every confirmatory session carries the tag of a
+    preregistration that existed before it ran; a tag on plans that are not confirmatory
+    is refused too.
+    """
+    confirmatory = [plan.session_id for plan in plans if plan.confirmatory]
+    if prereg is None:
+        if confirmatory:
+            return (
+                f"confirmatory plans need --prereg naming a committed preregistration "
+                f"(first: {confirmatory[0]})"
+            )
+        return None
+    loose = [plan.session_id for plan in plans if not plan.confirmatory]
+    if loose:
+        return f"--prereg {prereg} was given, but plan {loose[0]} is not confirmatory"
+    if not PREREG_PATH_RE.fullmatch(prereg):
+        return f"--prereg {prereg!r} is not a prereg/NNNN-slug.md path"
+    path = root / prereg
+    if path.is_symlink() or not path.is_file():
+        return f"--prereg {prereg} does not exist as a regular file"
+    if _git(root, "ls-files", "--error-unmatch", "--", prereg).returncode != 0:
+        return f"--prereg {prereg} is not committed"
+    if _git(root, "diff", "--quiet", "HEAD", "--", prereg).returncode != 0:
+        return f"--prereg {prereg} has uncommitted changes"
+    return None
+
+
+def stored_plan_problems(run_dir: Path, plans: Sequence[SessionPlan]) -> list[str]:
+    """Sessions of ``run_dir`` whose stored ``plan.json`` differs from the plan to run.
+
+    The runner skips a session whose result exists, so resuming a run after its plans
+    were regenerated (a template edit or a design change keeps the session id) would mix
+    plan versions; such a run must use a new run id instead.
+    """
+    out = []
+    for plan in plans:
+        stored = _read_json(run_dir / plan.session_id / "plan.json")
+        if stored is not None and _line_sha256(stored) != _line_sha256(plan.to_dict()):
+            out.append(
+                f"{plan.session_id}: the stored plan differs from the plan being run "
+                f"(use a new run id, or remove {run_dir.name}/{plan.session_id})"
+            )
+    return out
+
+
+def _source_dirty(root: Path) -> bool:
+    """True when tracked files under ``src/`` or ``designs/`` differ from HEAD."""
+    status = _git(root, "status", "--porcelain", "--untracked-files=no", "--", "src", "designs")
+    return bool(status.stdout.strip())
+
+
 def cmd_plan(design_path: Path, out: Path) -> int:
     """Write the plans of a design file as JSON lines."""
     from halflife.runner import write_plans
@@ -448,12 +651,14 @@ def cmd_run(args: Any, root: Path) -> int:
     if args.limit is not None:
         plans = plans[: args.limit]
     templates = {t.id: t for t in bench.load_all()}
+    run_dir = root / args.out_root / args.run_id
     problems = check_plans(plans, templates)
+    problems += [p for p in [prereg_problem(root, args.prereg, plans)] if p is not None]
+    problems += stored_plan_problems(run_dir, plans)
     if problems:
         for problem in problems:
             print(f"refusing: {problem}")
         return 2
-    run_dir = root / args.out_root / args.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     pid_file = run_dir / "pid"
     pid_file.write_text(f"{os.getpid()}\n", encoding="utf-8")
@@ -477,6 +682,7 @@ def cmd_run(args: Any, root: Path) -> int:
         },
         "prereg": args.prereg,
         "git_sha": _git_sha(root),
+        "git_dirty": _source_dirty(root),
         "sandbox_method": detect_method(),
         "subject_python": _subject_python_version(),
         "command": " ".join(sys.argv),
@@ -531,8 +737,23 @@ def cmd_run(args: Any, root: Path) -> int:
             break
         usage = model.reset_usage()
         if usage:  # empty when the session was already finished and only loaded
-            (root / args.out_root / args.run_id / plan.session_id / "usage.json").write_text(
+            session_dir = root / args.out_root / args.run_id / plan.session_id
+            (session_dir / "usage.json").write_text(
                 json.dumps(usage, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
+            # The code version and times of the invocation that ran this session, so the
+            # banked row can show it ran after its preregistration and under which code.
+            meta = {
+                "run_id": args.run_id,
+                "prereg": args.prereg,
+                "git_sha": record["git_sha"],
+                "git_dirty": record["git_dirty"],
+                "invocation_started": record["started"],
+                "started": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "finished": _now(),
+            }
+            (session_dir / "run_meta.json").write_text(
+                json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
         line = {
             "session_id": plan.session_id,
@@ -542,6 +763,8 @@ def cmd_run(args: Any, root: Path) -> int:
             "opportunities": len(result["opportunities"]),
             "wall_s": round((dt.datetime.now(dt.UTC) - start).total_seconds(), 1),
             "finished": _now(),
+            # False for a session whose result an earlier invocation wrote (only loaded).
+            "ran_now": bool(usage),
         }
         with progress.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(line, sort_keys=True) + "\n")
@@ -581,16 +804,20 @@ def cmd_bank(args: Any, root: Path) -> int:
                     },
                 }
             )
-    provenance = bank_runs(
-        run_dirs,
-        root / args.out,
-        root,
-        experiment=args.experiment,
-        prereg=args.prereg,
-        design_path=root / args.design if args.design else None,
-        models=models,
-        command=" ".join(sys.argv),
-    )
+    try:
+        provenance = bank_runs(
+            run_dirs,
+            root / args.out,
+            root,
+            experiment=args.experiment,
+            prereg=args.prereg,
+            design_path=root / args.design if args.design else None,
+            models=models,
+            command=" ".join(sys.argv),
+        )
+    except BankError as exc:
+        print(f"refusing: {exc}")
+        return 2
     counts = f"{provenance['n_sessions']} sessions, {provenance['n_opportunities']} opportunities"
     print(f"banked {counts} into {args.out}")
     return 0

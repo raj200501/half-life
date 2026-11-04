@@ -110,6 +110,7 @@ def synthetic_arms(
                         "reached_first_dp": True,
                         "mitigation": arm.get("mitigation", "none"),
                         "subtasks_checked": 4,
+                        "subtasks_planned_checked": 4,
                         "subtasks_succeeded": 3 if a % 2 else 4,
                         "usage": {
                             "step": {
@@ -362,6 +363,17 @@ def test_power_matches_the_power_command(tmp_path: Path, monkeypatch: pytest.Mon
     for key in ("synthetic", "pilot", "grid"):
         assert derived[key] == banked[key], key
     assert any(row["pilot_rate"] for row in banked["grid"])
+    # With the family choice banked, power reads the chosen families only, and the
+    # derivation re-runs with the families the artifact records.
+    write_json(tmp_path, "artifacts/pilot/family_choice.json", {"chosen": ["syn-a"]})
+    assert power.main(args) == 0
+    chosen = load_artifact(tmp_path / out)
+    assert chosen["families"] == ["syn-a"] and chosen["pilot"]["families_excluded"] == ["syn-b"]
+    params = derive.declare(out, tmp_path).derivations[out]["params"]
+    assert params == {"n_sim": 2, "seed": 5, "families": ["syn-a"]}
+    again = as_json(derive.power_e1(inputs, **params))
+    for key in ("synthetic", "pilot", "grid"):
+        assert again[key] == chosen[key], key
 
 
 # --------------------------------------------------------------------------- analyses

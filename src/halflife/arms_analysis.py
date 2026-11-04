@@ -16,7 +16,9 @@ E3, placement and phrasing (RQ3):
   with Wilson intervals;
 * violation-rate contrasts of ``system``, ``pinned_file``, and ``reminder`` against
   ``first_user`` (Holm-adjusted over the three) and of ``reason`` against ``bare``, with
-  session-clustered bootstrap intervals and CR1 Wald p-values;
+  bootstrap intervals and score-test p-values clustered by plan through an exchangeable
+  within-plan correlation (:func:`halflife.stats.score_test`; within one family a plan is
+  one session);
 * a hazard model with ``log1p(position)`` and ``compaction_count`` as covariates and
   ``constraint_type``, ``placement``, and ``phrasing`` as factors (plus ``family`` when
   more than one family ran), with bootstrap intervals.
@@ -28,8 +30,9 @@ E4, mitigations on held-out templates (RQ5):
 * costs beside every effect (rule 15), over all confirmatory sessions: tokens per session
   (prompt plus completion tokens of ``step`` and ``compaction`` calls; recall probes are
   measurement and are left out), latency per session (backend seconds of the same calls),
-  and task success (the share of checked subtasks that passed), each as a mean with a
-  session bootstrap interval and as a difference from ``none``.
+  and task success (the share of the plan's subtasks with a success check that passed; a
+  checked subtask the session never reached counts as not passed), each as a mean with a
+  bootstrap interval over plans and as a difference from ``none``.
 
 E2, Claude Code (the ecological arm, exploratory unless a preregistration is banked):
 
@@ -37,7 +40,13 @@ E2, Claude Code (the ecological arm, exploratory unless a preregistration is ban
   over sessions that reached their first decision point; ``summary.json`` follows the G8
   layout and is labeled ``ecological``.
 
-Every analysis runs per family and pooled over families.
+Every analysis runs per family and pooled over families, with the E1 identity rules
+(:mod:`halflife.e1_analysis`): a session is ``(family, session_id)``, so session counts
+and risk sets keep each family's session of a plan apart, while bootstrap draws and CR1
+errors cluster on the plan (``session_id``), which pooled keeps both families' sessions
+of a plan together. E2 sessions are ``(model, session_id)`` (one plan per model tier).
+Holm adjustments keep tests whose p-value cannot be computed in the family
+(:data:`halflife.e1_analysis.HOLM_NOTE`).
 """
 
 from __future__ import annotations
@@ -51,14 +60,22 @@ from typing import Any
 
 from halflife import stats
 from halflife.e1_analysis import (
+    CLUSTER,
     HAZARD_COVARIATES,
+    HOLM_NOTE,
+    SESSION,
     TRANSFORM,
     Settings,
     analysis_set,
+    contrast_entry,
+    exclusions_by_family,
     families,
-    holm,
+    fit_record,
+    holm_verdicts,
+    is_unstable,
     load_jsonl,
-    wald_p,
+    session_of,
+    term_records,
 )
 
 PLACEMENT_REFERENCE = "first_user"
@@ -70,6 +87,8 @@ MITIGATIONS = ("guard", "pin", "preserve", "reinject", "selfcheck")
 COST_PURPOSES = ("step", "compaction")
 COST_FIELDS = ("tokens", "latency_s", "task_success")
 E3_FACTORS = ("constraint_type", "placement", "phrasing")
+E2_SESSION: tuple[str, ...] = ("model", "session_id")
+"""E2 rows carry the model tier in ``model`` and run one plan per tier."""
 
 
 def _by_family(rows: Sequence[Mapping[str, Any]]) -> list[tuple[str, list[dict[str, Any]]]]:
@@ -79,9 +98,16 @@ def _by_family(rows: Sequence[Mapping[str, Any]]) -> list[tuple[str, list[dict[s
 
 
 def rates(
-    rows: Sequence[Mapping[str, Any]], keys: Sequence[str], level: float
+    rows: Sequence[Mapping[str, Any]],
+    keys: Sequence[str],
+    level: float,
+    session: Sequence[str] = SESSION,
 ) -> list[dict[str, Any]]:
-    """Violation rate and pre-decision-point recall for every combination of ``keys``."""
+    """Violation rate and pre-decision-point recall for every combination of ``keys``.
+
+    ``sessions`` counts distinct ``session`` keys, so each family's session of a plan
+    counts once.
+    """
     groups: dict[tuple[str, ...], list[Mapping[str, Any]]] = {}
     for row in rows:
         groups.setdefault(tuple(str(row[k]) for k in keys), []).append(row)
@@ -91,7 +117,7 @@ def rates(
         k = sum(1 for r in group if r["violated"])
         entry: dict[str, Any] = dict(zip(keys, key, strict=True)) | {
             "opportunities": len(group),
-            "sessions": len({r["session_id"] for r in group}),
+            "sessions": len({session_of(r, session) for r in group}),
         }
         entry["violation_rate"] = {"k": k, "n": len(group)} | stats.wilson_interval(
             k, len(group), level
@@ -102,6 +128,12 @@ def rates(
             entry["recall_before"] = {"k": kr, "n": len(recall)} | stats.wilson_interval(
                 kr, len(recall), level
             ).to_dict()
+            if all("reminder_on_request" in r for r in recall):
+                # A reminder sent with the decision-point request reached the agent after
+                # the probe ran, so these probes understate what the agent had in context.
+                entry["recall_before"]["reminders_on_request"] = sum(
+                    1 for r in recall if r["reminder_on_request"] is True
+                )
         out.append(entry)
     return out
 
@@ -113,10 +145,19 @@ def contrasts_against(
     arms: Sequence[str],
     settings: Settings,
 ) -> list[dict[str, Any]]:
-    """Violation-rate contrast of each present arm against ``reference``, Holm-adjusted."""
+    """Violation-rate contrast of each present arm against ``reference``, Holm-adjusted.
+
+    The decision p-value is the clustered score test at the null fit (:func:`halflife.
+    e1_analysis.test_fields`), which stays valid when an arm has no violations. The Holm
+    family is every arm in ``arms``, as the preregistrations fix it (D-040: over the three
+    placements, over the five mitigations). An arm without rows, an unstable contrast, and
+    one whose p-value cannot be computed stay in it as p = 1 (:data:`HOLM_NOTE`), so they
+    never make the other adjustments smaller; absent arms get no entry. Every entry
+    carries its verdict (:data:`halflife.e1_analysis.VERDICT_NOTE`).
+    """
     present = {r[key] for r in rows}
     out: list[dict[str, Any]] = []
-    pvalues: dict[str, float] = {}
+    names: list[str] = []
     if reference not in present:
         return out
     for arm in arms:
@@ -124,14 +165,19 @@ def contrasts_against(
             continue
         subset = [dict(r) for r in rows if r[key] in {reference, arm}]
         result = stats.rate_contrast(
-            subset, key, reference, arm, settings.n_boot, settings.seed, level=settings.level
+            subset,
+            key,
+            reference,
+            arm,
+            settings.n_boot,
+            settings.seed,
+            level=settings.level,
+            cluster=CLUSTER,
+            session=SESSION,
         )
-        p = wald_p(result)
-        pvalues[arm] = p
-        out.append({key: arm, "reference": reference, "p_value": p} | result.to_dict())
-    adjusted = holm(pvalues)
-    for entry in out:
-        entry["p_holm"] = adjusted[str(entry[key])]
+        names.append(arm)
+        out.append({key: arm, "reference": reference} | contrast_entry(result, settings))
+    holm_verdicts(out, names, list(arms), settings)
     return out
 
 
@@ -169,30 +215,43 @@ def e3_contrasts(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[
 
 
 def e3_hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, Any]:
-    """Hazard model with placement and phrasing factors, per family and pooled."""
+    """Hazard model with placement and phrasing factors, per family and pooled (exploratory).
+
+    As in E1 (:func:`halflife.e1_analysis.hazard`): each fit's diagnostics go under
+    ``fits``, a term the data cannot estimate (for example a placement without
+    violations, which separates its term) is written without a number, and every term
+    carries the unstable and ``not_tested`` flags; no term carries a hypothesis.
+    """
     estimates: list[dict[str, Any]] = []
+    fits: list[dict[str, Any]] = []
     several = len(families(rows)) > 1
     for family, subset in _by_family(rows):
         factors = [f for f in E3_FACTORS if len({r[f] for r in subset}) > 1]
         if family == "pooled" and several:
             factors.append("family")
-        intervals = stats.bootstrap_coefficients(
+        found = stats.bootstrap_coefficients(
             subset,
             settings.n_boot,
             settings.seed,
             level=settings.level,
+            cluster=CLUSTER,
+            session=SESSION,
             covariates=HAZARD_COVARIATES,
             categorical=tuple(factors),
             position_transform=TRANSFORM,
         )
-        for term in sorted(intervals):
-            estimates.append({"family": family, "term": term} | intervals[term].to_dict())
+        fits.append(fit_record(family, subset, found.fit))
+        for term, record in term_records(found, settings, hypotheses={}).items():
+            estimates.append({"family": family, "term": term} | record)
     return {
+        "fits": fits,
         "model": {
             "covariates": list(HAZARD_COVARIATES),
             "factors": list(E3_FACTORS),
             "position_transform": TRANSFORM,
             "risk_set": True,
+            "session_key": list(SESSION),
+            "cluster": CLUSTER,
             "outcome": "violated",
         },
         "estimates": estimates,
@@ -200,7 +259,16 @@ def e3_hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str
 
 
 def session_costs(session: Mapping[str, Any]) -> dict[str, float | None]:
-    """Tokens, backend seconds, and task success of one session (None when unknown)."""
+    """Tokens, backend seconds, and task success of one session (None when unknown).
+
+    Task success is the share of the plan's subtasks with a success check that passed
+    (``subtasks_succeeded / subtasks_planned_checked``): a checked subtask the session
+    never reached, for example after the tool-call cap, counts as not passed, so a
+    mitigation that ends sessions early shows that cost (D-040: costs use every
+    confirmatory session). A session that reached no checked subtask scores 0. Rows
+    without ``subtasks_planned_checked`` (banked before it existed) cannot say what was
+    missed, so their task success is unknown (None, counted as missing).
+    """
     usage = session.get("usage")
     tokens: float | None = None
     latency: float | None = None
@@ -208,8 +276,10 @@ def session_costs(session: Mapping[str, Any]) -> dict[str, float | None]:
         parts = [usage[p] for p in COST_PURPOSES if isinstance(usage.get(p), Mapping)]
         tokens = float(sum(p["prompt_tokens"] + p["completion_tokens"] for p in parts))
         latency = float(sum(p["elapsed_s"] for p in parts))
-    checked = int(session.get("subtasks_checked") or 0)
-    success = int(session.get("subtasks_succeeded") or 0) / checked if checked else None
+    planned = session.get("subtasks_planned_checked")
+    success: float | None = None
+    if isinstance(planned, int) and not isinstance(planned, bool) and planned > 0:
+        success = int(session.get("subtasks_succeeded") or 0) / planned
     return {"tokens": tokens, "latency_s": latency, "task_success": success}
 
 
@@ -240,10 +310,15 @@ def _difference_of(name: str, arm: str, reference: str) -> Any:
 def e4_costs(
     sessions: Sequence[Mapping[str, Any]], settings: Settings
 ) -> tuple[dict[str, Any], dict[str, dict[str, float]]]:
-    """Mean cost per arm with intervals, differences from ``none``, and plain arm means."""
+    """Mean cost per arm with intervals, differences from ``none``, and plain arm means.
+
+    One row per confirmatory session; the bootstrap resamples plans (``session_id``), so
+    pooled draws keep both families' sessions of a plan together, as the violation
+    contrasts do.
+    """
     rows = [
         {
-            "session_id": f"{s['family']}|{s['session_id']}",
+            "session_id": s["session_id"],
             "family": s["family"],
             "mitigation": s["mitigation"],
         }
@@ -265,9 +340,16 @@ def e4_costs(
                 if not known:
                     continue
                 interval = stats.cluster_bootstrap(
-                    known, _mean_of(name), settings.n_boot, settings.seed, level=settings.level
+                    known,
+                    _mean_of(name),
+                    settings.n_boot,
+                    settings.seed,
+                    cluster=CLUSTER,
+                    level=settings.level,
                 )
-                entry[name] = interval.to_dict("mean")
+                entry[name] = interval.to_dict("mean") | {
+                    "unstable": is_unstable(interval, settings)
+                }
                 estimate = interval.estimate
                 if family == "pooled" and not isinstance(estimate, stats.NotReached):
                     means.setdefault(arm, {})[name] = float(estimate)
@@ -284,10 +366,13 @@ def e4_costs(
                         _difference_of(name, arm, MITIGATION_REFERENCE),
                         settings.n_boot,
                         settings.seed,
+                        cluster=CLUSTER,
                         level=settings.level,
                         strata="mitigation",
                     )
-                    entry[f"{name}_vs_none"] = diff.to_dict("difference")
+                    entry[f"{name}_vs_none"] = diff.to_dict("difference") | {
+                        "unstable": is_unstable(diff, settings)
+                    }
             entries.append(entry)
         out["by_family"].append({"family": family, "arms": entries})
     return out, means
@@ -312,6 +397,9 @@ def e4_summary(
                 "violation_difference": effect.get("difference"),
                 "odds_ratio": effect.get("odds_ratio"),
                 "p_holm": effect.get("p_holm"),
+                "p_value_missing": effect.get("p_value_missing"),
+                "verdict": effect.get("verdict"),
+                "not_tested": effect.get("not_tested"),
                 "cost": dict(means[name]),
             }
         )
@@ -328,7 +416,10 @@ def e4_summary(
         "cost_definitions": {
             "tokens": "mean prompt plus completion tokens per session, step and compaction calls",
             "latency_s": "mean backend seconds per session, step and compaction calls",
-            "task_success": "mean share of checked subtasks that passed, per session",
+            "task_success": (
+                "mean share of the plan's subtasks with a success check that passed, per "
+                "session; a checked subtask the session never reached counts as not passed"
+            ),
         },
     }
 
@@ -342,10 +433,14 @@ def analyze_e3(
     rows, exclusions = analysis_set(sessions, opportunities)
     if not rows:
         raise stats.StatsError("no opportunities in the analysis set")
-    meta = {"settings": settings.__dict__, "exclusions": exclusions}
+    meta = {
+        "settings": settings.__dict__,
+        "exclusions": exclusions,
+        "exclusions_by_family": exclusions_by_family(sessions, opportunities),
+    }
     return {
         "rates": e3_rates(rows, settings) | meta,
-        "contrasts": e3_contrasts(rows, settings) | meta,
+        "contrasts": e3_contrasts(rows, settings) | {"holm_note": HOLM_NOTE} | meta,
         "hazard": e3_hazard(rows, settings) | meta,
         "summary": {"arm": "E3", "ran": True, "n_sessions": len(sessions)} | meta,
     }
@@ -360,7 +455,11 @@ def analyze_e4(
     rows, exclusions = analysis_set(sessions, opportunities)
     if not rows:
         raise stats.StatsError("no opportunities in the analysis set")
-    meta = {"settings": settings.__dict__, "exclusions": exclusions}
+    meta = {
+        "settings": settings.__dict__,
+        "exclusions": exclusions,
+        "exclusions_by_family": exclusions_by_family(sessions, opportunities),
+    }
     contrasts = {
         "by_family": [
             {
@@ -370,7 +469,8 @@ def analyze_e4(
                 ),
             }
             for family, subset in _by_family(rows)
-        ]
+        ],
+        "holm_note": HOLM_NOTE,
     }
     costs, means = e4_costs(sessions, settings)
     return {
@@ -392,13 +492,13 @@ def analyze_e2(
     opportunities: Sequence[Mapping[str, Any]],
     settings: Settings,
 ) -> dict[str, dict[str, Any]]:
-    """Every E2 output, keyed by file stem; E2 rows carry the model tier in ``model``."""
-    reached = {(s["model"], s["session_id"]) for s in sessions if s.get("reached_first_dp") is True}
-    rows = [
-        dict(o)
-        for o in opportunities
-        if (o["model"], o["session_id"]) in reached and int(o.get("span_calls", 1)) > 0
-    ]
+    """Every E2 output, keyed by file stem; E2 rows carry the model tier in ``model``.
+
+    Sessions are ``(model, session_id)`` (:data:`E2_SESSION`): one plan runs on each tier.
+    """
+    reached = {session_of(s, E2_SESSION) for s in sessions if s.get("reached_first_dp") is True}
+    in_set = [o for o in opportunities if session_of(o, E2_SESSION) in reached]
+    rows = [dict(o) for o in in_set if int(o.get("span_calls", 1)) > 0]
     if not rows:
         raise stats.StatsError("no opportunities in the E2 analysis set")
     confirmatory = all(s.get("confirmatory") is True for s in sessions)
@@ -409,11 +509,12 @@ def analyze_e2(
         "exclusions": {
             "sessions_total": len(sessions),
             "sessions_not_reaching_first_dp": len(sessions) - len(reached),
+            "opportunities_zero_calls": len(in_set) - len(rows),
             "opportunities_analyzed": len(rows),
         },
     }
     return {
-        "rates": {"model": rates(rows, ("model",), settings.level)} | meta,
+        "rates": {"model": rates(rows, ("model",), settings.level, E2_SESSION)} | meta,
         "summary": {
             "arm": "E2",
             "ran": True,
