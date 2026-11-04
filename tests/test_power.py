@@ -1,0 +1,56 @@
+"""Tests for the E1 power analysis on synthetic pilot rows (labeled synthetic)."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from halflife import power, stats
+
+
+def _pilot(violations: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    sessions = [
+        {"session_id": f"s{i}", "reached_first_dp": True, "dps_reached": 4}
+        | {"n_tool_calls": 40 + i, "n_compactions": 2}
+        for i in range(3)
+    ] + [{"session_id": "s9", "reached_first_dp": False, "dps_reached": 0}]
+    opportunities = [{"session_id": f"s{i % 3}", "violated": i < violations} for i in range(12)]
+    return sessions, opportunities
+
+
+def test_pilot_inputs_measure_the_session_shape() -> None:
+    inputs = power.pilot_inputs(*_pilot(3))
+    assert inputs["sessions"] == 4 and inputs["sessions_reaching_first_dp"] == 3
+    assert inputs["opportunities_per_session"] == 4 and inputs["max_position"] == 41
+    assert inputs["compactions_per_session"] == 2
+    assert inputs["violation_rate"]["value"] == pytest.approx(0.25)
+    with pytest.raises(stats.StatsError):
+        power.pilot_inputs([], [])
+
+
+def test_grid_adds_the_pilot_rate_only_when_usable() -> None:
+    inputs = power.pilot_inputs(*_pilot(3))
+    rows = power.grid(inputs, sessions_grid=(4,), effects_grid=(1.0,), rates=(0.1,), n_sim=5)
+    assert [r["inputs"]["base_rate"] for r in rows] == [0.1, 0.25]
+    assert [r["pilot_rate"] for r in rows] == [False, True]
+    assert all(r["synthetic"] is True for r in rows)
+    zero = power.pilot_inputs(*_pilot(0))
+    rows = power.grid(zero, sessions_grid=(4,), effects_grid=(1.0,), rates=(0.1,), n_sim=5)
+    assert len(rows) == 1 and rows[0]["inputs"]["max_position"] == 41
+
+
+def test_main_banks_the_grid(tmp_path: Path) -> None:
+    sessions, opportunities = _pilot(2)
+    for name, rows in (("sessions", sessions), ("opportunities", opportunities)):
+        (tmp_path / f"{name}.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+        )
+    out = tmp_path / "power" / "e1.json"
+    assert power.main(["--pilot", str(tmp_path), "--out", str(out), "--n-sim", "3"]) == 0
+    banked = json.loads(out.read_text(encoding="utf-8"))
+    assert banked["synthetic"] is True and banked["pilot"]["violations"] == 2
+    grid_size = len(power.SESSIONS_GRID) * len(power.EFFECTS_GRID) * (len(power.PLANNING_RATES) + 1)
+    assert len(banked["grid"]) == grid_size and banked["command"].startswith("python -m")
