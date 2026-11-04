@@ -40,22 +40,23 @@ Updated 2026-11-04 (goal_turn 2). History lives in docs/LOG.md.
 
 ## Now
 
-Three builder workflows are running (one owner per file set): model client, backends, pinned local models, then the mitigation kit; integrity tools and stats with figures, then citations; template QA on 14 templates, 15 new templates by three authors, and the E2 Claude Code driver. Done this session: Raj's authorship and CI-budget instructions, offline demo v0.1 (tag v0.1), subject Python environment, doctor reports harness sandbox methods.
+Done this session: offline demo v0.1 (tag v0.1); per-tool tool-call grammar and JSON recall probes scored one rule at a time (D-027, D-031); E0 detector validation banked; 21 bench templates committed (15 main, 2 pilot, 4 held-out) with 9 more being written; stats and SVG figures; model client, llama.cpp backend, five pinned local models, planning benchmark; integrity tools (prereg-verify, claimcheck, freshness, citecheck) with a gate mutation suite; 13 citations verified; E1 analysis fixed in code before any data; experiment CLI (plan, run, bank, e0-validate). Running now: gate hardening (26 surviving ship-check mutations), the mitigation kit, two template authors, then the E2 driver.
 
 ## Next three actions
 
-1. Integrate the builders: make targets for prereg-verify, claimcheck, freshness, citecheck; bench verify and bank all 30 templates with the manifest (G6).
-2. Family pilot on the 3 pilot templates with the pinned local models; use its sessions as the E0 validation runs for probe leakage and compaction-log completeness (G5); probe-scorer validation set (D-023).
-3. Power analysis and the E1 preregistration, then E1 in the background (G7, G11).
+1. Family pilot (designs/pilot.yaml, D-026) once the third pilot template lands: five families round-robin, then the E1 family choice; the pilot sessions are the E0 validation runs for probe leakage and compaction logs (G5).
+2. Bank all 30 templates (bench verify --all --bank, manifest) for G6, and the probe-scoring validation set (D-023).
+3. Power analysis from the pilot, the E1 preregistration (prereg/0001-e1.md citing designs/e1.yaml and halflife.e1_analysis), then E1 in the background.
 
 ## Usage to date
 
-- cash_usd = 0. Claude subject runs 0, single calls 0, review runs 0. Local model calls 0.
+- cash_usd = 0. Claude subject runs 0, single calls 0, review runs 0.
+- Local model calls in the ledger: 90 (dry runs and the planning benchmark; no study data yet).
 
 ## Needs Raj
 
-1. **Claude backend (blocks E2 in G8, and headless review).** This cloud container sets `ANTHROPIC_BASE_URL` and `CLAUDE_CODE_USE_CCR_V2`, so the billing guard refuses Claude children. To run E2, start a session on a machine where `env | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_)'` prints nothing and `claude` is logged in to the Max plan.
-2. **E2 runs on your machine.** E2 needs the `claude` CLI as a subject with a clean billing guard; docs/E2_RUNBOOK.md (being written) will give the exact commands.
+1. **Claude backend (blocks E2 in G8, and headless review).** This cloud container sets `ANTHROPIC_BASE_URL` and `CLAUDE_CODE_USE_CCR_V2`, so the billing guard refuses Claude children. To run E2, use a machine where `env | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_)'` prints nothing and `claude` is logged in to the Max plan, then follow docs/E2_RUNBOOK.md (being written).
+2. **Model licenses (confirm, not blocking).** Llama-3.2-3B-Instruct is under the Llama 3.2 Community License (its acceptable-use policy file is gated and could not be read here) and Qwen2.5-3B-Instruct under the Qwen Research License (non-commercial research and evaluation). This project uses both only for research evaluation and redistributes no weights (D-035). If you do not accept either license, say so and that family's data is dropped and recorded in CORRECTIONS.md.
 
 ## Blocked
 
