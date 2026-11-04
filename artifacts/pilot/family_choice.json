@@ -1,0 +1,167 @@
+{
+  "chosen": [
+    "smollm",
+    "granite"
+  ],
+  "command": "python -m halflife.pilot --dir artifacts/pilot --templates unit-converter grade-book ini-merger",
+  "created": "2026-11-04T17:10:20Z",
+  "exploratory": true,
+  "families": [
+    {
+      "acted": 12,
+      "acted_share": {
+        "hi": 1.0,
+        "k": 12,
+        "level": 0.95,
+        "lo": 0.757505993345,
+        "method": "wilson",
+        "n": 12,
+        "value": 1.0
+      },
+      "decision_points_reached": 12,
+      "family": "granite",
+      "fully_piloted": true,
+      "median_step_wall_s": 12.7225,
+      "models": [
+        "granite-3.3-2b-instruct-q4km"
+      ],
+      "qualifies": true,
+      "reach_share": {
+        "hi": 1.0,
+        "k": 3,
+        "level": 0.95,
+        "lo": 0.438502968245,
+        "method": "wilson",
+        "n": 3,
+        "value": 1.0
+      },
+      "reached_first_dp": 3,
+      "sessions": 3,
+      "step_calls": 114,
+      "templates_piloted": [
+        "grade-book",
+        "ini-merger",
+        "unit-converter"
+      ]
+    },
+    {
+      "acted": 4,
+      "acted_share": {
+        "hi": 1.0,
+        "k": 4,
+        "level": 0.95,
+        "lo": 0.510109163545,
+        "method": "wilson",
+        "n": 4,
+        "value": 1.0
+      },
+      "decision_points_reached": 4,
+      "family": "phi",
+      "fully_piloted": false,
+      "median_step_wall_s": 36.118,
+      "models": [
+        "phi-3.5-mini-instruct-q4km"
+      ],
+      "qualifies": false,
+      "reach_share": {
+        "hi": 1.0,
+        "k": 1,
+        "level": 0.95,
+        "lo": 0.206549314377,
+        "method": "wilson",
+        "n": 1,
+        "value": 1.0
+      },
+      "reached_first_dp": 1,
+      "sessions": 1,
+      "step_calls": 87,
+      "templates_piloted": [
+        "unit-converter"
+      ]
+    },
+    {
+      "acted": 12,
+      "acted_share": {
+        "hi": 1.0,
+        "k": 12,
+        "level": 0.95,
+        "lo": 0.757505993345,
+        "method": "wilson",
+        "n": 12,
+        "value": 1.0
+      },
+      "decision_points_reached": 12,
+      "family": "qwen",
+      "fully_piloted": true,
+      "median_step_wall_s": 13.331,
+      "models": [
+        "qwen2.5-3b-instruct-q4km"
+      ],
+      "qualifies": true,
+      "reach_share": {
+        "hi": 1.0,
+        "k": 3,
+        "level": 0.95,
+        "lo": 0.438502968245,
+        "method": "wilson",
+        "n": 3,
+        "value": 1.0
+      },
+      "reached_first_dp": 3,
+      "sessions": 3,
+      "step_calls": 111,
+      "templates_piloted": [
+        "grade-book",
+        "ini-merger",
+        "unit-converter"
+      ]
+    },
+    {
+      "acted": 9,
+      "acted_share": {
+        "hi": 0.911058331606,
+        "k": 9,
+        "level": 0.95,
+        "lo": 0.467694665066,
+        "method": "wilson",
+        "n": 12,
+        "value": 0.75
+      },
+      "decision_points_reached": 12,
+      "family": "smollm",
+      "fully_piloted": true,
+      "median_step_wall_s": 8.88,
+      "models": [
+        "smollm2-1.7b-instruct-q4km"
+      ],
+      "qualifies": true,
+      "reach_share": {
+        "hi": 1.0,
+        "k": 3,
+        "level": 0.95,
+        "lo": 0.438502968245,
+        "method": "wilson",
+        "n": 3,
+        "value": 1.0
+      },
+      "reached_first_dp": 3,
+      "sessions": 3,
+      "step_calls": 65,
+      "templates_piloted": [
+        "grade-book",
+        "ini-merger",
+        "unit-converter"
+      ]
+    }
+  ],
+  "git_sha": "e8903353d21defbf35d9f21fbab2807bbe941beb",
+  "min_acted_share": 0.5,
+  "min_reach_share": 0.8,
+  "n_families": 2,
+  "rule": "DECISIONS.md D-026 as amended by D-042",
+  "templates": [
+    "unit-converter",
+    "grade-book",
+    "ini-merger"
+  ]
+}

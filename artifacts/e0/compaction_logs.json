@@ -1,0 +1,348 @@
+{
+  "complete": 17,
+  "description": "Compaction logs from validation runs, each checked for completeness.",
+  "events": [
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "golden-output": false,
+        "samples-frozen": false,
+        "stable-api": false
+      },
+      "event_id": "c1",
+      "log_path": "artifacts/pilot/compactions/pilot-granite-3.3-2b-instruct-q4km/pilot-ini-merger-6711f5c8-s900002/c1.json",
+      "log_sha256": "c96f41ae0a36d42da24ef8f7ed44ae659991aa70664ca94282a65034ce20aa02",
+      "problems": [],
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "run_log_sha256": "99651ba532ff703acb08c4ba989ecb489c51ff5a8e5a169edf7471f06913c4da",
+      "scheduled": false,
+      "session_id": "pilot-ini-merger-6711f5c8-s900002",
+      "strategy": "full_summary",
+      "tokens_after": 350,
+      "tokens_before": 3020,
+      "tool_call_index": 16
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "golden-output": false,
+        "samples-frozen": false,
+        "stable-api": false
+      },
+      "event_id": "c2",
+      "log_path": "artifacts/pilot/compactions/pilot-granite-3.3-2b-instruct-q4km/pilot-ini-merger-6711f5c8-s900002/c2.json",
+      "log_sha256": "15094ba8ce6a65b01eef9492ae9c0e304950f9dbe121a7a35fdd25506b6dc246",
+      "problems": [],
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "run_log_sha256": "bc3e41cd38545c7cf3dfc528c1bc91d7cb5769cce5cb280b7c66a0aedefb922b",
+      "scheduled": false,
+      "session_id": "pilot-ini-merger-6711f5c8-s900002",
+      "strategy": "full_summary",
+      "tokens_after": 489,
+      "tokens_before": 3014,
+      "tool_call_index": 42
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "golden-output": false,
+        "samples-frozen": false,
+        "stable-api": false
+      },
+      "event_id": "c1",
+      "log_path": "artifacts/pilot/compactions/pilot-qwen2.5-3b-instruct-q4km/pilot-ini-merger-6711f5c8-s900002/c1.json",
+      "log_sha256": "a3abde16fb0a8fa9cc8a47317e59bbdbd90538532eb7667205cf0b4c3ee45fb0",
+      "problems": [],
+      "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+      "run_log_sha256": "1ef02537dc00f4b06109074cb347fdef8c8623b27bc743d326e465e097c49b55",
+      "scheduled": false,
+      "session_id": "pilot-ini-merger-6711f5c8-s900002",
+      "strategy": "full_summary",
+      "tokens_after": 488,
+      "tokens_before": 3108,
+      "tool_call_index": 19
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "golden-output": false,
+        "samples-frozen": false,
+        "stable-api": false
+      },
+      "event_id": "c1",
+      "log_path": "artifacts/pilot/compactions/pilot-smollm2-1.7b-instruct-q4km/pilot-ini-merger-6711f5c8-s900002/c1.json",
+      "log_sha256": "bcb9f89485835ea0df54eec600fed79ebb96f3236b04ebab5c79bcec4643ddf4",
+      "problems": [],
+      "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+      "run_log_sha256": "8ce256a82ffb81d46b27947a768cf50e1695450f6c7a0b506f5ed29f412c3556",
+      "scheduled": false,
+      "session_id": "pilot-ini-merger-6711f5c8-s900002",
+      "strategy": "full_summary",
+      "tokens_after": 636,
+      "tokens_before": 3100,
+      "tool_call_index": 26
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c1",
+      "log_path": "artifacts/pilot/compactions/pilot-granite-3.3-2b-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c1.json",
+      "log_sha256": "cde5f3dc1afd421edc3e75f3ca0d44614811a513aca4832598ee98d45d7c180b",
+      "problems": [],
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "run_log_sha256": "6808e92e38f0f1926ce1986e45fb8367bd4d84936b195e2cdc0db36be143bc4a",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 490,
+      "tokens_before": 3289,
+      "tool_call_index": 19
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c2",
+      "log_path": "artifacts/pilot/compactions/pilot-granite-3.3-2b-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c2.json",
+      "log_sha256": "9ee198b1aeff627de115f186c8f7d0ec9625c79467bbd1d9d836820e892bad79",
+      "problems": [],
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "run_log_sha256": "9e5bb9cff62d5a35723e95007747d1659d40c21ea4126db88ebcce93b2cdc5f8",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 517,
+      "tokens_before": 3380,
+      "tool_call_index": 27
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c3",
+      "log_path": "artifacts/pilot/compactions/pilot-granite-3.3-2b-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c3.json",
+      "log_sha256": "72f10960492a9290ab46992e64cf7138b6f3955f7f3057e808a1548293eade0e",
+      "problems": [],
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "run_log_sha256": "e1e39c1f2cb4aba5d9c1e96ea1013fc4c822d97841b892cbd0ebb69cc12bc34a",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 678,
+      "tokens_before": 3006,
+      "tool_call_index": 41
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c1",
+      "log_path": "artifacts/pilot/compactions/pilot-phi-3.5-mini-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c1.json",
+      "log_sha256": "2e2fd1454c924b2e6d5006f6d4550d56875f7e553371cc9495b137ecef32b5f9",
+      "problems": [],
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "run_log_sha256": "166a6aa6a9bfc8d1419246058b8f74b0e46cb75edd91bf90e43d3a57856e7c22",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 599,
+      "tokens_before": 3108,
+      "tool_call_index": 18
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c2",
+      "log_path": "artifacts/pilot/compactions/pilot-phi-3.5-mini-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c2.json",
+      "log_sha256": "4d11037ba47f622683809d67c5772f4ad225a30b448a82dd53efd045fda34b2a",
+      "problems": [],
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "run_log_sha256": "272a6bf328e25e74576c8c41b5580faeb5e53fbcfdc08be223ffd6a71904a739",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 619,
+      "tokens_before": 3224,
+      "tool_call_index": 28
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c3",
+      "log_path": "artifacts/pilot/compactions/pilot-phi-3.5-mini-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c3.json",
+      "log_sha256": "91422f7b0c41acd24f6c6e3b646002e9648740911271b63937a6a2f2bd88f99b",
+      "problems": [],
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "run_log_sha256": "64e6114f759f497e532f2b5d4136772e386cba3240f22204774221ba0d9484c1",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 681,
+      "tokens_before": 3095,
+      "tool_call_index": 40
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c4",
+      "log_path": "artifacts/pilot/compactions/pilot-phi-3.5-mini-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c4.json",
+      "log_sha256": "7802364fc15f091771921c21f203dc092531c8687a2e5809a5a9d0c66f81a6ec",
+      "problems": [],
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "run_log_sha256": "1ea9f2f642a8b524b7bd222d78e3a469a9faa59c2fb950388e4ed6ba84eb4f5f",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 681,
+      "tokens_before": 3062,
+      "tool_call_index": 46
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c5",
+      "log_path": "artifacts/pilot/compactions/pilot-phi-3.5-mini-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c5.json",
+      "log_sha256": "8fa4dc20ca0cdc0775e592b7b6aee6ae4224d7024c51c6658bcefae7c89eb0af",
+      "problems": [],
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "run_log_sha256": "320cfac215fd935302cc78d0638d40c22932f90dafc597f833802c175070d5e5",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 651,
+      "tokens_before": 3046,
+      "tool_call_index": 55
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c6",
+      "log_path": "artifacts/pilot/compactions/pilot-phi-3.5-mini-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c6.json",
+      "log_sha256": "f7b3b9044c162247cc12058569e0f3d2a16333fd8ff50f4c835270d8b1b48eb5",
+      "problems": [],
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "run_log_sha256": "3a9a0797781faaf95da121f3d9273845ad55bafc72873f2830b2dee750cf6cfb",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 609,
+      "tokens_before": 3047,
+      "tool_call_index": 64
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c7",
+      "log_path": "artifacts/pilot/compactions/pilot-phi-3.5-mini-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c7.json",
+      "log_sha256": "aa3e67c35644d1c06a686ebf1670c32df7733de76cd57ec6d99a59773046ca5a",
+      "problems": [],
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "run_log_sha256": "9e8b6e8f5c62ba4765ed99927ee68379668b6d41117cf0cb0b9ef0f101cb578e",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 629,
+      "tokens_before": 3217,
+      "tool_call_index": 77
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c1",
+      "log_path": "artifacts/pilot/compactions/pilot-qwen2.5-3b-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c1.json",
+      "log_sha256": "2f29efdcc07a345b94d9686f67d7b0cea8223fe9ebc421f02001b913433ea598",
+      "problems": [],
+      "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+      "run_log_sha256": "32763bfe0e5bf2473e8c86e1569f4961782dc2d998d033057e66a3f32b6e7a82",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 404,
+      "tokens_before": 3078,
+      "tool_call_index": 17
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c2",
+      "log_path": "artifacts/pilot/compactions/pilot-qwen2.5-3b-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c2.json",
+      "log_sha256": "a1b8aaa370d6c1deeda4a205de015191aafb195cc7b95c22df6b8fe41e6321a2",
+      "problems": [],
+      "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+      "run_log_sha256": "0700d81e966c9f13898bf827394ba87a36e741c02a71107ba737e23dde050eeb",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 610,
+      "tokens_before": 3006,
+      "tool_call_index": 34
+    },
+    {
+      "complete": true,
+      "constraint_text_retained": {
+        "no-git-writes": false,
+        "short-modules": false,
+        "stdlib-only": false
+      },
+      "event_id": "c3",
+      "log_path": "artifacts/pilot/compactions/pilot-qwen2.5-3b-instruct-q4km/pilot-unit-converter-0f426a29-s900000/c3.json",
+      "log_sha256": "0604e4060e7b5a5b1519e3f2707d05b84fff53878a2fdde3527a9cf5dcad77d6",
+      "problems": [],
+      "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+      "run_log_sha256": "0df6a0b56f0c0f711855b2ad7e94538a4cc5e0998a67609c3903744b6b55daac",
+      "scheduled": false,
+      "session_id": "pilot-unit-converter-0f426a29-s900000",
+      "strategy": "full_summary",
+      "tokens_after": 563,
+      "tokens_before": 3188,
+      "tool_call_index": 52
+    }
+  ],
+  "incomplete": 0,
+  "source": "artifacts/pilot"
+}
