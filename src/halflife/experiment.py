@@ -27,6 +27,7 @@ import json
 import random
 import shutil
 import subprocess
+import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -331,3 +332,256 @@ def e0_validation(
         "events": len(checked),
         "incomplete": logs["incomplete"],
     }
+
+
+# --------------------------------------------------------------------------- command line
+
+
+def _now() -> str:
+    return dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _subject_python_version() -> str:
+    from halflife.sandbox import subject_bin
+
+    python = subject_bin() / "python"
+    proc = subprocess.run(
+        [str(python), "-c", "import sys; print(sys.version.split()[0])"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return proc.stdout.strip() or "unknown"
+
+
+def check_plans(
+    plans: Sequence[SessionPlan], templates: Mapping[str, bench.LoadedTemplate]
+) -> list[str]:
+    """Problems that make plans unsafe to run: unknown templates or changed template files."""
+    problems = []
+    for plan in plans:
+        item = templates.get(plan.template_id)
+        if item is None:
+            problems.append(f"{plan.session_id}: unknown template {plan.template_id}")
+        elif item.sha256 != plan.template_sha256:
+            problems.append(
+                f"{plan.session_id}: template {plan.template_id} changed since planning"
+            )
+    return problems
+
+
+def cmd_plan(design_path: Path, out: Path) -> int:
+    """Write the plans of a design file as JSON lines."""
+    from halflife.runner import write_plans
+
+    design = load_design(design_path)
+    plans = make_plans(design, bench.load_all())
+    write_plans(out, plans)
+    print(f"wrote {len(plans)} plans for {design.experiment} to {out}")
+    return 0
+
+
+def cmd_run(args: Any, root: Path) -> int:
+    """Run plans with a pinned local model; resumable; writes runs/<run_id>/."""
+    import os
+
+    from halflife import models as models_mod
+    from halflife.agent import AgentSettings
+    from halflife.client import CapExceeded, Client, ModelCallsDisabled
+    from halflife.detect import detect_all
+    from halflife.llm import ClientModel
+    from halflife.runner import RunContext, load_plans, run_session
+    from halflife.sandbox import detect_method
+
+    plans = load_plans(args.plans)
+    if args.index is not None:
+        plans = plans[args.index : args.index + 1]
+    if args.limit is not None:
+        plans = plans[: args.limit]
+    templates = {t.id: t for t in bench.load_all()}
+    problems = check_plans(plans, templates)
+    if problems:
+        for problem in problems:
+            print(f"refusing: {problem}")
+        return 2
+    run_dir = root / args.out_root / args.run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    pid_file = run_dir / "pid"
+    pid_file.write_text(f"{os.getpid()}\n", encoding="utf-8")
+    spec = models_mod.get_spec(args.model)
+    settings = AgentSettings(
+        temperature=args.temperature,
+        max_step_tokens=args.max_step_tokens,
+        family=spec.family,
+        model=spec.key,
+    )
+    record: dict[str, Any] = {
+        "run_id": args.run_id,
+        "plans": args.plans.as_posix(),
+        "plans_sha256": _sha256(args.plans),
+        "model": spec.to_dict(),
+        "n_ctx": args.n_ctx,
+        "settings": {
+            "temperature": settings.temperature,
+            "max_step_tokens": settings.max_step_tokens,
+        },
+        "prereg": args.prereg,
+        "git_sha": _git_sha(root),
+        "sandbox_method": detect_method(),
+        "subject_python": _subject_python_version(),
+        "command": " ".join(sys.argv),
+        "started": _now(),
+        "cpu_count": os.cpu_count(),
+    }
+    with (run_dir / "invocations.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True) + "\n")
+    (run_dir / "run.json").write_text(
+        json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    backend = models_mod.load_backend(spec.key, n_ctx=args.n_ctx)
+    experiment = plans[0].experiment if plans else "dev"
+    client = Client(
+        backend,
+        ledger_path=root / "artifacts" / "usage" / "ledger.jsonl",
+        cache_dir=root / "runs" / "cache",
+        run_id=args.run_id,
+        experiment=experiment,
+        budget_path=root / "budget.toml",
+    )
+    model = ClientModel(client)
+    ctx = RunContext(
+        run_id=args.run_id,
+        family=spec.family,
+        model=spec.key,
+        prereg=args.prereg,
+        settings=settings,
+    )
+    progress = run_dir / "progress.jsonl"
+    status = 0
+    for plan in plans:
+        model.session_id = plan.session_id
+        start = dt.datetime.now(dt.UTC)
+        try:
+            result = run_session(
+                plan,
+                templates[plan.template_id].template,
+                model,
+                detect_all,
+                ctx,
+                root / args.out_root,
+            )
+        except (CapExceeded, ModelCallsDisabled) as exc:
+            print(f"stopping: {type(exc).__name__}: {exc}")
+            status = 3
+            break
+        line = {
+            "session_id": plan.session_id,
+            "ended_reason": result["summary"]["ended_reason"],
+            "tool_calls": result["summary"]["tool_calls"],
+            "violations": result["session"]["n_violations"],
+            "opportunities": len(result["opportunities"]),
+            "wall_s": round((dt.datetime.now(dt.UTC) - start).total_seconds(), 1),
+            "finished": _now(),
+        }
+        with progress.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(line, sort_keys=True) + "\n")
+        print(json.dumps(line, sort_keys=True), flush=True)
+    record["finished"] = _now()
+    record["status"] = status
+    (run_dir / "run.json").write_text(
+        json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    pid_file.unlink(missing_ok=True)
+    return status
+
+
+def cmd_bank(args: Any, root: Path) -> int:
+    """Bank finished runs into an artifact directory."""
+    run_dirs = [root / p for p in args.runs]
+    models = []
+    for run_dir in run_dirs:
+        record_path = run_dir / "run.json"
+        if record_path.is_file():
+            record = json.loads(record_path.read_text(encoding="utf-8"))
+            models.append(
+                {
+                    "run_id": record["run_id"],
+                    **{
+                        k: record["model"].get(k)
+                        for k in (
+                            "key",
+                            "family",
+                            "repo",
+                            "revision",
+                            "filename",
+                            "sha256",
+                            "quantization",
+                            "license",
+                        )
+                    },
+                }
+            )
+    provenance = bank_runs(
+        run_dirs,
+        root / args.out,
+        root,
+        experiment=args.experiment,
+        prereg=args.prereg,
+        design_path=root / args.design if args.design else None,
+        models=models,
+        command=" ".join(sys.argv),
+    )
+    counts = f"{provenance['n_sessions']} sessions, {provenance['n_opportunities']} opportunities"
+    print(f"banked {counts} into {args.out}")
+    return 0
+
+
+def cmd_e0_validate(args: Any, root: Path) -> int:
+    """Write the G5 probe-leakage and compaction-log artifacts from a banked experiment."""
+    ids = {t.id: [c.id for c in t.template.constraints] for t in bench.load_all()}
+    summary = e0_validation(root / args.banked, root / "artifacts" / "e0", root, ids)
+    print(json.dumps(summary, sort_keys=True))
+    return 0 if summary["leaks"] == 0 and summary["incomplete"] == 0 else 1
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """``python -m halflife.experiment {plan,run,bank,e0-validate}``."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="python -m halflife.experiment")
+    sub = parser.add_subparsers(dest="command", required=True)
+    p_plan = sub.add_parser("plan", help="write the plans of a design file")
+    p_plan.add_argument("--design", type=Path, required=True)
+    p_plan.add_argument("--out", type=Path, required=True)
+    p_run = sub.add_parser("run", help="run plans with a pinned local model (resumable)")
+    p_run.add_argument("--plans", type=Path, required=True)
+    p_run.add_argument("--run-id", required=True)
+    p_run.add_argument("--model", required=True, help="model registry key")
+    p_run.add_argument("--n-ctx", type=int, default=8192)
+    p_run.add_argument("--temperature", type=float, default=0.7)
+    p_run.add_argument("--max-step-tokens", type=int, default=384)
+    p_run.add_argument("--prereg", default=None)
+    p_run.add_argument("--limit", type=int, default=None)
+    p_run.add_argument("--index", type=int, default=None, help="run only the plan at this index")
+    p_run.add_argument("--out-root", default="runs")
+    p_bank = sub.add_parser("bank", help="bank finished runs into artifacts")
+    p_bank.add_argument("--experiment", required=True)
+    p_bank.add_argument("--runs", nargs="+", required=True)
+    p_bank.add_argument("--out", required=True)
+    p_bank.add_argument("--prereg", default=None)
+    p_bank.add_argument("--design", default=None)
+    p_val = sub.add_parser("e0-validate", help="probe leakage and compaction logs from banked runs")
+    p_val.add_argument("--banked", required=True)
+    args = parser.parse_args(argv)
+    root = Path(__file__).resolve().parents[2]
+    if args.command == "plan":
+        return cmd_plan(args.design, args.out)
+    if args.command == "run":
+        return cmd_run(args, root)
+    if args.command == "bank":
+        return cmd_bank(args, root)
+    return cmd_e0_validate(args, root)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -13,7 +13,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Local open-weight inference (CPU wheels from the llama-cpp-python index).
-local = ["llama-cpp-python>=0.3.16"]
+local = ["llama-cpp-python>=0.3.16", "jinja2>=3.1"]
 
 [project.scripts]
 halflife-doctor = "halflife.doctor:main"

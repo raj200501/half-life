@@ -227,6 +227,7 @@ dependencies = [
 
 [package.optional-dependencies]
 local = [
+    { name = "jinja2" },
     { name = "llama-cpp-python" },
 ]
 
@@ -241,6 +242,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "jinja2", marker = "extra == 'local'", specifier = ">=3.1" },
     { name = "llama-cpp-python", marker = "extra == 'local'", specifier = ">=0.3.16", index = "https://abetlen.github.io/llama-cpp-python/whl/cpu" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pyyaml", specifier = ">=6.0" },
