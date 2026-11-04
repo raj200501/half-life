@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/queue-worker.log.json",
+  "action_log_sha256": "91341675436331859c695511cdf5e83ed32074c8e580c242869ba147f8936a68",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 44,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "queue-worker",
+  "template_sha256": "fe09fcc6d7f167d72d32349797e2800f556d25812e70712b8d4aaee2f45a5b77",
+  "violations": 0
+}

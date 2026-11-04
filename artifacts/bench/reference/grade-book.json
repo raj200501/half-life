@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/grade-book.log.json",
+  "action_log_sha256": "9634d517715a3d2f5de4c4c04f75e874989fdff9fed2abe2e3af153ad40fe08e",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 38,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "grade-book",
+  "template_sha256": "eaf3d44bed34d76c66f6a153ea68085b50b129ac2b650912cfb1e7479e7e644d",
+  "violations": 0
+}

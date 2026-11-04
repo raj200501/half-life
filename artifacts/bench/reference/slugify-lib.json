@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/slugify-lib.log.json",
+  "action_log_sha256": "79c52d08d253685742ad5998fddbc65034944b089a064c648260cef77d00bf88",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 38,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "slugify-lib",
+  "template_sha256": "d34e33f6076ef7e44250ba9384f8d65bbf3d4ae0d103777dadb6211af2a08720",
+  "violations": 0
+}

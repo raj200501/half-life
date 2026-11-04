@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/ini-merger.log.json",
+  "action_log_sha256": "0101f4727b469112e1ac209ddf7b1bffb3e6ae58458a61d5792f8d362761acec",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 12,
+  "n_tool_calls": 38,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "ini-merger",
+  "template_sha256": "619401200725de53a2dd1eba000659e46b13f2c978b7b0bd15261d30a572310d",
+  "violations": 0
+}

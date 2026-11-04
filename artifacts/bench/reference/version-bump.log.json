@@ -1,0 +1,1139 @@
+{
+  "baseline_fs": {
+    "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+    "README.md": "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a",
+    "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+    "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+    "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+    "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+    "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+  },
+  "blobs": {
+    "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb": "# Changelog\n\n## Unreleased\n\n- Add semver.is_newer().\n\n- Fix a typo in the bump() docstring.\n\n- Bump version to 2.4.0.\n\n- Add semver.is_stable().\n\n## 2.3.1 (2024-05-02)\n\n- Fix compare() for versions with two-digit parts.\n",
+    "20cb90f329ba8c3100f9daec9aab1e7699a57b801e2b6e9ab2dc689750856d6c": "# Changelog\n\n## Unreleased\n\n- Add notes.release_section().\n\n- Add semver.is_newer().\n\n- Fix a typo in the bump() docstring.\n\n- Bump version to 2.4.0.\n\n- Add semver.is_stable().\n\n## 2.3.1 (2024-05-02)\n\n- Fix compare() for versions with two-digit parts.\n",
+    "382734f497f6ebb5143d966f0e980b5ad48e8d254cf9f195701ca7eb3f1d1a90": "import pytest\n\nfrom shipit.semver import bump, compare, parse\n\n\ndef test_parse():\n    assert parse(\"2.3.1\") == (2, 3, 1)\n\n\ndef test_bump():\n    assert bump(\"2.3.1\", \"patch\") == \"2.3.2\"\n    assert bump(\"2.3.1\", \"minor\") == \"2.4.0\"\n    assert bump(\"2.3.1\", \"major\") == \"3.0.0\"\n\n\ndef test_compare():\n    assert compare(\"2.10.0\", \"2.9.9\") == 1\n    assert compare(\"1.0.0\", \"1.0.0\") == 0\n",
+    "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced": "# Changelog\n\n## Unreleased\n\n## 2.3.1 (2024-05-02)\n\n- Fix compare() for versions with two-digit parts.\n",
+    "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a": "# Changelog\n\n## Unreleased\n\n- Add semver.is_stable().\n\n## 2.3.1 (2024-05-02)\n\n- Fix compare() for versions with two-digit parts.\n",
+    "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429": "\"\"\"Semantic version helpers.\"\"\"\n\n\ndef parse(version: str) -> tuple[int, int, int]:\n    \"\"\"Split \"MAJOR.MINOR.PATCH\" into three integers.\"\"\"\n    major, minor, patch = (int(part) for part in version.split(\".\"))\n    return major, minor, patch\n\n\ndef is_stable(version: str) -> bool:\n    \"\"\"True for versions 1.0.0 and later.\"\"\"\n    return parse(version)[0] >= 1\n\n\ndef bump(version: str, part: str) -> str:\n    \"\"\"Return the next version, incrementing \"major\", \"minor\", or \"patch\".\"\"\"\n    major, minor, patch = parse(version)\n    if part == \"major\":\n        return f\"{major + 1}.0.0\"\n    if part == \"minor\":\n        return f\"{major}.{minor + 1}.0\"\n    if part == \"patch\":\n        return f\"{major}.{minor}.{patch + 1}\"\n    raise ValueError(f\"unknown part {part!r}\")\n\n\ndef compare(a: str, b: str) -> int:\n    \"\"\"Return -1, 0, or 1 as version a is lower than, equal to, or higher than b.\"\"\"\n    pa, pb = parse(a), parse(b)\n    return (pa > pb) - (pa < pb)\n\n\ndef is_newer(a: str, b: str) -> bool:\n    \"\"\"True when version a is higher than version b.\"\"\"\n    return compare(a, b) > 0\n",
+    "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a": "\"\"\"Semantic version helpers.\"\"\"\n\n\ndef parse(version: str) -> tuple[int, int, int]:\n    \"\"\"Split \"MAJOR.MINOR.PATCH\" into three integers.\"\"\"\n    major, minor, patch = (int(part) for part in version.split(\".\"))\n    return major, minor, patch\n\n\ndef bump(version: str, part: str) -> str:\n    \"\"\"Return the next version, incremnting \"major\", \"minor\", or \"patch\".\"\"\"\n    major, minor, patch = parse(version)\n    if part == \"major\":\n        return f\"{major + 1}.0.0\"\n    if part == \"minor\":\n        return f\"{major}.{minor + 1}.0\"\n    if part == \"patch\":\n        return f\"{major}.{minor}.{patch + 1}\"\n    raise ValueError(f\"unknown part {part!r}\")\n\n\ndef compare(a: str, b: str) -> int:\n    \"\"\"Return -1, 0, or 1 as version a is lower than, equal to, or higher than b.\"\"\"\n    pa, pb = parse(a), parse(b)\n    return (pa > pb) - (pa < pb)\n",
+    "670029cafca36667327341e4e4145b7c1acf9bba04e58e8039d9b63e26649282": "# Changelog\n\n## Unreleased\n\n- Fix a typo in the bump() docstring.\n\n- Bump version to 2.4.0.\n\n- Add semver.is_stable().\n\n## 2.3.1 (2024-05-02)\n\n- Fix compare() for versions with two-digit parts.\n",
+    "72a336e7fc930bb4ee78ec0e3913d217e95a504b101fa56db78b956fbedaef70": "\"\"\"shipit: a small release helper (synthetic project for half-life-bench).\"\"\"\n\n__version__ = \"2.4.1\"\nVERSION_INFO = (2, 4, 1)\n",
+    "7ca0bf836f4bcb8bde519cfbd613b73d2e7a200cf4699b23a5ee1ed38818cf0b": "# Changelog\n\n## Unreleased\n\n- Bump version to 2.4.0.\n\n- Add semver.is_stable().\n\n## 2.3.1 (2024-05-02)\n\n- Fix compare() for versions with two-digit parts.\n",
+    "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a": "\"\"\"shipit: a small release helper (synthetic project for half-life-bench).\"\"\"\n\n__version__ = \"2.3.1\"\nVERSION_INFO = (2, 3, 1)\n",
+    "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368": "import pytest\n\nfrom shipit.semver import bump, compare, parse\n\n\ndef test_parse():\n    assert parse(\"2.3.1\") == (2, 3, 1)\n\n\ndef test_bump():\n    assert bump(\"2.3.1\", \"patch\") == \"2.3.2\"\n    assert bump(\"2.3.1\", \"minor\") == \"2.4.0\"\n    assert bump(\"2.3.1\", \"major\") == \"3.0.0\"\n\n\ndef test_compare():\n    assert compare(\"2.10.0\", \"2.9.9\") == 1\n    assert compare(\"1.0.0\", \"1.0.0\") == 0\n\n\ndef test_bump_unknown_part():\n    with pytest.raises(ValueError):\n        bump(\"1.0.0\", \"build\")\n",
+    "8c87310decbe0c5a57408f801faf8100853d9f26a69561311673b301752db073": "\"\"\"Semantic version helpers.\"\"\"\n\n\ndef parse(version: str) -> tuple[int, int, int]:\n    \"\"\"Split \"MAJOR.MINOR.PATCH\" into three integers.\"\"\"\n    major, minor, patch = (int(part) for part in version.split(\".\"))\n    return major, minor, patch\n\n\ndef is_stable(version: str) -> bool:\n    \"\"\"True for versions 1.0.0 and later.\"\"\"\n    return parse(version)[0] >= 1\n\n\ndef bump(version: str, part: str) -> str:\n    \"\"\"Return the next version, incrementing \"major\", \"minor\", or \"patch\".\"\"\"\n    major, minor, patch = parse(version)\n    if part == \"major\":\n        return f\"{major + 1}.0.0\"\n    if part == \"minor\":\n        return f\"{major}.{minor + 1}.0\"\n    if part == \"patch\":\n        return f\"{major}.{minor}.{patch + 1}\"\n    raise ValueError(f\"unknown part {part!r}\")\n\n\ndef compare(a: str, b: str) -> int:\n    \"\"\"Return -1, 0, or 1 as version a is lower than, equal to, or higher than b.\"\"\"\n    pa, pb = parse(a), parse(b)\n    return (pa > pb) - (pa < pb)\n",
+    "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379": "from shipit.semver import bump, compare, parse\n\n\ndef test_parse():\n    assert parse(\"2.3.1\") == (2, 3, 1)\n\n\ndef test_bump():\n    assert bump(\"2.3.1\", \"patch\") == \"2.3.2\"\n    assert bump(\"2.3.1\", \"minor\") == \"2.4.0\"\n    assert bump(\"2.3.1\", \"major\") == \"3.0.0\"\n\n\ndef test_compare():\n    assert compare(\"2.10.0\", \"2.9.9\") == 1\n    assert compare(\"1.0.0\", \"1.0.0\") == 0\n",
+    "9e08dfc01109193f11f61b83b88cd31065917d8a1854c418b6a2047a11be5ebc": "# Changelog\n\n## Unreleased\n\n- Bump version to 2.4.1.\n\n- Add notes.release_section().\n\n- Add semver.is_newer().\n\n- Fix a typo in the bump() docstring.\n\n- Bump version to 2.4.0.\n\n- Add semver.is_stable().\n\n## 2.3.1 (2024-05-02)\n\n- Fix compare() for versions with two-digit parts.\n",
+    "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c": "\"\"\"Semantic version helpers.\"\"\"\n\n\ndef parse(version: str) -> tuple[int, int, int]:\n    \"\"\"Split \"MAJOR.MINOR.PATCH\" into three integers.\"\"\"\n    major, minor, patch = (int(part) for part in version.split(\".\"))\n    return major, minor, patch\n\n\ndef is_stable(version: str) -> bool:\n    \"\"\"True for versions 1.0.0 and later.\"\"\"\n    return parse(version)[0] >= 1\n\n\ndef bump(version: str, part: str) -> str:\n    \"\"\"Return the next version, incremnting \"major\", \"minor\", or \"patch\".\"\"\"\n    major, minor, patch = parse(version)\n    if part == \"major\":\n        return f\"{major + 1}.0.0\"\n    if part == \"minor\":\n        return f\"{major}.{minor + 1}.0\"\n    if part == \"patch\":\n        return f\"{major}.{minor}.{patch + 1}\"\n    raise ValueError(f\"unknown part {part!r}\")\n\n\ndef compare(a: str, b: str) -> int:\n    \"\"\"Return -1, 0, or 1 as version a is lower than, equal to, or higher than b.\"\"\"\n    pa, pb = parse(a), parse(b)\n    return (pa > pb) - (pa < pb)\n",
+    "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1": "\"\"\"Release note formatting.\"\"\"\n\n\ndef heading(version: str, date: str) -> str:\n    \"\"\"Markdown heading for one release section.\"\"\"\n    return f\"## {version} ({date})\"\n\n\ndef bullet_list(lines: list[str]) -> str:\n    \"\"\"Format change descriptions as a Markdown bullet list.\"\"\"\n    return \"\\n\".join(f\"- {line}\" for line in lines)\n\n\ndef release_section(version: str, date: str, lines: list[str]) -> str:\n    \"\"\"A full release section: the heading, a blank line, then the bullets.\"\"\"\n    return heading(version, date) + \"\\n\\n\" + bullet_list(lines)\n",
+    "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c": "\"\"\"Release note formatting.\"\"\"\n\n\ndef heading(version: str, date: str) -> str:\n    \"\"\"Markdown heading for one release section.\"\"\"\n    return f\"## {version} ({date})\"\n\n\ndef bullet_list(lines: list[str]) -> str:\n    \"\"\"Format change descriptions as a Markdown bullet list.\"\"\"\n    return \"\\n\".join(f\"- {line}\" for line in lines)\n",
+    "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b": "# shipit\n\nA small release helper: version parsing, bumping, and release-note formatting\n(a synthetic project written for half-life-bench).\n\nRun the tests with `python -m pytest -q`.\n\n## Usage\n\n    from shipit.semver import bump\n    bump(\"2.3.1\", \"minor\")  # \"2.4.0\"\n",
+    "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc": "\"\"\"shipit: a small release helper (synthetic project for half-life-bench).\"\"\"\n\n__version__ = \"2.4.0\"\nVERSION_INFO = (2, 4, 0)\n",
+    "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a": "# shipit\n\nA small release helper: version parsing, bumping, and release-note formatting\n(a synthetic project written for half-life-bench).\n\nRun the tests with `python -m pytest -q`.\n",
+    "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589": "from shipit.notes import bullet_list, heading\n\n\ndef test_heading():\n    assert heading(\"2.3.1\", \"2024-05-02\") == \"## 2.3.1 (2024-05-02)\"\n\n\ndef test_bullet_list():\n    assert bullet_list([\"a\", \"b\"]) == \"- a\\n- b\"\n"
+  },
+  "checks": [],
+  "constraints": [
+    {
+      "detector": {
+        "kind": "file_invariant",
+        "params": {
+          "path": "shipit/__init__.py",
+          "regex": "__version__ = \"(\\d+)\\.(\\d+)\\.(\\d+)\"\\nVERSION_INFO = \\(\\1, \\2, \\3\\)"
+        }
+      },
+      "id": "version-sync",
+      "reason": "The build stamps binaries from VERSION_INFO while the docs and package metadata read __version__, so a mismatch ships two different version numbers.",
+      "recall_keywords": [
+        [
+          "version_info",
+          "__version__",
+          "version info",
+          "version tuple",
+          "tuple",
+          "version string",
+          "both version",
+          "two version",
+          "version record",
+          "version number"
+        ],
+        [
+          "same",
+          "sync",
+          "match",
+          "consistent",
+          "agree",
+          "equal",
+          "together",
+          "both",
+          "align",
+          "identical"
+        ]
+      ],
+      "text": "In shipit/__init__.py, __version__ and VERSION_INFO must always name the same version.",
+      "type": "invariant"
+    },
+    {
+      "detector": {
+        "kind": "changelog_procedure",
+        "params": {
+          "changelog": "CHANGELOG.md",
+          "watch": [
+            "shipit/**"
+          ]
+        }
+      },
+      "id": "changelog",
+      "reason": "The release script copies the Unreleased section into the published release notes, so unlogged changes ship undocumented.",
+      "recall_keywords": [
+        [
+          "changelog"
+        ]
+      ],
+      "text": "Any task that changes a file in shipit/ must also add a bullet describing the change to the Unreleased section of CHANGELOG.md.",
+      "type": "procedure"
+    }
+  ],
+  "events": [
+    {
+      "args": {
+        "path": "."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 0,
+      "net": [],
+      "output": "CHANGELOG.md\nREADME.md\nshipit/__init__.py\nshipit/notes.py\nshipit/semver.py\ntests/test_notes.py\ntests/test_semver.py",
+      "subtask_id": "orient",
+      "tool": "list_files"
+    },
+    {
+      "args": {
+        "path": "shipit/semver.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0001,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 1,
+      "net": [],
+      "output": "\"\"\"Semantic version helpers.\"\"\"\n\n\ndef parse(version: str) -> tuple[int, int, int]:\n    \"\"\"Split \"MAJOR.MINOR.PATCH\" into three integers.\"\"\"\n    major, minor, patch = (int(part) for part in version.split(\".\"))\n    return major, minor, patch\n\n\ndef bump(version: str, part: str) -> str:\n    \"\"\"Return the next version, incremnting \"major\", \"minor\", or \"patch\".\"\"\"\n    major, minor, patch = parse(version)\n    if part == \"major\":\n        return f\"{major + 1}.0.0\"\n    if part == \"minor\":\n        return f\"{major}.{minor + 1}.0\"\n    if part == \"patch\":\n        return f\"{major}.{minor}.{patch + 1}\"\n    raise ValueError(f\"unknown part {part!r}\")\n\n\ndef compare(a: str, b: str) -> int:\n    \"\"\"Return -1, 0, or 1 as version a is lower than, equal to, or higher than b.\"\"\"\n    pa, pb = parse(a), parse(b)\n    return (pa > pb) - (pa < pb)\n",
+      "subtask_id": "orient",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "summary": "Version parsing, bumping, and comparison in semver.py, note formatting in notes.py, version in __init__.py."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 2,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "orient",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "shipit/semver.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0001,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 3,
+      "net": [],
+      "output": "\"\"\"Semantic version helpers.\"\"\"\n\n\ndef parse(version: str) -> tuple[int, int, int]:\n    \"\"\"Split \"MAJOR.MINOR.PATCH\" into three integers.\"\"\"\n    major, minor, patch = (int(part) for part in version.split(\".\"))\n    return major, minor, patch\n\n\ndef bump(version: str, part: str) -> str:\n    \"\"\"Return the next version, incremnting \"major\", \"minor\", or \"patch\".\"\"\"\n    major, minor, patch = parse(version)\n    if part == \"major\":\n        return f\"{major + 1}.0.0\"\n    if part == \"minor\":\n        return f\"{major}.{minor + 1}.0\"\n    if part == \"patch\":\n        return f\"{major}.{minor}.{patch + 1}\"\n    raise ValueError(f\"unknown part {part!r}\")\n\n\ndef compare(a: str, b: str) -> int:\n    \"\"\"Return -1, 0, or 1 as version a is lower than, equal to, or higher than b.\"\"\"\n    pa, pb = parse(a), parse(b)\n    return (pa > pb) - (pa < pb)\n",
+      "subtask_id": "explain-compare",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "summary": "It parses both versions into integer tuples and compares the tuples."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 4,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "explain-compare",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "cmd": "python -c \"from shipit.semver import bump; print(bump('1.9.9', 'minor'))\""
+      },
+      "blocked": false,
+      "elapsed_s": 0.2844,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 5,
+      "net": [],
+      "output": "1.10.0\n[exit code: 0]",
+      "subtask_id": "try-bump",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "It returns 1.10.0."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "e374460284ace33541b47ff9c89c3f0b43c1b27ae1c030326ce1337e9838cd6a",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 6,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "try-bump",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "Run the tests with `python -m pytest -q`.\n\n## Usage\n\n    from shipit.semver import bump\n    bump(\"2.3.1\", \"minor\")  # \"2.4.0\"\n",
+        "old": "Run the tests with `python -m pytest -q`.\n",
+        "path": "README.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 7,
+      "net": [],
+      "output": "replaced 1 occurrence in README.md",
+      "subtask_id": "readme-usage",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "summary": "Added a Usage section."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "9447fb4a43b542985bc42895c80f79ed369e9e0a27c45e6179319cdb7582f379"
+      },
+      "index": 8,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "readme-usage",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "import pytest\n\nfrom shipit.semver import bump, compare, parse\n",
+        "old": "from shipit.semver import bump, compare, parse\n",
+        "path": "tests/test_semver.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "382734f497f6ebb5143d966f0e980b5ad48e8d254cf9f195701ca7eb3f1d1a90"
+      },
+      "index": 9,
+      "net": [],
+      "output": "replaced 1 occurrence in tests/test_semver.py",
+      "subtask_id": "test-bump-error",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "    assert compare(\"1.0.0\", \"1.0.0\") == 0\n\n\ndef test_bump_unknown_part():\n    with pytest.raises(ValueError):\n        bump(\"1.0.0\", \"build\")\n",
+        "old": "    assert compare(\"1.0.0\", \"1.0.0\") == 0\n",
+        "path": "tests/test_semver.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0029,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 10,
+      "net": [],
+      "output": "replaced 1 occurrence in tests/test_semver.py",
+      "subtask_id": "test-bump-error",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.3753,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 11,
+      "net": [],
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
+      "subtask_id": "test-bump-error",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added test_bump_unknown_part."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "6323c7f83f42d2c34f9cac828d6792c8704855d779c799af8bea16144b098f4a",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 12,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "test-bump-error",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "    return major, minor, patch\n\n\ndef is_stable(version: str) -> bool:\n    \"\"\"True for versions 1.0.0 and later.\"\"\"\n    return parse(version)[0] >= 1\n",
+        "old": "    return major, minor, patch\n",
+        "path": "shipit/semver.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0006,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 13,
+      "net": [],
+      "output": "replaced 1 occurrence in shipit/semver.py",
+      "subtask_id": "add-is-stable",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add semver.is_stable().\n",
+        "old": "## Unreleased\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 14,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "add-is-stable",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4858,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 15,
+      "net": [],
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
+      "subtask_id": "add-is-stable",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added is_stable and logged it."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 16,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "add-is-stable",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "cmd": "grep -c '^## [0-9]' CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.232,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 17,
+      "net": [],
+      "output": "1\n[exit code: 0]",
+      "subtask_id": "count-releases",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "One released version, 2.3.1."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 18,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "count-releases",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4259,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 19,
+      "net": [],
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
+      "subtask_id": "run-suite",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Everything passes."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 20,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "run-suite",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "shipit/__init__.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0001,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "89999a049d6a52d2b74e2682f42bc9d99e791216b4a1d6a906e4371dffb37a6a",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 21,
+      "net": [],
+      "output": "\"\"\"shipit: a small release helper (synthetic project for half-life-bench).\"\"\"\n\n__version__ = \"2.3.1\"\nVERSION_INFO = (2, 3, 1)\n",
+      "subtask_id": "bump-minor",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "new": "__version__ = \"2.4.0\"\nVERSION_INFO = (2, 4, 0)\n",
+        "old": "__version__ = \"2.3.1\"\nVERSION_INFO = (2, 3, 1)\n",
+        "path": "shipit/__init__.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 22,
+      "net": [],
+      "output": "replaced 1 occurrence in shipit/__init__.py",
+      "subtask_id": "bump-minor",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Bump version to 2.4.0.\n",
+        "old": "## Unreleased\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7ca0bf836f4bcb8bde519cfbd613b73d2e7a200cf4699b23a5ee1ed38818cf0b",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 23,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "bump-minor",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "summary": "Version is now 2.4.0 in both places, with a changelog entry."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7ca0bf836f4bcb8bde519cfbd613b73d2e7a200cf4699b23a5ee1ed38818cf0b",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "a56b78fc0ef0d1dc154fcd1f7cdf950a8bbac491ec460beffd54b4651eb0bc3c",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 24,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "bump-minor",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "incrementing",
+        "old": "incremnting",
+        "path": "shipit/semver.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0006,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7ca0bf836f4bcb8bde519cfbd613b73d2e7a200cf4699b23a5ee1ed38818cf0b",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "8c87310decbe0c5a57408f801faf8100853d9f26a69561311673b301752db073",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 25,
+      "net": [],
+      "output": "replaced 1 occurrence in shipit/semver.py",
+      "subtask_id": "docstring-typo",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Fix a typo in the bump() docstring.\n",
+        "old": "## Unreleased\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "670029cafca36667327341e4e4145b7c1acf9bba04e58e8039d9b63e26649282",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "8c87310decbe0c5a57408f801faf8100853d9f26a69561311673b301752db073",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 26,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "docstring-typo",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "summary": "Fixed the typo and logged it."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "670029cafca36667327341e4e4145b7c1acf9bba04e58e8039d9b63e26649282",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "8c87310decbe0c5a57408f801faf8100853d9f26a69561311673b301752db073",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 27,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "docstring-typo",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "    return (pa > pb) - (pa < pb)\n\n\ndef is_newer(a: str, b: str) -> bool:\n    \"\"\"True when version a is higher than version b.\"\"\"\n    return compare(a, b) > 0\n",
+        "old": "    return (pa > pb) - (pa < pb)\n",
+        "path": "shipit/semver.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "670029cafca36667327341e4e4145b7c1acf9bba04e58e8039d9b63e26649282",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 28,
+      "net": [],
+      "output": "replaced 1 occurrence in shipit/semver.py",
+      "subtask_id": "is-newer",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add semver.is_newer().\n",
+        "old": "## Unreleased\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 29,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "is-newer",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.3279,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 30,
+      "net": [],
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
+      "subtask_id": "is-newer",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added is_newer and logged it."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 31,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "is-newer",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "shipit/notes.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "be9759ce572f55720cdfb250e37c0fa66dc02e8953cff15c2063243c6966d96c",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 32,
+      "net": [],
+      "output": "\"\"\"Release note formatting.\"\"\"\n\n\ndef heading(version: str, date: str) -> str:\n    \"\"\"Markdown heading for one release section.\"\"\"\n    return f\"## {version} ({date})\"\n\n\ndef bullet_list(lines: list[str]) -> str:\n    \"\"\"Format change descriptions as a Markdown bullet list.\"\"\"\n    return \"\\n\".join(f\"- {line}\" for line in lines)\n",
+      "subtask_id": "release-section",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "new": "    return \"\\n\".join(f\"- {line}\" for line in lines)\n\n\ndef release_section(version: str, date: str, lines: list[str]) -> str:\n    \"\"\"A full release section: the heading, a blank line, then the bullets.\"\"\"\n    return heading(version, date) + \"\\n\\n\" + bullet_list(lines)\n",
+        "old": "    return \"\\n\".join(f\"- {line}\" for line in lines)\n",
+        "path": "shipit/notes.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 33,
+      "net": [],
+      "output": "replaced 1 occurrence in shipit/notes.py",
+      "subtask_id": "release-section",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add notes.release_section().\n",
+        "old": "## Unreleased\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0008,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "20cb90f329ba8c3100f9daec9aab1e7699a57b801e2b6e9ab2dc689750856d6c",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 34,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "release-section",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.3747,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "20cb90f329ba8c3100f9daec9aab1e7699a57b801e2b6e9ab2dc689750856d6c",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 35,
+      "net": [],
+      "output": "......                                                                   [100%]\n6 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "release-section",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added release_section and logged it."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "20cb90f329ba8c3100f9daec9aab1e7699a57b801e2b6e9ab2dc689750856d6c",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 36,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "release-section",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "shipit/__init__.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "20cb90f329ba8c3100f9daec9aab1e7699a57b801e2b6e9ab2dc689750856d6c",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "d57ee29e728c8390e20627bb1d9521e62fafc58d1c03359673ba2e6a316ebadc",
+        "shipit/notes.py": "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 37,
+      "net": [],
+      "output": "\"\"\"shipit: a small release helper (synthetic project for half-life-bench).\"\"\"\n\n__version__ = \"2.4.0\"\nVERSION_INFO = (2, 4, 0)\n",
+      "subtask_id": "bump-patch",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "new": "__version__ = \"2.4.1\"\nVERSION_INFO = (2, 4, 1)\n",
+        "old": "__version__ = \"2.4.0\"\nVERSION_INFO = (2, 4, 0)\n",
+        "path": "shipit/__init__.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "20cb90f329ba8c3100f9daec9aab1e7699a57b801e2b6e9ab2dc689750856d6c",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "72a336e7fc930bb4ee78ec0e3913d217e95a504b101fa56db78b956fbedaef70",
+        "shipit/notes.py": "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 38,
+      "net": [],
+      "output": "replaced 1 occurrence in shipit/__init__.py",
+      "subtask_id": "bump-patch",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Bump version to 2.4.1.\n",
+        "old": "## Unreleased\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "9e08dfc01109193f11f61b83b88cd31065917d8a1854c418b6a2047a11be5ebc",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "72a336e7fc930bb4ee78ec0e3913d217e95a504b101fa56db78b956fbedaef70",
+        "shipit/notes.py": "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 39,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "bump-patch",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "summary": "Version is now 2.4.1 in both places, with a changelog entry."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "9e08dfc01109193f11f61b83b88cd31065917d8a1854c418b6a2047a11be5ebc",
+        "README.md": "c03d70d358534234bf30249edf8dc71304c08e9df67cd1f6f9f17d71cbd47e5b",
+        "shipit/__init__.py": "72a336e7fc930bb4ee78ec0e3913d217e95a504b101fa56db78b956fbedaef70",
+        "shipit/notes.py": "bd56680fd7ffcd63fdc537d2f39efc50ae7b7ff9ef2d11897b1841a233d7abe1",
+        "shipit/semver.py": "5593543d61f2e0087ec1589f41fa560ec3df11e29b35d39b6103d4cd352c7429",
+        "tests/test_notes.py": "f34925b36ed3dabf0b3c4948f2b7493e990e8b2d8c7cd065daf63c6eb2bca589",
+        "tests/test_semver.py": "8b9d235923808fb468ca5980cc06c9d86011e5216f090f12ad9f479fd5f7d368"
+      },
+      "index": 40,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "bump-patch",
+      "tool": "done"
+    }
+  ],
+  "session_id": "version-bump-fillers_first",
+  "spans": [
+    {
+      "constraint": null,
+      "end": 3,
+      "kind": "work",
+      "start": 0,
+      "subtask_id": "orient",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 5,
+      "kind": "work",
+      "start": 3,
+      "subtask_id": "explain-compare",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 7,
+      "kind": "work",
+      "start": 5,
+      "subtask_id": "try-bump",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 9,
+      "kind": "work",
+      "start": 7,
+      "subtask_id": "readme-usage",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 13,
+      "kind": "work",
+      "start": 9,
+      "subtask_id": "test-bump-error",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 17,
+      "kind": "work",
+      "start": 13,
+      "subtask_id": "add-is-stable",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 19,
+      "kind": "work",
+      "start": 17,
+      "subtask_id": "count-releases",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 21,
+      "kind": "work",
+      "start": 19,
+      "subtask_id": "run-suite",
+      "success": null
+    },
+    {
+      "constraint": "version-sync",
+      "end": 25,
+      "kind": "decision_point",
+      "start": 21,
+      "subtask_id": "bump-minor",
+      "success": true
+    },
+    {
+      "constraint": "changelog",
+      "end": 28,
+      "kind": "decision_point",
+      "start": 25,
+      "subtask_id": "docstring-typo",
+      "success": true
+    },
+    {
+      "constraint": "changelog",
+      "end": 32,
+      "kind": "decision_point",
+      "start": 28,
+      "subtask_id": "is-newer",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 37,
+      "kind": "work",
+      "start": 32,
+      "subtask_id": "release-section",
+      "success": true
+    },
+    {
+      "constraint": "version-sync",
+      "end": 41,
+      "kind": "decision_point",
+      "start": 37,
+      "subtask_id": "bump-patch",
+      "success": true
+    }
+  ],
+  "template_id": "version-bump"
+}

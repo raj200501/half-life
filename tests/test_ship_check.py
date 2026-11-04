@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -238,6 +239,47 @@ def test_check_detectors_requires_indirect_kinds(tmp_path: Path) -> None:
     assert not ok and "cp" in detail
 
 
+def test_check_detectors_requires_unique_ids_and_booleans(tmp_path: Path) -> None:
+    path = tmp_path / "d.json"
+    cases = _cases(100, 100)
+    path.write_text(json.dumps(_detector_artifact([*cases, dict(cases[0])])), encoding="utf-8")
+    assert sc.check_detectors(path) == (False, "duplicate case_id p0 in seeded cases")
+    cases[150]["predicted"] = None
+    path.write_text(json.dumps(_detector_artifact(cases)), encoding="utf-8")
+    assert sc.check_detectors(path) == (False, "case n50: predicted is not a boolean")
+    cases[150]["predicted"] = False
+    cases[150]["label"] = 0
+    path.write_text(json.dumps(_detector_artifact(cases)), encoding="utf-8")
+    assert sc.check_detectors(path) == (False, "case n50: label is not a boolean")
+
+
+def test_check_detectors_on_the_banked_validation() -> None:
+    """The banked E0 detector validation still passes the hardened check."""
+    banked = REPO_ROOT / "artifacts" / "e0" / "detector_validation.json"
+    if not banked.is_file():
+        pytest.skip("artifacts/e0/detector_validation.json is not banked")
+    ok, detail = sc.check_detectors(banked)
+    assert ok, detail
+
+
+def test_check_leakage_requires_booleans_and_unique_runs(tmp_path: Path) -> None:
+    path = tmp_path / "l.json"
+
+    def check(runs: list[dict[str, Any]], validation_runs: Any, leaks: Any = 0) -> str:
+        data = {"validation_runs": validation_runs, "leaks": leaks, "runs": runs}
+        path.write_text(json.dumps(data), encoding="utf-8")
+        result: str = sc.check_leakage(path)[1]
+        return result
+
+    good = {"run_id": "r", "session_id": "s1", "leaked": False}
+    assert check([good, {**good, "session_id": "s2"}], 2) == "leakage 0/2"
+    assert check([good, dict(good)], 2) == "duplicate probe leakage run r"
+    assert check([{**good, "leaked": None}], 1) == "probe leakage run r: leaked is not a boolean"
+    assert check([{**good, "leaked": "no"}], 1) == "probe leakage run r: leaked is not a boolean"
+    assert check([{"leaked": False}], 1) == "probe leakage run without a run_id"
+    assert check([good], True, False) == "probe leakage artifact inconsistent or empty"
+
+
 def test_check_leakage(tmp_path: Path) -> None:
     path = tmp_path / "l.json"
     runs = [{"run_id": "a", "leaked": False}, {"run_id": "b", "leaked": False}]
@@ -250,10 +292,27 @@ def test_check_leakage(tmp_path: Path) -> None:
     assert not sc.check_leakage(path)[0]
 
 
+COMPLETE_LOG: dict[str, Any] = {
+    "event_id": "c1",
+    "strategy": "full_summary",
+    "tool_call_index": 12,
+    "scheduled": True,
+    "tokens_before": 4000,
+    "tokens_after": 900,
+    "before": [{"role": "system", "content": "s"}, {"role": "user", "content": "rules"}],
+    "after": [{"role": "system", "content": "s"}, {"role": "user", "content": "summary"}],
+    "summary": "Fixed the parser.",
+    "constraint_text_retained": {"protect-tests": False},
+}
+
+
 def test_check_compaction_logs(tmp_path: Path) -> None:
+    # This fixture used to bank "{}" as the log, which passed only because completeness
+    # was checked as presence plus hash; it now banks a complete log.
     log = tmp_path / "artifacts" / "e0" / "c1.json"
     log.parent.mkdir(parents=True)
-    log.write_text("{}", encoding="utf-8")
+    text = json.dumps(COMPLETE_LOG)
+    log.write_text(text, encoding="utf-8")
     event = {
         "run_id": "r",
         "event_id": "c1",
@@ -262,11 +321,11 @@ def test_check_compaction_logs(tmp_path: Path) -> None:
         "tokens_before": 4000,
         "tokens_after": 900,
         "log_path": "artifacts/e0/c1.json",
-        "log_sha256": hashlib.sha256(b"{}").hexdigest(),
+        "log_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
     }
     path = tmp_path / "c.json"
     path.write_text(json.dumps({"events": [event]}), encoding="utf-8")
-    assert sc.check_compaction_logs(path, tmp_path)[0]
+    assert sc.check_compaction_logs(path, tmp_path) == (True, "1 compaction logs complete")
     event["log_sha256"] = "0" * 64
     path.write_text(json.dumps({"events": [event]}), encoding="utf-8")
     assert not sc.check_compaction_logs(path, tmp_path)[0]
@@ -275,6 +334,135 @@ def test_check_compaction_logs(tmp_path: Path) -> None:
     assert "missing strategy" in sc.check_compaction_logs(path, tmp_path)[1]
     path.write_text(json.dumps({"events": []}), encoding="utf-8")
     assert not sc.check_compaction_logs(path, tmp_path)[0]
+
+
+def test_check_compaction_logs_reads_the_log_content(tmp_path: Path) -> None:
+    log = tmp_path / "artifacts" / "e0" / "c1.json"
+    log.parent.mkdir(parents=True)
+    path = tmp_path / "c.json"
+
+    def bank(content: str, **event: Any) -> tuple[bool, str]:
+        log.write_text(content, encoding="utf-8")
+        record = {
+            "run_id": "r",
+            "event_id": "c1",
+            "strategy": "full_summary",
+            "tool_call_index": 12,
+            "tokens_before": 4000,
+            "tokens_after": 900,
+            "log_path": "artifacts/e0/c1.json",
+            "log_sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            **event,
+        }
+        path.write_text(json.dumps({"events": [record]}), encoding="utf-8")
+        result: tuple[bool, str] = sc.check_compaction_logs(path, tmp_path)
+        return result
+
+    assert bank(json.dumps(COMPLETE_LOG))[0]
+    assert "is not valid JSON" in bank("")[1]
+    assert "lacks event_id" in bank("{}")[1]
+    assert "has no summary text" in bank(json.dumps({**COMPLETE_LOG, "summary": None}))[1]
+    sliding = {**COMPLETE_LOG, "strategy": "sliding_window", "summary": None}
+    assert bank(json.dumps(sliding), strategy="sliding_window")[0]
+    assert (
+        "disagrees with its event on tokens_after"
+        in bank(json.dumps(COMPLETE_LOG), tokens_after=901)[1]
+    )
+    assert (
+        "log_path is not a clean path"
+        in bank(json.dumps(COMPLETE_LOG), log_path=str(log.resolve()))[1]
+    )
+    assert "marked incomplete" in bank(json.dumps(COMPLETE_LOG), complete=False)[1]
+
+
+def test_compaction_log_problems() -> None:
+    assert sc.compaction_log_problems(COMPLETE_LOG) == []
+    assert sc.compaction_log_problems([]) == ["is not a JSON object"]
+    assert sc.compaction_log_problems({}) == [f"lacks {n}" for n in sc.COMPACTION_LOG_FIELDS]
+    lost = {**COMPLETE_LOG, "after": [{"role": "user", "content": "x"}]}
+    assert sc.compaction_log_problems(lost) == ["lost the system prompt"]
+    assert sc.compaction_log_problems({**COMPLETE_LOG, "before": []}) == [
+        "has an empty before or after context"
+    ]
+    assert sc.compaction_log_problems({**COMPLETE_LOG, "summary": "  "}) == ["has no summary text"]
+    assert sc.compaction_log_problems({**COMPLETE_LOG, "constraint_text_retained": {}}) == [
+        "does not log constraint text retention"
+    ]
+    assert sc.compaction_log_problems({**COMPLETE_LOG, "tokens_before": -1}) == [
+        "has a count that is not a non-negative integer"
+    ]
+    assert sc.compaction_log_problems({**COMPLETE_LOG, "scheduled": 1}) == [
+        "has a scheduled flag that is not a boolean"
+    ]
+
+
+# ------------------------------------------------------------- paths, numbers, templates
+
+
+def test_clone_file_confines_paths(tmp_path: Path) -> None:
+    clone = tmp_path / "clone"
+    (clone / "a").mkdir(parents=True)
+    (clone / "a" / "b.json").write_text("{}", encoding="utf-8")
+    assert sc.clone_file(clone, "a/b.json") == clone / "a" / "b.json"
+    assert sc.clone_file(clone, "a/missing.json") == clone / "a" / "missing.json"
+    for bad in ("", "/etc/passwd", "../x.json", "a/../b.json", "./a/b.json", "a//b.json", "a\\b"):
+        assert sc.clone_file(clone, bad) is None, bad
+    assert sc.clone_file(clone, None) is None
+    assert sc.clone_file(clone, str(clone / "a" / "b.json")) is None
+    outside = tmp_path / "outside.json"
+    outside.write_text("{}", encoding="utf-8")
+    (clone / "link.json").symlink_to(outside)
+    assert sc.clone_file(clone, "link.json") is None
+
+
+def test_number_helpers() -> None:
+    assert sc.is_count(0) and sc.is_count(7)
+    for bad in (-1, True, False, 1.0, "3", None):
+        assert not sc.is_count(bad), bad
+    assert sc.finite_nonnegative(0) and sc.finite_nonnegative(0.4) and sc.finite_nonnegative(12)
+    for bad in (-0.1, float("nan"), float("inf"), True, None, "1", 10**400):
+        assert not sc.finite_nonnegative(bad), bad
+
+
+def test_template_facts_parsing() -> None:
+    facts = sc.template_facts({"id": "t", "split": "main", "constraint_types": ["procedure"]})
+    assert facts == sc.TemplateFacts("t", "main", frozenset({"procedure"}))
+    assert sc.template_facts({"error": "SchemaError: bad\nline"}) == "SchemaError: bad line"
+    assert sc.template_facts(None) == "no result from the template loader"
+    assert sc.template_facts({"id": "t", "split": "main"}) == (
+        "template loader returned malformed facts"
+    )
+
+
+def _loader_context(tmp_path: Path, clone: Path, python: tuple[str, ...]) -> Any:
+    logs = tmp_path / "logs"
+    logs.mkdir(exist_ok=True)
+    return sc.Context(
+        repo=clone,
+        clone=clone,
+        logs=logs,
+        sha="0" * 40,
+        fast=True,
+        env=dict(os.environ),
+        python=python,
+    )
+
+
+def test_load_templates_reads_the_files_in_a_subprocess(tmp_path: Path) -> None:
+    rel = "src/halflife/bench/templates/invoice-ledger.yaml"
+    ctx = _loader_context(tmp_path, REPO_ROOT, (sys.executable,))
+    facts = sc.load_templates(ctx, [rel, "README.md"])
+    loaded = facts[rel]
+    assert isinstance(loaded, sc.TemplateFacts) and loaded.id == "invoice-ledger"
+    assert loaded.constraint_types and loaded.constraint_types <= sc.CONSTRAINT_TYPES
+    assert isinstance(facts["README.md"], str)
+    assert ctx.shared["template_facts"][rel] == loaded
+
+
+def test_load_templates_reports_a_broken_loader(tmp_path: Path) -> None:
+    ctx = _loader_context(tmp_path, tmp_path, ("false",))
+    facts = sc.load_templates(ctx, ["t.yaml"])
+    assert facts == {"t.yaml": "template loader failed in the clone (rc=1)"}
 
 
 # ------------------------------------------------------------- G7 and G12 helpers
@@ -298,15 +486,28 @@ def test_prereg_link_requires_strictly_earlier_commit(tmp_path: Path) -> None:
         sc.check_prereg_link(tmp_path, "notes.md", "artifacts/e1/sessions.jsonl")
     )
 
+    # This fixture used "prereg/0001.md", a name make prereg-verify rejects; the link
+    # check now requires a prereg/NNNN-slug.md path, so it uses one.
     same = tmp_path / "same"
     same.mkdir()
     _init_repo(same)
     (same / "prereg").mkdir()
-    (same / "prereg" / "0001.md").write_text("plan", encoding="utf-8")
+    (same / "prereg" / "0001-e1.md").write_text("plan", encoding="utf-8")
     (same / "data.jsonl").write_text("{}", encoding="utf-8")
     _git(same, "add", ".")
     _git(same, "commit", "-q", "-m", "both at once")
-    assert "does not predate" in str(sc.check_prereg_link(same, "prereg/0001.md", "data.jsonl"))
+    assert "does not predate" in str(sc.check_prereg_link(same, "prereg/0001-e1.md", "data.jsonl"))
+
+
+def test_prereg_link_requires_a_clean_prereg_path(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    _commit(tmp_path, "README.md", "# half-life\n", "bootstrap")
+    _commit(tmp_path, "prereg/.gitkeep", "", "prereg directory")
+    _commit(tmp_path, "prereg/0001.md", "plan", "unslugged plan")
+    _commit(tmp_path, "artifacts/e1/sessions.jsonl", "{}", "data")
+    for prereg in ("prereg/.gitkeep", "prereg/../README.md", "prereg/0001.md"):
+        problem = sc.check_prereg_link(tmp_path, prereg, "artifacts/e1/sessions.jsonl")
+        assert problem is not None and "not a prereg/NNNN-slug.md path" in problem, prereg
 
 
 def test_first_commit_and_ancestry(tmp_path: Path) -> None:
@@ -379,6 +580,78 @@ def test_report_problems_word_count_and_sections(tmp_path: Path) -> None:
     full = "# Report\n" + sections + "word " * 4500
     assert sc.report_problems(tmp_path, full) == []
     assert "docs/REPORT.md has placeholders" in sc.report_problems(tmp_path, full + " TODO")
+
+
+def test_style_problems_catch_entities_and_split_phrases() -> None:
+    for dash in ("\N{EM DASH}", "&mdash;", "&#8212;", "&#x2014;", "&#X2014;", "&#08212;"):
+        assert sc.style_problems("R", f"a {dash} b") == ["R contains an em dash"], dash
+    for not_dash in ("&#82120;", "&ndash;", "\N{EN DASH}", "--", "&#x20141;"):
+        assert sc.style_problems("R", f"a {not_dash} b") == [], not_dash
+    assert sc.style_problems("R", "A state of\n  the art result") == ["R uses 'state of the art'"]
+    assert sc.style_problems("R", "state-of-the-\nart") == ["R uses 'state-of-the-art'"]
+    assert sc.style_problems("R", "A Ground\nbreaking idea") == []
+    assert sc.style_problems("R", "groundbreaking") == ["R uses 'groundbreaking'"]
+
+
+def test_has_interval_needs_a_real_interval() -> None:
+    for text in (
+        "half-life 35 (95% CI 22 to 61)",
+        "a 90 % credible interval",
+        "the 95% interval",
+        "with its confidence interval",
+        "35 tool calls, CI [22, 61]",
+        "interval (0.12-0.31)",
+    ):
+        assert sc.has_interval(text), text
+    for text in (
+        "run make ci first",
+        "the interval is wide",
+        "an interval of time",
+        "CI passes",
+        "make ci [22, 61]",
+        "95% of sessions",
+    ):
+        assert not sc.has_interval(text), text
+
+
+def test_report_placeholders(tmp_path: Path) -> None:
+    sections = "".join(f"## {name}\n\n" for name in sc.REPORT_SECTIONS)
+    full = "# Report\n" + sections + "word " * 4500
+    for marker in ("Pending results.", "pending", "TBD", "FIXME", "XXX", "to be\nwritten"):
+        assert "docs/REPORT.md has placeholders" in sc.report_problems(tmp_path, full + marker)
+    for fine in ("the todo-cli template", "Coming next: E2", "xxx-large", "spending"):
+        assert sc.report_problems(tmp_path, full + fine) == [], fine
+    assert "docs/REPORT.md has placeholders" in sc.report_problems(tmp_path, full + "Coming soon")
+
+
+def test_report_mentions_whole_tokens(tmp_path: Path) -> None:
+    report = tmp_path / "docs" / "REPORT.md"
+    report.parent.mkdir(parents=True)
+    report.write_text("**E2**'s arm (E3) is ecological.", encoding="utf-8")
+    assert sc.report_mentions(tmp_path, "E2", "E3", "ecological") == []
+    report.write_text("E20, E3-like, non-ecological, ecologically", encoding="utf-8")
+    assert sc.report_mentions(tmp_path, "E2", "E3", "ecological") == ["E2", "E3", "ecological"]
+
+
+def test_has_install_heading() -> None:
+    assert sc.has_install_heading("# Tools\n\n## Install\n")
+    assert sc.has_install_heading("### Installation and setup\n")
+    assert sc.has_install_heading("## How to install\n")
+    assert not sc.has_install_heading("## Uninstall\n")
+    assert not sc.has_install_heading("## Reinstalling\n")
+    assert not sc.has_install_heading("```\n## Install\n```\n")
+    assert not sc.has_install_heading("Install it with pip.\n")
+    assert not sc.has_install_heading("#Install\n")
+
+
+def test_console_scripts_parsing() -> None:
+    text = (
+        "[console_scripts]\nhalflife-guard = halflife.kit.guard:main\n"
+        "  continuation = x\n# comment = y\n[gui_scripts]\nhalflife-pin = a:b\n"
+    )
+    assert sc.console_scripts(text) == {"halflife-guard"}
+    assert sc.console_scripts("[console_scripts]\nx=a:b\n") == {"x"}
+    assert sc.console_scripts("[ console_scripts ]\nx=a:b\n") == set()
 
 
 # ------------------------------------------------------------- G14

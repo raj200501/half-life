@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/invoice-ledger.log.json",
+  "action_log_sha256": "6049d3ca8e8a2866b6b5d937175e773b6681f727ff4e916c9d999568ed91f847",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 10,
+  "n_tool_calls": 27,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "invoice-ledger",
+  "template_sha256": "ac09e2f0b7c7bc6143311506993163cdc27057b65358ae96a4598e905558bb73",
+  "violations": 0
+}

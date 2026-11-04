@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/matrix-lite.log.json",
+  "action_log_sha256": "21cab13bf1d77a131f9e27ec7206a7f49df68907348309b61d87501bf0801ce4",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 47,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "matrix-lite",
+  "template_sha256": "b7b39322d1bd793278ee4d93f4a38d8a35c5dd1fa146246cf4a6f30b2188fc13",
+  "violations": 0
+}

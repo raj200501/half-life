@@ -18,7 +18,9 @@ With ``--fast`` it skips slow steps (re-running ``make ci`` and building the
 wheel) and the last line is ``SHIP-CHECK-FAST (does not count): <passed>/14``.
 
 The artifact layouts checked for G5 to G9 and G12 are documented in
-docs/ARTIFACTS.md. Stdlib only, Python 3.11+.
+docs/ARTIFACTS.md. Stdlib only, Python 3.11+. Benchmark template files are YAML,
+so G6 and G9 read them with the clone's own ``halflife.bench`` loader, run as a
+sub-command in the clone's locked environment after ``make setup``.
 """
 
 from __future__ import annotations
@@ -37,10 +39,11 @@ import tempfile
 import time
 import tokenize
 import tomllib
+import zipfile
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeGuard
 
 REPO = Path(__file__).resolve().parents[1]
 COVERAGE_MIN = 85.0
@@ -58,6 +61,24 @@ REVIEW_EXEMPT_FILES = frozenset({"STATUS.md", "docs/LOG.md"})
 REPORT_WORDS = (4000, 8000)
 HYPE_WORDS = ("revolutionary", "groundbreaking", "state of the art", "state-of-the-art")
 EM_DASH = "\u2014"
+# The character itself, or an HTML entity that renders as one (named, decimal, hex).
+EM_DASH_RE = re.compile(r"\u2014|&mdash;|&#0*8212(?![0-9]);?|&#[xX]0*2014(?![0-9A-Fa-f]);?")
+# Upper-case markers are matched case-sensitively ("todo-cli" is a template name);
+# placeholder words and phrases in any case.
+PLACEHOLDER_RE = re.compile(
+    r"\b(?:TODO|TBD|FIXME|XXX)\b|(?i:\b(?:pending|to\s+be\s+written|coming\s+soon)\b)"
+)
+# A first-screen interval: "95% CI" and the like, a named interval, or a bracketed
+# pair of numbers together with the word CI or interval.
+PERCENT_INTERVAL_RE = re.compile(
+    r"\b\d{1,2}(?:\.\d+)?\s?%\s?(?:CI\b|(?:confidence\s+|credible\s+)?interval\b)", re.IGNORECASE
+)
+NAMED_INTERVAL_RE = re.compile(r"\b(?:confidence|credible)\s+interval\b", re.IGNORECASE)
+_NUMBER = r"[-+]?\d+(?:\.\d+)?"
+BRACKETED_PAIR_RE = re.compile(rf"[\[(]\s*{_NUMBER}\s*(?:,|;|to|-|\u2013)\s*{_NUMBER}\s*[\])]")
+INTERVAL_WORD_RE = re.compile(r"\bCI\b|(?i:\binterval\b)")
+# Same rule as halflife.integrity.prereg (make prereg-verify).
+PREREG_PATH_RE = re.compile(r"prereg/\d{4}-[A-Za-z0-9][A-Za-z0-9_-]*\.md")
 Z95 = 1.959963984540054
 TOL = 1e-6
 
@@ -104,7 +125,11 @@ class CmdResult:
 
 @dataclass
 class Context:
-    """Shared state for one ship-check run."""
+    """Shared state for one ship-check run.
+
+    ``python`` is the command prefix that runs Python in the clone's locked
+    environment (tests point it at their own interpreter).
+    """
 
     repo: Path
     clone: Path
@@ -113,6 +138,7 @@ class Context:
     fast: bool
     env: dict[str, str]
     shared: dict[str, Any] = field(default_factory=dict)
+    python: tuple[str, ...] = ("uv", "run", "--frozen", "--quiet", "python")
 
     def run(
         self,
@@ -219,6 +245,40 @@ def missing(paths: Iterable[Path], root: Path) -> list[str]:
     return [str(p.relative_to(root)) for p in paths if not p.exists()]
 
 
+def is_count(value: object) -> TypeGuard[int]:
+    """True for a non-negative int that is not a boolean."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def finite_nonnegative(value: object) -> bool:
+    """True for a finite, non-negative int or float that is not a boolean."""
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return False
+    try:
+        return math.isfinite(value) and value >= 0
+    except OverflowError:  # an int too large for a float
+        return False
+
+
+def clone_file(clone: Path, rel: object) -> Path | None:
+    """The path ``rel`` names in the clone, or None unless it is clean and stays inside.
+
+    Clean means a relative POSIX path with no empty, ``.``, or ``..`` segment and no
+    backslash; the resolved path (symlinks followed) must still lie inside ``clone``.
+    """
+    if not isinstance(rel, str) or not rel or "\\" in rel or "\x00" in rel:
+        return None
+    parts = rel.split("/")
+    if any(part in ("", ".", "..") for part in parts):
+        return None
+    path = clone.joinpath(*parts)
+    try:
+        path.resolve().relative_to(clone.resolve())
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return path
+
+
 def first_commit(repo: Path, rel: str) -> str | None:
     """SHA of the commit that first added ``rel``, or None if never committed."""
     out = git(repo, "log", "--diff-filter=A", "--format=%H", "--reverse", "--", rel)
@@ -242,6 +302,114 @@ def setup_failed(ctx: Context) -> GateResult | None:
     if not ctx.shared.get("setup_ok"):
         return fail("make setup failed in fresh clone")
     return None
+
+
+# ---------------------------------------------------------------- benchmark templates
+
+TEMPLATE_FACTS_MARK = "HALFLIFE-TEMPLATE-FACTS "
+# Runs in the clone's environment: loads each template file with halflife.bench and
+# prints what the file itself declares, so no gate trusts the manifest for it.
+TEMPLATE_LOADER = """\
+import json, sys
+from pathlib import Path
+from halflife import bench
+root = Path(sys.argv[1])
+facts = {}
+for rel in json.loads(sys.argv[2]):
+    try:
+        template = bench.load(root / rel).template
+        facts[rel] = {
+            "id": template.id,
+            "split": template.split,
+            "constraint_types": sorted({c.type for c in template.constraints}),
+        }
+    except Exception as exc:
+        facts[rel] = {"error": type(exc).__name__ + ": " + str(exc)}
+print("HALFLIFE-TEMPLATE-FACTS " + json.dumps(facts))
+"""
+
+
+@dataclass(frozen=True)
+class TemplateFacts:
+    """What a template file declares, as read by the clone's own loader."""
+
+    id: str
+    split: str
+    constraint_types: frozenset[str]
+
+
+def template_facts(entry: Any) -> TemplateFacts | str:
+    """Facts from one loader result, or a short reason the file did not load."""
+    if not isinstance(entry, dict):
+        return "no result from the template loader"
+    if "error" in entry:
+        return " ".join(str(entry["error"]).split())[:120]
+    tid, split, types = entry.get("id"), entry.get("split"), entry.get("constraint_types")
+    if (
+        not isinstance(tid, str)
+        or not isinstance(split, str)
+        or not isinstance(types, list)
+        or not all(isinstance(t, str) for t in types)
+    ):
+        return "template loader returned malformed facts"
+    return TemplateFacts(tid, split, frozenset(types))
+
+
+def load_templates(ctx: Context, rels: Sequence[str]) -> dict[str, TemplateFacts | str]:
+    """Load template files (clean clone-relative paths) with the clone's ``halflife.bench``.
+
+    Results are cached in ``ctx.shared`` so G6 and G9 share one loader run.
+    """
+    cache: dict[str, TemplateFacts | str] = ctx.shared.setdefault("template_facts", {})
+    todo = sorted(set(rels) - set(cache))
+    if todo:
+        result = ctx.run(
+            f"templates-{len(cache)}",
+            [*ctx.python, "-I", "-c", TEMPLATE_LOADER, str(ctx.clone), json.dumps(todo)],
+            timeout=300,
+        )
+        lines = [ln for ln in result.output.splitlines() if ln.startswith(TEMPLATE_FACTS_MARK)]
+        parsed: Any = None
+        if result.returncode == 0 and len(lines) == 1:
+            try:
+                parsed = json.loads(lines[0][len(TEMPLATE_FACTS_MARK) :])
+            except ValueError:
+                parsed = None
+        for rel in todo:
+            if isinstance(parsed, dict):
+                cache[rel] = template_facts(parsed.get(rel))
+            else:
+                cache[rel] = f"template loader failed in the clone (rc={result.returncode})"
+    return {rel: cache[rel] for rel in rels}
+
+
+def bench_template_facts(ctx: Context) -> tuple[dict[str, TemplateFacts] | None, str]:
+    """Bench templates by id: the files the bench manifest lists, loaded in the clone."""
+    manifest = ctx.clone / "artifacts" / "bench" / "manifest.json"
+    if not manifest.is_file():
+        return None, "missing artifacts/bench/manifest.json (needed for held-out templates)"
+    entries = load_json(manifest)["templates"]
+    ids = [entry.get("id") for entry in entries]
+    if len({str(i) for i in ids}) != len(ids):
+        return None, "bench manifest has duplicate template ids"
+    rels: list[str] = []
+    for entry in entries:
+        rel = entry.get("path")
+        if clone_file(ctx.clone, rel) is None:
+            return None, f"bench template {entry.get('id')}: path is not inside the clone"
+        rels.append(str(rel))
+    if (blocked := setup_failed(ctx)) is not None:
+        return None, blocked.evidence
+    loaded = load_templates(ctx, rels)
+    out: dict[str, TemplateFacts] = {}
+    for entry, rel in zip(entries, rels, strict=True):
+        facts = loaded[rel]
+        if isinstance(facts, str):
+            return None, f"bench template {entry.get('id')} does not load ({facts})"
+        if facts.id != entry.get("id"):
+            return None, f"bench manifest id {entry.get('id')} names a file declaring {facts.id}"
+        out[facts.id] = facts
+    return out, ""
 
 
 # ---------------------------------------------------------------- G1
@@ -470,9 +638,28 @@ def gate_g4(ctx: Context) -> GateResult:
 
 
 def check_detectors(path: Path) -> tuple[bool, str]:
-    """Recompute detector precision and recall with Wilson intervals from seeded cases."""
+    """Recompute detector precision and recall with Wilson intervals from seeded cases.
+
+    Every case has a unique ``case_id`` (so a repeated row cannot inflate a count)
+    and boolean ``label`` and ``predicted`` values.
+    """
     data = load_json(path)
     cases = data["cases"]
+    if not isinstance(cases, list):
+        return False, "detector cases are not a list"
+    seen: set[str] = set()
+    for case in cases:
+        if not isinstance(case, dict):
+            return False, "detector case is not an object"
+        cid = case.get("case_id")
+        if not isinstance(cid, str) or not cid:
+            return False, "detector case without a case_id"
+        if cid in seen:
+            return False, f"duplicate case_id {cid} in seeded cases"
+        seen.add(cid)
+        for name in ("label", "predicted"):
+            if not isinstance(case.get(name), bool):
+                return False, f"case {cid}: {name} is not a boolean"
     tp = sum(1 for c in cases if c["label"] and c["predicted"])
     fp = sum(1 for c in cases if not c["label"] and c["predicted"])
     fn = sum(1 for c in cases if c["label"] and not c["predicted"])
@@ -499,11 +686,29 @@ def check_detectors(path: Path) -> tuple[bool, str]:
 
 
 def check_leakage(path: Path) -> tuple[bool, str]:
-    """Probe leakage must be zero across a non-empty set of validation runs."""
+    """Probe leakage must be zero across a non-empty set of validation runs.
+
+    Each run has a ``run_id``, a boolean ``leaked`` (null means never checked), and a
+    unique ``(run_id, session_id)``; the integer counts must match the runs.
+    """
     data = load_json(path)
     runs = data["runs"]
+    counts = (data.get("validation_runs"), data.get("leaks"))
+    if not isinstance(runs, list) or not runs or not all(is_count(c) for c in counts):
+        return False, "probe leakage artifact inconsistent or empty"
+    seen: set[tuple[str, str]] = set()
+    for run in runs:
+        run_id = run.get("run_id") if isinstance(run, dict) else None
+        if not isinstance(run_id, str) or not run_id:
+            return False, "probe leakage run without a run_id"
+        key = (run_id, str(run.get("session_id")))
+        if key in seen:
+            return False, f"duplicate probe leakage run {run_id}"
+        seen.add(key)
+        if not isinstance(run.get("leaked"), bool):
+            return False, f"probe leakage run {run_id}: leaked is not a boolean"
     leaks = sum(1 for run in runs if run["leaked"])
-    if not runs or data["validation_runs"] != len(runs) or data["leaks"] != leaks:
+    if data["validation_runs"] != len(runs) or data["leaks"] != leaks:
         return False, "probe leakage artifact inconsistent or empty"
     if leaks:
         return False, f"probe leakage {leaks}/{len(runs)}"
@@ -520,20 +725,118 @@ COMPACTION_FIELDS = (
     "log_path",
     "log_sha256",
 )
+# Fields every compaction log file holds (halflife.experiment.LOG_FIELDS).
+COMPACTION_LOG_FIELDS = (
+    "event_id",
+    "strategy",
+    "tool_call_index",
+    "scheduled",
+    "tokens_before",
+    "tokens_after",
+    "before",
+    "after",
+    "summary",
+    "constraint_text_retained",
+)
+# Fields an event row repeats from its log; when present they must agree.
+COMPACTION_EVENT_LOG_FIELDS = (
+    "event_id",
+    "strategy",
+    "tool_call_index",
+    "scheduled",
+    "tokens_before",
+    "tokens_after",
+    "constraint_text_retained",
+)
+
+
+def compaction_log_problems(log: Any) -> list[str]:
+    """Ways a parsed compaction log falls short of complete.
+
+    The rules of ``halflife.experiment.log_problems``: every field present, non-empty
+    before and after contexts, the system prompt first after compaction, a summary
+    unless the strategy is ``sliding_window``, and retention logged per constraint
+    (here: a non-empty map of constraint id to boolean). Counts must be non-negative
+    integers and ``scheduled`` a boolean.
+    """
+    if not isinstance(log, dict):
+        return ["is not a JSON object"]
+    problems = [f"lacks {name}" for name in COMPACTION_LOG_FIELDS if name not in log]
+    if problems:
+        return problems
+    before, after = log["before"], log["after"]
+    if not isinstance(before, list) or not before or not isinstance(after, list) or not after:
+        problems.append("has an empty before or after context")
+    elif not isinstance(after[0], dict) or after[0].get("role") != "system":
+        problems.append("lost the system prompt")
+    summary = log["summary"]
+    if log["strategy"] != "sliding_window" and not (isinstance(summary, str) and summary.strip()):
+        problems.append("has no summary text")
+    retained = log["constraint_text_retained"]
+    if (
+        not isinstance(retained, dict)
+        or not retained
+        or not all(isinstance(v, bool) for v in retained.values())
+    ):
+        problems.append("does not log constraint text retention")
+    if not all(isinstance(log[name], str) and log[name] for name in ("event_id", "strategy")):
+        problems.append("has no event_id or strategy")
+    if not all(
+        is_count(log[name]) for name in ("tool_call_index", "tokens_before", "tokens_after")
+    ):
+        problems.append("has a count that is not a non-negative integer")
+    if not isinstance(log["scheduled"], bool):
+        problems.append("has a scheduled flag that is not a boolean")
+    return problems
 
 
 def check_compaction_logs(path: Path, root: Path) -> tuple[bool, str]:
-    """Every compaction event has all fields and a banked log with a matching hash."""
-    events = load_json(path)["events"]
-    if not events:
+    """Every compaction event has all fields and its own complete, banked log.
+
+    A log path must be clean and inside ``root`` (the clone), the file must match
+    its SHA-256, its content must be complete (:func:`compaction_log_problems`),
+    and the event's copies of the log fields must agree with it.
+    """
+    data = load_json(path)
+    events = data["events"]
+    if not isinstance(events, list) or not events:
         return False, "no compaction events banked"
+    if data.get("incomplete") not in (None, 0):
+        return False, f"compaction log artifact counts {data.get('incomplete')!r} incomplete logs"
+    seen_events: set[tuple[str, str, str]] = set()
+    seen_logs: set[Path] = set()
     for event in events:
+        if not isinstance(event, dict):
+            return False, "compaction event is not an object"
         absent = [name for name in COMPACTION_FIELDS if event.get(name) is None]
         if absent:
             return False, f"compaction event {event.get('event_id')} missing {absent[0]}"
-        log = root / event["log_path"]
-        if not log.is_file() or sha256_file(log) != event["log_sha256"]:
-            return False, f"compaction log {event['log_path']} missing or hash mismatch"
+        eid = str(event["event_id"])
+        key = (str(event["run_id"]), str(event.get("session_id")), eid)
+        if key in seen_events:
+            return False, f"duplicate compaction event {eid} in run {event['run_id']}"
+        seen_events.add(key)
+        rel = event["log_path"]
+        log_file = clone_file(root, rel)
+        if log_file is None:
+            return False, f"compaction event {eid}: log_path is not a clean path inside the clone"
+        if log_file.resolve() in seen_logs:
+            return False, f"compaction log {rel} is shared by two events"
+        seen_logs.add(log_file.resolve())
+        if not log_file.is_file() or sha256_file(log_file) != event["log_sha256"]:
+            return False, f"compaction log {rel} missing or hash mismatch"
+        if event.get("complete", True) is not True or event.get("problems"):
+            return False, f"compaction event {eid} is marked incomplete"
+        try:
+            log = json.loads(log_file.read_text(encoding="utf-8"))
+        except ValueError:
+            return False, f"compaction log {rel} is not valid JSON"
+        problems = compaction_log_problems(log)
+        if problems:
+            return False, f"compaction log {rel} {problems[0]}"
+        for name in COMPACTION_EVENT_LOG_FIELDS:
+            if name in event and event[name] != log[name]:
+                return False, f"compaction log {rel} disagrees with its event on {name}"
     return True, f"{len(events)} compaction logs complete"
 
 
@@ -561,6 +864,43 @@ def gate_g5(ctx: Context) -> GateResult:
 # ---------------------------------------------------------------- G6
 
 
+def bench_records_problem(clone: Path, template: dict[str, Any]) -> str | None:
+    """Why a template's compliant route or reference run is not verified, or None.
+
+    Both paths must be clean and inside the clone, and they must be two different
+    records (different files with different content).
+    """
+    tid = template["id"]
+    route_path = clone_file(clone, template.get("compliant_route"))
+    ref_path = clone_file(clone, template.get("reference_run"))
+    if route_path is None or ref_path is None:
+        return "compliant route or reference run path is not a clean path inside the clone"
+    if not route_path.is_file() or not ref_path.is_file():
+        return "compliant route or reference run not banked"
+    if route_path.resolve() == ref_path.resolve() or sha256_file(route_path) == sha256_file(
+        ref_path
+    ):
+        return "compliant route and reference run are the same record"
+    route, ref = load_json(route_path), load_json(ref_path)
+    for name, record in (("compliant route", route), ("reference run", ref)):
+        if (
+            not isinstance(record, dict)
+            or record.get("template_id") != tid
+            or record.get("template_sha256") != template["sha256"]
+        ):
+            return f"{name} is for a different template version"
+    total, passed, violations = (
+        route.get(k) for k in ("tasks_total", "tasks_passed", "violations")
+    )
+    if not (is_count(total) and total > 0 and is_count(passed) and passed == total):
+        return "compliant route not verified"
+    if not is_count(violations) or violations != 0:
+        return "compliant route not verified"
+    if ref.get("completed") is not True:
+        return "reference run incomplete"
+    return None
+
+
 def gate_g6(ctx: Context) -> GateResult:
     manifest_path = ctx.clone / "artifacts" / "bench" / "manifest.json"
     if not manifest_path.is_file():
@@ -571,42 +911,60 @@ def gate_g6(ctx: Context) -> GateResult:
         return fail("duplicate template ids")
     if len(ids) < MIN_TEMPLATES:
         return fail(f"{len(ids)} templates < {MIN_TEMPLATES}")
-    types: set[str] = set()
+    sources: list[Path] = []
     for template in templates:
+        source = clone_file(ctx.clone, template.get("path"))
+        if source is None:
+            return fail(f"template {template['id']}: path is not a clean path inside the clone")
+        sources.append(source)
+    if len({source.resolve() for source in sources}) != len(sources):
+        return fail("duplicate template paths: one file listed under several ids")
+    if len({str(t.get("sha256")) for t in templates}) != len(templates):
+        return fail("duplicate template sha256 values: one template counted twice")
+    if (blocked := setup_failed(ctx)) is not None:
+        return blocked
+    facts = load_templates(ctx, [str(t["path"]) for t in templates])
+    types: set[str] = set()
+    for template, source in zip(templates, sources, strict=True):
         tid = template["id"]
-        source = ctx.clone / template["path"]
         if not source.is_file() or sha256_file(source) != template["sha256"]:
             return fail(f"template {tid}: file missing or hash mismatch")
-        declared = set(template["constraint_types"])
-        if not declared or not declared <= CONSTRAINT_TYPES:
+        declared = template["constraint_types"]
+        if not isinstance(declared, list) or not declared or not set(declared) <= CONSTRAINT_TYPES:
             return fail(f"template {tid}: unknown or empty constraint types")
-        types |= declared
-        route_path = ctx.clone / template["compliant_route"]
-        ref_path = ctx.clone / template["reference_run"]
-        if not route_path.is_file() or not ref_path.is_file():
-            return fail(f"template {tid}: compliant route or reference run not banked")
-        route = load_json(route_path)
-        ref = load_json(ref_path)
-        for name, record in (("compliant route", route), ("reference run", ref)):
-            if (
-                record.get("template_id") != tid
-                or record.get("template_sha256") != template["sha256"]
-            ):
-                return fail(f"template {tid}: {name} is for a different template version")
-        total = int(route["tasks_total"])
-        if total <= 0 or int(route["tasks_passed"]) != total or int(route["violations"]) != 0:
-            return fail(f"template {tid}: compliant route not verified")
-        if ref.get("completed") is not True:
-            return fail(f"template {tid}: reference run incomplete")
+        loaded = facts[str(template["path"])]
+        if isinstance(loaded, str):
+            return fail(f"template {tid}: file does not load ({loaded})")
+        if loaded.id != tid:
+            return fail(f"template {tid}: file declares id {loaded.id!r}")
+        if not loaded.constraint_types or not loaded.constraint_types <= CONSTRAINT_TYPES:
+            return fail(f"template {tid}: file has unknown or no constraint types")
+        if loaded.constraint_types != set(declared):
+            return fail(f"template {tid}: manifest constraint types differ from the template file")
+        types |= loaded.constraint_types
+        problem = bench_records_problem(ctx.clone, template)
+        if problem:
+            return fail(f"template {tid}: {problem}")
     if len(types) < MIN_CONSTRAINT_TYPES:
         return fail(f"{len(types)} constraint types < {MIN_CONSTRAINT_TYPES}")
     return GateResult(
         True,
-        f"{len(ids)} templates, {len(types)} constraint types, routes and reference runs verified",
+        f"{len(ids)} templates, {len(types)} constraint types (read from the template files), "
+        "routes and reference runs verified",
     )
 
 
 # ---------------------------------------------------------------- G7
+
+# Every E1 file the gate reads; each must be first committed after the preregistration.
+E1_FILES = (
+    "sessions.jsonl",
+    "opportunities.jsonl",
+    "provenance.json",
+    "hazard.json",
+    "half_life.json",
+    "km.json",
+)
 
 
 def check_interval(record: dict[str, Any], key: str) -> bool:
@@ -641,9 +999,18 @@ def check_half_life(record: dict[str, Any]) -> bool:
 
 
 def check_prereg_link(clone: Path, prereg: str, artifact: str) -> str | None:
-    """Problem text if ``artifact`` does not cite a preregistration committed strictly before it."""
+    """Problem text if ``artifact`` does not cite a preregistration committed strictly before it.
+
+    The preregistration must be a regular file at a ``prereg/NNNN-slug.md`` path
+    (the naming rule of ``make prereg-verify``), so ``..`` segments and
+    ``prereg/.gitkeep`` do not count.
+    """
     if not prereg.startswith("prereg/") or not (clone / prereg).is_file():
         return f"{artifact} cites missing preregistration {prereg!r}"
+    if not PREREG_PATH_RE.fullmatch(prereg):
+        return f"{artifact} cites {prereg!r}, which is not a prereg/NNNN-slug.md path"
+    if (clone / prereg).is_symlink():
+        return f"{artifact} cites {prereg!r}, a symlink rather than a preregistration file"
     pre_commit = first_commit(clone, prereg)
     art_commit = first_commit(clone, artifact)
     if pre_commit is None or art_commit is None:
@@ -655,40 +1022,54 @@ def check_prereg_link(clone: Path, prereg: str, artifact: str) -> str | None:
 
 def gate_g7(ctx: Context) -> GateResult:
     base = ctx.clone / "artifacts" / "e1"
-    names = [
-        "provenance.json",
-        "sessions.jsonl",
-        "opportunities.jsonl",
-        "hazard.json",
-        "half_life.json",
-        "km.json",
-    ]
-    absent = missing([base / n for n in names], ctx.clone)
+    absent = missing([base / n for n in E1_FILES], ctx.clone)
     if absent:
         return fail(f"missing {', '.join(absent)}")
     provenance = load_json(base / "provenance.json")
-    problem = check_prereg_link(
-        ctx.clone, str(provenance.get("prereg", "")), "artifacts/e1/sessions.jsonl"
-    )
-    if problem:
-        return fail(problem)
+    prereg = str(provenance.get("prereg", ""))
+    for name in E1_FILES:
+        problem = check_prereg_link(ctx.clone, prereg, f"artifacts/e1/{name}")
+        if problem:
+            return fail(problem)
     sessions = load_jsonl(base / "sessions.jsonl")
     reached: dict[str, int] = {}
+    keys: set[tuple[str, str]] = set()
+    claimed: set[tuple[str, str]] = set()
     for row in sessions:
+        sid = row.get("session_id")
         if row.get("prereg") != provenance["prereg"] or row.get("confirmatory") is not True:
-            return fail(f"session {row.get('session_id')} not tagged with the E1 preregistration")
-        reached.setdefault(row["family"], 0)
-        if row["reached_first_dp"] is True:
-            reached[row["family"]] += 1
+            return fail(f"session {sid} not tagged with the E1 preregistration")
+        family = row.get("family")
+        if not isinstance(sid, str) or not sid or not isinstance(family, str) or not family:
+            return fail(f"session {sid} lacks a session_id or model family")
+        # Every family runs the same plans, so a session is one plan run by one family.
+        key = (family, sid)
+        if key in keys:
+            return fail(f"duplicate session rows for {sid} ({family})")
+        keys.add(key)
+        if not isinstance(row.get("reached_first_dp"), bool):
+            return fail(f"session {sid}: reached_first_dp is not a boolean")
+        reached.setdefault(family, 0)
+        if row["reached_first_dp"]:
+            reached[family] += 1
+            claimed.add(key)
     if len(reached) < MIN_E1_FAMILIES:
         return fail(f"{len(reached)} model families < {MIN_E1_FAMILIES}")
     short = {f: n for f, n in reached.items() if n < MIN_E1_SESSIONS_PER_FAMILY}
     if short:
         return fail(f"families below {MIN_E1_SESSIONS_PER_FAMILY} sessions reaching a DP: {short}")
-    session_ids = {row["session_id"] for row in sessions}
     opportunities = load_jsonl(base / "opportunities.jsonl")
-    if not opportunities or any(o["session_id"] not in session_ids for o in opportunities):
+    seen = {(str(o.get("family")), str(o.get("session_id"))) for o in opportunities}
+    if not opportunities or not seen <= keys:
         return fail("opportunities.jsonl empty or references unknown sessions")
+    if seen - claimed:
+        return fail(
+            f"{len(seen - claimed)} session(s) have opportunities but reached_first_dp false"
+        )
+    if claimed - seen:
+        return fail(
+            f"{len(claimed - seen)} session(s) claim reached_first_dp with no opportunities"
+        )
     for name in ("hazard.json", "half_life.json"):
         estimates = load_json(base / name)["estimates"]
         families = {e["family"] for e in estimates}
@@ -711,21 +1092,62 @@ def gate_g7(ctx: Context) -> GateResult:
 
 
 def arm_summary(clone: Path, arm: str) -> tuple[dict[str, Any] | None, str]:
-    """Load and sanity-check ``artifacts/<arm>/summary.json``."""
+    """Load and sanity-check ``artifacts/<arm>/summary.json`` (``n_sessions`` an integer)."""
     path = clone / "artifacts" / arm.lower() / "summary.json"
     if not path.is_file():
         return None, f"missing artifacts/{arm.lower()}/summary.json"
     data = load_json(path)
-    if data.get("arm") != arm or data.get("ran") is not True or int(data.get("n_sessions", 0)) <= 0:
+    n_sessions = data.get("n_sessions") if isinstance(data, dict) else None
+    if (
+        not isinstance(data, dict)
+        or data.get("arm") != arm
+        or data.get("ran") is not True
+        or not is_count(n_sessions)
+        or n_sessions <= 0
+    ):
         return None, f"{arm} summary does not show a completed run"
     return data, ""
 
 
+def arm_sessions(
+    clone: Path, arm: str, summary: dict[str, Any]
+) -> tuple[list[dict[str, Any]] | None, str]:
+    """Banked ``artifacts/<arm>/sessions.jsonl`` rows; their count must equal ``n_sessions``.
+
+    Rows are unique by ``(session_id, model)``: arms may run one plan per model.
+    """
+    rel = f"artifacts/{arm.lower()}/sessions.jsonl"
+    path = clone / rel
+    if not path.is_file():
+        return None, f"missing {rel}"
+    rows = load_jsonl(path)
+    keys: set[tuple[str, str]] = set()
+    for row in rows:
+        sid = row.get("session_id")
+        if not isinstance(sid, str) or not sid:
+            return None, f"{rel} has a row without a session_id"
+        key = (sid, str(row.get("model")))
+        if key in keys:
+            return None, f"{rel} has duplicate session rows ({sid})"
+        keys.add(key)
+    if len(rows) != summary["n_sessions"]:
+        return None, f"{arm} n_sessions {summary['n_sessions']} != {len(rows)} banked session rows"
+    return rows, ""
+
+
 def report_mentions(clone: Path, *needles: str) -> list[str]:
-    """Needles that docs/REPORT.md does not mention."""
+    """Needles that docs/REPORT.md does not mention as whole tokens.
+
+    A token is not part of a longer word, number, or hyphenated compound, so
+    'E20' does not mention E2 and 'non-ecological' does not mention ecological.
+    """
     path = clone / "docs" / "REPORT.md"
     text = path.read_text(encoding="utf-8") if path.is_file() else ""
-    return [n for n in needles if n not in text]
+    return [
+        n
+        for n in needles
+        if not re.search(rf"(?<![A-Za-z0-9_-]){re.escape(n)}(?![A-Za-z0-9_-])", text)
+    ]
 
 
 def gate_g8(ctx: Context) -> GateResult:
@@ -734,31 +1156,110 @@ def gate_g8(ctx: Context) -> GateResult:
         return fail(why)
     if e2.get("label") != "ecological":
         return fail("E2 not labeled ecological")
-    if len(set(e2.get("models", []))) < MIN_E2_MODELS:
+    models = e2.get("models", [])
+    if (
+        not isinstance(models, list)
+        or not all(isinstance(m, str) and m for m in models)
+        or len(set(models)) < MIN_E2_MODELS
+    ):
         return fail(f"E2 used fewer than {MIN_E2_MODELS} model tiers")
+    rows, why = arm_sessions(ctx.clone, "E2", e2)
+    if rows is None:
+        return fail(why)
+    if any(row.get("label") != "ecological" for row in rows):
+        return fail("E2 session rows not all labeled ecological")
+    if {row.get("model") for row in rows} != set(models):
+        return fail("E2 session rows do not match the summary's model tiers")
     e3, why = arm_summary(ctx.clone, "E3")
     if e3 is None:
+        return fail(why)
+    e3_rows, why = arm_sessions(ctx.clone, "E3", e3)
+    if e3_rows is None:
         return fail(why)
     absent = report_mentions(ctx.clone, "E2", "E3", "ecological")
     if absent:
         return fail(f"docs/REPORT.md does not report {', '.join(absent)}")
     return GateResult(
-        True, f"E2 n={e2['n_sessions']} (ecological), E3 n={e3['n_sessions']}, reported"
+        True,
+        f"E2 n={e2['n_sessions']} (ecological), E3 n={e3['n_sessions']}, rows banked, reported",
     )
+
+
+COST_FIELDS = ("tokens", "latency_s", "task_success")
+
+
+def held_out_problem(ctx: Context, held_out: Sequence[str]) -> str | None:
+    """Why E4's held-out templates are not held out, or None.
+
+    Each must be a bench template whose file declares the ``heldout`` split, and
+    none may appear as a ``template_id`` in the E1 sessions.
+    """
+    bench, why = bench_template_facts(ctx)
+    if bench is None:
+        return why
+    sessions = ctx.clone / "artifacts" / "e1" / "sessions.jsonl"
+    if not sessions.is_file():
+        return "missing artifacts/e1/sessions.jsonl (needed for held-out templates)"
+    used: set[str] = set()
+    for row in load_jsonl(sessions):
+        tid = row.get("template_id")
+        if not isinstance(tid, str) or not tid:
+            return "E1 session rows lack template_id, so held-out templates cannot be checked"
+        used.add(tid)
+    for tid in held_out:
+        facts = bench.get(tid)
+        if facts is None:
+            return f"E4 held-out template {tid} is not in the bench"
+        if tid in used:
+            return f"E4 held-out template {tid} was used in E1"
+        if facts.split != "heldout":
+            return f"E4 held-out template {tid} is not in the heldout split"
+    return None
+
+
+def has_install_heading(text: str) -> bool:
+    """True when a Markdown heading outside code fences has a word starting 'install'."""
+    fenced = False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+        elif not fenced and re.match(r"#{1,6} .*\binstall", line, re.IGNORECASE):
+            return True
+    return False
 
 
 def gate_g9(ctx: Context) -> GateResult:
     e4, why = arm_summary(ctx.clone, "E4")
     if e4 is None:
         return fail(why)
-    if not e4.get("held_out_templates"):
+    held_out = e4.get("held_out_templates")
+    if not held_out:
         return fail("E4 does not list held-out templates")
-    for mitigation in e4.get("mitigations", []):
-        cost = mitigation.get("cost", {})
-        if not all(k in cost for k in ("tokens", "latency_s", "task_success")):
-            return fail(f"E4 mitigation {mitigation.get('name')} lacks cost beside benefit")
-    if not e4.get("mitigations"):
+    if (
+        not isinstance(held_out, list)
+        or not all(isinstance(t, str) and t for t in held_out)
+        or len(set(held_out)) != len(held_out)
+    ):
+        return fail("E4 held_out_templates is not a list of distinct template ids")
+    mitigations = e4.get("mitigations")
+    if not isinstance(mitigations, list) or not mitigations:
         return fail("E4 reports no mitigations")
+    for mitigation in mitigations:
+        record = mitigation if isinstance(mitigation, dict) else {}
+        cost = record.get("cost")
+        bad = [
+            k
+            for k in COST_FIELDS
+            if not isinstance(cost, dict) or not finite_nonnegative(cost.get(k))
+        ]
+        if bad:
+            return fail(
+                f"E4 mitigation {record.get('name')} lacks cost beside benefit: "
+                f"{bad[0]} is not a finite number >= 0"
+            )
+    problem = held_out_problem(ctx, held_out)
+    if problem:
+        return fail(problem)
     pyproject = tomllib.loads((ctx.clone / "pyproject.toml").read_text(encoding="utf-8"))
     scripts = pyproject.get("project", {}).get("scripts", {})
     tools = ("halflife-guard", "halflife-pin")
@@ -767,18 +1268,18 @@ def gate_g9(ctx: Context) -> GateResult:
         return fail(f"not packaged as console scripts: {', '.join(unpackaged)}")
     docs = ctx.clone / "docs" / "MITIGATIONS.md"
     text = docs.read_text(encoding="utf-8") if docs.is_file() else ""
-    if not re.search(r"^#+ .*install", text, re.IGNORECASE | re.MULTILINE) or not all(
-        t in text for t in tools
-    ):
+    if not has_install_heading(text) or not all(t in text for t in tools):
         return fail("docs/MITIGATIONS.md lacks install docs for halflife-guard and halflife-pin")
     overhead_path = ctx.clone / "artifacts" / "e4" / "overhead.json"
     if not overhead_path.is_file():
         return fail("missing artifacts/e4/overhead.json")
     overhead = load_json(overhead_path)
     for tool in tools:
-        entry = overhead.get(tool, {})
-        if not isinstance(entry.get("latency_ms"), int | float) or not isinstance(
-            entry.get("tokens"), int | float
+        entry = overhead.get(tool) if isinstance(overhead, dict) else None
+        if (
+            not isinstance(entry, dict)
+            or not finite_nonnegative(entry.get("latency_ms"))
+            or not finite_nonnegative(entry.get("tokens"))
         ):
             return fail(f"overhead for {tool} not measured")
     if not ctx.fast:
@@ -795,18 +1296,36 @@ def gate_g9(ctx: Context) -> GateResult:
     )
 
 
-def entry_points_ok(dist: Path, tools: Sequence[str]) -> bool:
-    """True when a built wheel declares every tool as a console script."""
-    import zipfile
+def console_scripts(text: str) -> set[str]:
+    """Names declared under ``[console_scripts]`` in an ``entry_points.txt``.
 
-    for wheel in dist.glob("*.whl"):
+    The section header must be exactly ``[console_scripts]`` (importlib.metadata does
+    not strip spaces inside the brackets), and keys start in column 0 (indented lines
+    are continuations, as in INI files).
+    """
+    names: set[str] = set()
+    section = ""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", ";")):
+            continue
+        if stripped.startswith("[") and stripped.endswith("]"):
+            section = stripped[1:-1]
+            continue
+        match = re.match(r"([^\s=][^=]*?)\s*=", line)
+        if section == "console_scripts" and match:
+            names.add(match.group(1))
+    return names
+
+
+def entry_points_ok(dist: Path, tools: Sequence[str]) -> bool:
+    """True when a built wheel declares every tool under ``[console_scripts]``."""
+    for wheel in sorted(dist.glob("*.whl")):
         with zipfile.ZipFile(wheel) as archive:
             for name in archive.namelist():
                 if name.endswith(".dist-info/entry_points.txt"):
-                    text = archive.read(name).decode("utf-8")
-                    return all(
-                        re.search(rf"^{re.escape(t)}\s*=", text, re.MULTILINE) for t in tools
-                    )
+                    scripts = console_scripts(archive.read(name).decode("utf-8"))
+                    return all(t in scripts for t in tools)
     return False
 
 
@@ -852,8 +1371,11 @@ def gate_g12(ctx: Context) -> GateResult:
         return fail("review does not record a full commit SHA")
     if review.get("final_line") != "REVIEW: SHIP" or review.get("verdict") != "SHIP":
         return fail(f"latest review ends with {review.get('final_line')!r}")
-    if review.get("blocking"):
-        return fail(f"{len(review['blocking'])} open blocking issue(s)")
+    blocking = review.get("blocking")
+    if not isinstance(blocking, list):
+        return fail("review has no blocking list")
+    if blocking:
+        return fail(f"{len(blocking)} open blocking issue(s)")
     if not (ctx.clone / "docs" / "REVIEW_LOG.md").is_file():
         return fail("missing docs/REVIEW_LOG.md for non-blocking issues")
     if reviewed != ctx.sha:
@@ -886,11 +1408,28 @@ def headings(text: str) -> list[str]:
 
 
 def style_problems(name: str, text: str) -> list[str]:
-    """Rule 12 violations: em dashes and hype words."""
-    problems = [f"{name} contains an em dash"] if EM_DASH in text else []
-    lowered = text.lower()
-    problems += [f"{name} uses {word!r}" for word in HYPE_WORDS if word in lowered]
+    """Rule 12 violations: em dashes (also as HTML entities) and hype words.
+
+    Hype phrases are matched after collapsing whitespace, so a phrase split across
+    lines (or across a line break after a hyphen) still counts.
+    """
+    problems = [f"{name} contains an em dash"] if EM_DASH_RE.search(text) else []
+    flat = " ".join(text.lower().split())
+    joined = re.sub(r"(?<=\w)- (?=\w)", "-", flat)
+    problems += [f"{name} uses {word!r}" for word in HYPE_WORDS if word in flat or word in joined]
     return problems
+
+
+def has_interval(text: str) -> bool:
+    """True when ``text`` states an interval, not merely the letters 'ci'.
+
+    Accepted: a percentage before CI or interval ('95% CI'), the phrase 'confidence
+    interval' or 'credible interval', or a bracketed pair of numbers ('[0.12, 0.31]',
+    '(22 to 61)') together with the word CI (upper case) or interval.
+    """
+    if PERCENT_INTERVAL_RE.search(text) or NAMED_INTERVAL_RE.search(text):
+        return True
+    return bool(BRACKETED_PAIR_RE.search(text) and INTERVAL_WORD_RE.search(text))
 
 
 def readme_problems(clone: Path, text: str) -> list[str]:
@@ -916,7 +1455,7 @@ def readme_problems(clone: Path, text: str) -> list[str]:
         problems.append("README.md first screen lacks the headline table")
     if not re.search(r"quickstart", first_screen, re.IGNORECASE):
         problems.append("quickstart is not on the README first screen")
-    if not re.search(r"\b(CI|confidence interval|interval)\b", first_screen, re.IGNORECASE):
+    if not has_interval(first_screen):
         problems.append("README.md first screen gives no interval for the finding")
     return problems + style_problems("README.md", text)
 
@@ -933,7 +1472,7 @@ def report_problems(clone: Path, text: str) -> list[str]:
     for label, pattern in REPORT_SECTIONS.items():
         if not any(re.search(pattern, h) for h in heads):
             problems.append(f"docs/REPORT.md lacks {label!r}")
-    if re.search(r"\b(TODO|TBD|FIXME)\b", text):
+    if PLACEHOLDER_RE.search(text):
         problems.append("docs/REPORT.md has placeholders")
     for figure in re.findall(r"!\[[^\]]*\]\(([^)\s]+)\)", text):
         if not (clone / "docs" / figure).resolve().is_file() and not (clone / figure).is_file():

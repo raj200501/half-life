@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/version-bump.log.json",
+  "action_log_sha256": "ed2ee5c56e83f689a0312734326bbdd460cd26c8979f4d2a821512992c989576",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 41,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "version-bump",
+  "template_sha256": "a8c0dd3d0e9c51ca45e61df4528a87aebfdbd0f000e08423d718a4e10a1246d2",
+  "violations": 0
+}

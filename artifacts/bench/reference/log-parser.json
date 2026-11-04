@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/log-parser.log.json",
+  "action_log_sha256": "9a006d5108902af4f8e9c77f0e3d35abe607f654bdfbf72f59a2c58b82a9f132",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 40,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "log-parser",
+  "template_sha256": "7911f6076807051898b770d6a4a98e17132d7215e3217c0f00513bc7129477ac",
+  "violations": 0
+}

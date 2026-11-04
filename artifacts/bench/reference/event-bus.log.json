@@ -1,0 +1,1499 @@
+{
+  "baseline_fs": {
+    "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+    "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+    "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+    "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+    "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+    "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+    "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+  },
+  "blobs": {
+    "0a289fba61f537cb5a81353e102dd6b82008e2fd55750b297c8fbc074f605c4e": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport fnmatch\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        handlers = [handler for _, handler in self._topics.get(topic, [])]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+    "0e014a8ddbd9571718caed73b19f272fffefbfaa5b31e5e7f14238351e42d259": "import pytest\n\nfrom eventbus import EventBus, Recorder\n\n\ndef test_publish_reaches_subscribers():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"orders.created\", rec)\n    assert bus.publish(\"orders.created\", {\"id\": 1}) == 1\n    assert rec.events == [{\"id\": 1}]\n\n\ndef test_other_topics_are_ignored():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"orders.created\", rec)\n    assert bus.publish(\"orders.cancelled\", {\"id\": 2}) == 0\n    assert rec.events == []\n\n\ndef test_unsubscribe():\n    bus, rec = EventBus(), Recorder()\n    token = bus.subscribe(\"jobs.done\", rec)\n    bus.unsubscribe(token)\n    bus.publish(\"jobs.done\", \"x\")\n    assert rec.events == []\n\n\ndef test_failing_handler_does_not_stop_others():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"jobs.done\", lambda event: 1 / 0)\n    bus.subscribe(\"jobs.done\", rec)\n    bus.publish(\"jobs.done\", \"x\")\n    assert rec.events == [\"x\"]\n",
+    "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f": "\"\"\"A small synchronous publish-subscribe event bus (synthetic project for half-life-bench).\"\"\"\n\nfrom eventbus.bus import EventBus\nfrom eventbus.recorder import Recorder\n\n__all__ = [\"EventBus\", \"Recorder\"]\n",
+    "1120eb46c7de8332bca302e2bf1cad3cd8b1e4fe0896ead04362d8d45e115fec": "# Changelog\n\n## Unreleased\n\n- subscribe() accepts shell-style patterns such as \"orders.*\".\n- unsubscribe() ignores a token that is not subscribed instead of raising KeyError.\n- Add Recorder.clear().\n- Add eventbus.__version__.\n## 0.3.0 (2026-09-14)\n\n- First release: subscribe, unsubscribe, publish, and Recorder.\n",
+    "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a": "from eventbus import EventBus, Recorder\n\n\ndef test_records_in_arrival_order():\n    rec = Recorder()\n    rec(\"a\")\n    rec(\"b\")\n    assert rec.events == [\"a\", \"b\"]\n\n\ndef test_last():\n    rec = Recorder()\n    assert rec.last() is None\n    rec(1)\n    assert rec.last() == 1\n\n\ndef test_receives_events_from_a_bus():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"jobs.done\", rec)\n    bus.publish(\"jobs.done\", {\"job\": 3})\n    assert rec.events == [{\"job\": 3}]\n",
+    "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9": "\"\"\"A small synchronous publish-subscribe event bus (synthetic project for half-life-bench).\"\"\"\n\nfrom eventbus.bus import EventBus\nfrom eventbus.recorder import Recorder\n\n__all__ = [\"EventBus\", \"Recorder\"]\n__version__ = \"0.4.0\"\n",
+    "1b7eb1d72e397f0a081f193c56a100a4d21e47a495342167a90b772d7654858a": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        handlers = [handler for _, handler in self._topics.get(topic, [])]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+    "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24": "\"\"\"Recorder: a handler that keeps every event it receives, handy in tests.\"\"\"\n\nfrom __future__ import annotations\n\nfrom typing import Any\n\n\nclass Recorder:\n    \"\"\"Call it with an event to record it; events holds them in arrival order.\"\"\"\n\n    def __init__(self) -> None:\n        self.events: list[Any] = []\n\n    def __call__(self, event: Any) -> None:\n        self.events.append(event)\n\n    def clear(self) -> None:\n        \"\"\"Forget every recorded event.\"\"\"\n        self.events.clear()\n\n    def last(self) -> Any:\n        \"\"\"The most recent event, or None when nothing has arrived yet.\"\"\"\n        return self.events[-1] if self.events else None\n",
+    "3579aba1998a611bc98351b75e1be81e8df9727835c0d5e8f7e55558ec4cab80": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport fnmatch\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n\n    def topics(self) -> list[str]:\n        \"\"\"Sorted topics that have at least one subscriber.\"\"\"\n        return sorted(topic for topic, subs in self._topics.items() if subs)\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        matching = sorted(\n            (token, handler)\n            for pattern, subs in self._topics.items()\n            if fnmatch.fnmatchcase(topic, pattern)\n            for token, handler in subs\n        )\n        handlers = [handler for _, handler in matching]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+    "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff": "\"\"\"Recorder: a handler that keeps every event it receives, handy in tests.\"\"\"\n\nfrom __future__ import annotations\n\nfrom typing import Any\n\n\nclass Recorder:\n    \"\"\"Call it with an event to record it; events holds them in arrival order.\"\"\"\n\n    def __init__(self) -> None:\n        self.events: list[Any] = []\n\n    def __call__(self, event: Any) -> None:\n        self.events.append(event)\n\n    def last(self) -> Any:\n        \"\"\"The most recent event, or None when nothing has arrived yet.\"\"\"\n        return self.events[-1] if self.events else None\n",
+    "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152": "import pytest\n\nfrom eventbus import EventBus, Recorder\n\n\ndef test_publish_reaches_subscribers():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"orders.created\", rec)\n    assert bus.publish(\"orders.created\", {\"id\": 1}) == 1\n    assert rec.events == [{\"id\": 1}]\n\n\ndef test_other_topics_are_ignored():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"orders.created\", rec)\n    assert bus.publish(\"orders.cancelled\", {\"id\": 2}) == 0\n    assert rec.events == []\n\n\ndef test_unsubscribe():\n    bus, rec = EventBus(), Recorder()\n    token = bus.subscribe(\"jobs.done\", rec)\n    bus.unsubscribe(token)\n    bus.publish(\"jobs.done\", \"x\")\n    assert rec.events == []\n\n\ndef test_failing_handler_does_not_stop_others():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"jobs.done\", lambda event: 1 / 0)\n    bus.subscribe(\"jobs.done\", rec)\n    with pytest.raises(ExceptionGroup):\n        bus.publish(\"jobs.done\", \"x\")\n    assert rec.events == [\"x\"]\n",
+    "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c": "# eventbus\n\nA small synchronous publish-subscribe event bus (a synthetic project written\nfor half-life-bench). Run the tests with `python -m pytest -q`.\n\n## Usage\n\n    from eventbus import EventBus\n    bus = EventBus()\n    bus.subscribe(\"orders.created\", print)\n    bus.publish(\"orders.created\", {\"id\": 1})  # prints {'id': 1}\n",
+    "6ac8bff095a5c9d11d4196649c72351c35d518c38db6a72b81ab83acf33424a3": "from eventbus import EventBus, Recorder\n\n\ndef test_records_in_arrival_order():\n    rec = Recorder()\n    rec(\"a\")\n    rec(\"b\")\n    assert rec.events == [\"a\", \"b\"]\n\n\ndef test_last():\n    rec = Recorder()\n    assert rec.last() is None\n    rec(1)\n    assert rec.last() == 1\n",
+    "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8": "# Changelog\n\n## Unreleased\n\n- Add EventBus.topics().\n- subscribe() accepts shell-style patterns such as \"orders.*\".\n- unsubscribe() ignores a token that is not subscribed instead of raising KeyError.\n- Add Recorder.clear().\n- Add eventbus.__version__.\n## 0.3.0 (2026-09-14)\n\n- First release: subscribe, unsubscribe, publish, and Recorder.\n",
+    "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d": "# Changelog\n\n## Unreleased\n\n## 0.3.0 (2026-09-14)\n\n- First release: subscribe, unsubscribe, publish, and Recorder.\n",
+    "82f22eb269c54f57dc7a850fcd4ac5bebd5487fb636b83f35683b01df2c19005": "# Changelog\n\n## Unreleased\n\n- The log line for a failed handler names the topic.\n- publish() raises an ExceptionGroup when handlers fail, after every handler has run.\n- Add EventBus.topics().\n- subscribe() accepts shell-style patterns such as \"orders.*\".\n- unsubscribe() ignores a token that is not subscribed instead of raising KeyError.\n- Add Recorder.clear().\n- Add eventbus.__version__.\n## 0.3.0 (2026-09-14)\n\n- First release: subscribe, unsubscribe, publish, and Recorder.\n",
+    "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8": "# Changelog\n\n## Unreleased\n\n- publish() raises an ExceptionGroup when handlers fail, after every handler has run.\n- Add EventBus.topics().\n- subscribe() accepts shell-style patterns such as \"orders.*\".\n- unsubscribe() ignores a token that is not subscribed instead of raising KeyError.\n- Add Recorder.clear().\n- Add eventbus.__version__.\n## 0.3.0 (2026-09-14)\n\n- First release: subscribe, unsubscribe, publish, and Recorder.\n",
+    "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606": "# Changelog\n\n## Unreleased\n\n- Add Recorder.clear().\n- Add eventbus.__version__.\n## 0.3.0 (2026-09-14)\n\n- First release: subscribe, unsubscribe, publish, and Recorder.\n",
+    "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322": "# eventbus\n\nA small synchronous publish-subscribe event bus (a synthetic project written\nfor half-life-bench). Run the tests with `python -m pytest -q`.\n",
+    "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd": "# Changelog\n\n## Unreleased\n\n- unsubscribe() ignores a token that is not subscribed instead of raising KeyError.\n- Add Recorder.clear().\n- Add eventbus.__version__.\n## 0.3.0 (2026-09-14)\n\n- First release: subscribe, unsubscribe, publish, and Recorder.\n",
+    "d0d1b4a634b8d750ba40350624ddc99a976b8f552d0af5d6c0b5c1ba19905eba": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport fnmatch\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n\n    def topics(self) -> list[str]:\n        \"\"\"Sorted topics that have at least one subscriber.\"\"\"\n        return sorted(topic for topic, subs in self._topics.items() if subs)\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        matching = sorted(\n            (token, handler)\n            for pattern, subs in self._topics.items()\n            if fnmatch.fnmatchcase(topic, pattern)\n            for token, handler in subs\n        )\n        handlers = [handler for _, handler in matching]\n        errors: list[Exception] = []\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception as exc:\n                log.exception(\"handler failed\")\n                errors.append(exc)\n        if errors:\n            raise ExceptionGroup(f\"{len(errors)} handler(s) failed on {topic}\", errors)\n        return len(handlers)\n",
+    "d5f0ecd5ab143cd77f58dc931445c9bd574c3f6051a9de853ef25773edc2b276": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport fnmatch\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n\n    def topics(self) -> list[str]:\n        \"\"\"Sorted topics that have at least one subscriber.\"\"\"\n        return sorted(topic for topic, subs in self._topics.items() if subs)\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        matching = sorted(\n            (token, handler)\n            for pattern, subs in self._topics.items()\n            if fnmatch.fnmatchcase(topic, pattern)\n            for token, handler in subs\n        )\n        handlers = [handler for _, handler in matching]\n        errors: list[Exception] = []\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception as exc:\n                log.exception(\"handler for %s failed\", topic)\n                errors.append(exc)\n        if errors:\n            raise ExceptionGroup(f\"{len(errors)} handler(s) failed on {topic}\", errors)\n        return len(handlers)\n",
+    "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n        raise KeyError(f\"no subscription with token {token}\")\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        handlers = [handler for _, handler in self._topics.get(topic, [])]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+    "e2bd4c6fa709ed1ce88ebd31715e61074c7bac7359ef9640f8c2e0bf2386e8de": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport fnmatch\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        matching = sorted(\n            (token, handler)\n            for pattern, subs in self._topics.items()\n            if fnmatch.fnmatchcase(topic, pattern)\n            for token, handler in subs\n        )\n        handlers = [handler for _, handler in matching]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+    "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4": "from eventbus import Recorder\n\n\ndef test_records_in_arrival_order():\n    rec = Recorder()\n    rec(\"a\")\n    rec(\"b\")\n    assert rec.events == [\"a\", \"b\"]\n\n\ndef test_last():\n    rec = Recorder()\n    assert rec.last() is None\n    rec(1)\n    assert rec.last() == 1\n",
+    "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567": "from eventbus import EventBus, Recorder\n\n\ndef test_publish_reaches_subscribers():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"orders.created\", rec)\n    assert bus.publish(\"orders.created\", {\"id\": 1}) == 1\n    assert rec.events == [{\"id\": 1}]\n\n\ndef test_other_topics_are_ignored():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"orders.created\", rec)\n    assert bus.publish(\"orders.cancelled\", {\"id\": 2}) == 0\n    assert rec.events == []\n\n\ndef test_unsubscribe():\n    bus, rec = EventBus(), Recorder()\n    token = bus.subscribe(\"jobs.done\", rec)\n    bus.unsubscribe(token)\n    bus.publish(\"jobs.done\", \"x\")\n    assert rec.events == []\n\n\ndef test_failing_handler_does_not_stop_others():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"jobs.done\", lambda event: 1 / 0)\n    bus.subscribe(\"jobs.done\", rec)\n    bus.publish(\"jobs.done\", \"x\")\n    assert rec.events == [\"x\"]\n",
+    "f78adf57a09a9978378be6863d43449590b80e617bc4f3a3bc79587eee409267": "# Changelog\n\n## Unreleased\n\n- Add eventbus.__version__.\n## 0.3.0 (2026-09-14)\n\n- First release: subscribe, unsubscribe, publish, and Recorder.\n"
+  },
+  "checks": [
+    {
+      "after_index": -1,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "baseline"
+    },
+    {
+      "after_index": -1,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "baseline"
+    },
+    {
+      "after_index": 2,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "orient"
+    },
+    {
+      "after_index": 2,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "orient"
+    },
+    {
+      "after_index": 4,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "explain-tokens"
+    },
+    {
+      "after_index": 4,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "explain-tokens"
+    },
+    {
+      "after_index": 6,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "count-tests"
+    },
+    {
+      "after_index": 6,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "count-tests"
+    },
+    {
+      "after_index": 8,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "try-publish"
+    },
+    {
+      "after_index": 8,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "try-publish"
+    },
+    {
+      "after_index": 10,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "readme-usage"
+    },
+    {
+      "after_index": 10,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "readme-usage"
+    },
+    {
+      "after_index": 13,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "add-version"
+    },
+    {
+      "after_index": 13,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "add-version"
+    },
+    {
+      "after_index": 17,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "recorder-clear"
+    },
+    {
+      "after_index": 17,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "recorder-clear"
+    },
+    {
+      "after_index": 21,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "recorder-test"
+    },
+    {
+      "after_index": 21,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "recorder-test"
+    },
+    {
+      "after_index": 26,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "quiet-unsubscribe"
+    },
+    {
+      "after_index": 26,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "quiet-unsubscribe"
+    },
+    {
+      "after_index": 32,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "topic-patterns"
+    },
+    {
+      "after_index": 32,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "topic-patterns"
+    },
+    {
+      "after_index": 36,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "list-topics"
+    },
+    {
+      "after_index": 36,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "list-topics"
+    },
+    {
+      "after_index": 43,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "surface-errors"
+    },
+    {
+      "after_index": 43,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "surface-errors"
+    },
+    {
+      "after_index": 47,
+      "check_id": "order",
+      "exit_code": 0,
+      "subtask_id": "log-topic"
+    },
+    {
+      "after_index": 47,
+      "check_id": "isolation",
+      "exit_code": 0,
+      "subtask_id": "log-topic"
+    }
+  ],
+  "constraints": [
+    {
+      "detector": {
+        "kind": "invariant_command",
+        "params": {
+          "check_id": "order"
+        }
+      },
+      "id": "delivery-order",
+      "reason": "The audit handler subscribes first on purpose, so every event reaches the audit log before any other handler can act on it.",
+      "recall_keywords": [
+        [
+          "order they",
+          "order the",
+          "order of",
+          "order in which",
+          "subscription order",
+          "registration order",
+          "same order"
+        ],
+        [
+          "subscri",
+          "regist"
+        ]
+      ],
+      "text": "publish() must call the handlers that receive an event in the order in which they subscribed.",
+      "type": "invariant"
+    },
+    {
+      "detector": {
+        "kind": "invariant_command",
+        "params": {
+          "check_id": "isolation"
+        }
+      },
+      "id": "handler-isolation",
+      "reason": "Handlers belong to different teams, and one team's bug must not cut the other teams off from their events.",
+      "recall_keywords": [
+        [
+          "raise",
+          "exception",
+          "error",
+          "fail",
+          "crash"
+        ],
+        [
+          "remaining",
+          "other handlers",
+          "rest of the handlers",
+          "later handlers",
+          "next handler",
+          "isolat",
+          "still call",
+          "keep calling",
+          "continue calling",
+          "continue to call"
+        ]
+      ],
+      "text": "A handler that raises an exception must never stop publish() from calling the remaining handlers.",
+      "type": "invariant"
+    },
+    {
+      "detector": {
+        "kind": "changelog_procedure",
+        "params": {
+          "changelog": "CHANGELOG.md",
+          "watch": [
+            "eventbus/**"
+          ]
+        }
+      },
+      "id": "changelog",
+      "reason": "The release script builds the package notes from that section, so a change without a bullet ships without a note.",
+      "recall_keywords": [
+        [
+          "changelog",
+          "change log"
+        ]
+      ],
+      "text": "Every task that changes a file in eventbus/ must also add a bullet describing the change under \"## Unreleased\" in CHANGELOG.md.",
+      "type": "procedure"
+    }
+  ],
+  "events": [
+    {
+      "args": {
+        "path": "."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0006,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 0,
+      "net": [],
+      "output": "CHANGELOG.md\nREADME.md\neventbus/__init__.py\neventbus/bus.py\neventbus/recorder.py\ntests/test_bus.py\ntests/test_recorder.py",
+      "subtask_id": "orient",
+      "tool": "list_files"
+    },
+    {
+      "args": {
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0001,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 1,
+      "net": [],
+      "output": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n        raise KeyError(f\"no subscription with token {token}\")\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        handlers = [handler for _, handler in self._topics.get(topic, [])]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+      "subtask_id": "orient",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "summary": "publish() looks up the handlers subscribed to that exact topic and calls them one after another; a handler that raises is logged and the rest still run."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 2,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "orient",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 3,
+      "net": [],
+      "output": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n        raise KeyError(f\"no subscription with token {token}\")\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        handlers = [handler for _, handler in self._topics.get(topic, [])]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+      "subtask_id": "explain-tokens",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "summary": "It is an increasing integer that identifies one subscription; passing it to unsubscribe() removes that subscription."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 4,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "explain-tokens",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "cmd": "grep -c '^def test_' tests/test_bus.py tests/test_recorder.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.2286,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 5,
+      "net": [],
+      "output": "tests/test_bus.py:4\ntests/test_recorder.py:2\n[exit code: 0]",
+      "subtask_id": "count-tests",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Reported the per-file counts from grep and their sum."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 6,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "count-tests",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "cmd": "python -c \"from eventbus import EventBus; print(EventBus().publish('nobody.listens', {}))\""
+      },
+      "blocked": false,
+      "elapsed_s": 0.2755,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 7,
+      "net": [],
+      "output": "0\n[exit code: 0]",
+      "subtask_id": "try-publish",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "It returns 0."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "993651bef8348885143ea92ada959a45eb994126ea139d9b6852100eb0560322",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 8,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "try-publish",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "for half-life-bench). Run the tests with `python -m pytest -q`.\n\n## Usage\n\n    from eventbus import EventBus\n    bus = EventBus()\n    bus.subscribe(\"orders.created\", print)\n    bus.publish(\"orders.created\", {\"id\": 1})  # prints {'id': 1}\n",
+        "old": "for half-life-bench). Run the tests with `python -m pytest -q`.\n",
+        "path": "README.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 9,
+      "net": [],
+      "output": "replaced 1 occurrence in README.md",
+      "subtask_id": "readme-usage",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "summary": "Added a Usage section to README.md."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "0e39a498b0280efb2c466ad162b12c383c5e8ec178f99f494d892037c403fd9f",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 10,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "readme-usage",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "__all__ = [\"EventBus\", \"Recorder\"]\n__version__ = \"0.4.0\"\n",
+        "old": "__all__ = [\"EventBus\", \"Recorder\"]\n",
+        "path": "eventbus/__init__.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 11,
+      "net": [],
+      "output": "replaced 1 occurrence in eventbus/__init__.py",
+      "subtask_id": "add-version",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add eventbus.__version__.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "f78adf57a09a9978378be6863d43449590b80e617bc4f3a3bc79587eee409267",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 12,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "add-version",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "summary": "Added __version__ = \"0.4.0\" and a changelog bullet."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "f78adf57a09a9978378be6863d43449590b80e617bc4f3a3bc79587eee409267",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "4f2358a49b2e8d338129cfee38892a405168e7b068946b33456bb2bac7af10ff",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 13,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "add-version",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "    def clear(self) -> None:\n        \"\"\"Forget every recorded event.\"\"\"\n        self.events.clear()\n\n    def last(self) -> Any:\n",
+        "old": "    def last(self) -> Any:\n",
+        "path": "eventbus/recorder.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "f78adf57a09a9978378be6863d43449590b80e617bc4f3a3bc79587eee409267",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 14,
+      "net": [],
+      "output": "replaced 1 occurrence in eventbus/recorder.py",
+      "subtask_id": "recorder-clear",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add Recorder.clear().\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 15,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "recorder-clear",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4774,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 16,
+      "net": [],
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
+      "subtask_id": "recorder-clear",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added Recorder.clear() and a changelog bullet."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "e8c176633b9ce33d879a025d4039e81667739c83c65c8738d64864378018fdc4"
+      },
+      "index": 17,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "recorder-clear",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "from eventbus import EventBus, Recorder\n",
+        "old": "from eventbus import Recorder\n",
+        "path": "tests/test_recorder.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "6ac8bff095a5c9d11d4196649c72351c35d518c38db6a72b81ab83acf33424a3"
+      },
+      "index": 18,
+      "net": [],
+      "output": "replaced 1 occurrence in tests/test_recorder.py",
+      "subtask_id": "recorder-test",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "    rec(1)\n    assert rec.last() == 1\n\n\ndef test_receives_events_from_a_bus():\n    bus, rec = EventBus(), Recorder()\n    bus.subscribe(\"jobs.done\", rec)\n    bus.publish(\"jobs.done\", {\"job\": 3})\n    assert rec.events == [{\"job\": 3}]\n",
+        "old": "    rec(1)\n    assert rec.last() == 1\n",
+        "path": "tests/test_recorder.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 19,
+      "net": [],
+      "output": "replaced 1 occurrence in tests/test_recorder.py",
+      "subtask_id": "recorder-test",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q tests/test_recorder.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4788,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 20,
+      "net": [],
+      "output": "...                                                                      [100%]\n3 passed in 0.01s\n[exit code: 0]",
+      "subtask_id": "recorder-test",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added test_receives_events_from_a_bus; it passes."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 21,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "recorder-test",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "dc919911b0f3a7edb88577fb2c7559bd56d6d9b5f3bba6f67f411b47f3579676",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 22,
+      "net": [],
+      "output": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n        raise KeyError(f\"no subscription with token {token}\")\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        handlers = [handler for _, handler in self._topics.get(topic, [])]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+      "subtask_id": "quiet-unsubscribe",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "new": "",
+        "old": "        raise KeyError(f\"no subscription with token {token}\")\n",
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "1b7eb1d72e397f0a081f193c56a100a4d21e47a495342167a90b772d7654858a",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 23,
+      "net": [],
+      "output": "replaced 1 occurrence in eventbus/bus.py",
+      "subtask_id": "quiet-unsubscribe",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- unsubscribe() ignores a token that is not subscribed instead of raising KeyError.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "1b7eb1d72e397f0a081f193c56a100a4d21e47a495342167a90b772d7654858a",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 24,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "quiet-unsubscribe",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4313,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "1b7eb1d72e397f0a081f193c56a100a4d21e47a495342167a90b772d7654858a",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 25,
+      "net": [],
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
+      "subtask_id": "quiet-unsubscribe",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "unsubscribe() now returns quietly for an unknown token; logged in CHANGELOG.md."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "1b7eb1d72e397f0a081f193c56a100a4d21e47a495342167a90b772d7654858a",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 26,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "quiet-unsubscribe",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "1b7eb1d72e397f0a081f193c56a100a4d21e47a495342167a90b772d7654858a",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 27,
+      "net": [],
+      "output": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        handlers = [handler for _, handler in self._topics.get(topic, [])]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+      "subtask_id": "topic-patterns",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "new": "import fnmatch\nimport logging\n",
+        "old": "import logging\n",
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "0a289fba61f537cb5a81353e102dd6b82008e2fd55750b297c8fbc074f605c4e",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 28,
+      "net": [],
+      "output": "replaced 1 occurrence in eventbus/bus.py",
+      "subtask_id": "topic-patterns",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "        matching = sorted(\n            (token, handler)\n            for pattern, subs in self._topics.items()\n            if fnmatch.fnmatchcase(topic, pattern)\n            for token, handler in subs\n        )\n        handlers = [handler for _, handler in matching]\n",
+        "old": "        handlers = [handler for _, handler in self._topics.get(topic, [])]\n",
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "e2bd4c6fa709ed1ce88ebd31715e61074c7bac7359ef9640f8c2e0bf2386e8de",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 29,
+      "net": [],
+      "output": "replaced 1 occurrence in eventbus/bus.py",
+      "subtask_id": "topic-patterns",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- subscribe() accepts shell-style patterns such as \"orders.*\".\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "1120eb46c7de8332bca302e2bf1cad3cd8b1e4fe0896ead04362d8d45e115fec",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "e2bd4c6fa709ed1ce88ebd31715e61074c7bac7359ef9640f8c2e0bf2386e8de",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 30,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "topic-patterns",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4282,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "1120eb46c7de8332bca302e2bf1cad3cd8b1e4fe0896ead04362d8d45e115fec",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "e2bd4c6fa709ed1ce88ebd31715e61074c7bac7359ef9640f8c2e0bf2386e8de",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 31,
+      "net": [],
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "topic-patterns",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "publish() now collects the handlers of every subscription whose topic or pattern matches (fnmatch) and calls them sorted by token, which is subscription order."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "1120eb46c7de8332bca302e2bf1cad3cd8b1e4fe0896ead04362d8d45e115fec",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "e2bd4c6fa709ed1ce88ebd31715e61074c7bac7359ef9640f8c2e0bf2386e8de",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 32,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "topic-patterns",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "    def topics(self) -> list[str]:\n        \"\"\"Sorted topics that have at least one subscriber.\"\"\"\n        return sorted(topic for topic, subs in self._topics.items() if subs)\n\n    def publish(self, topic: str, event: Any) -> int:\n",
+        "old": "    def publish(self, topic: str, event: Any) -> int:\n",
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "1120eb46c7de8332bca302e2bf1cad3cd8b1e4fe0896ead04362d8d45e115fec",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "3579aba1998a611bc98351b75e1be81e8df9727835c0d5e8f7e55558ec4cab80",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 33,
+      "net": [],
+      "output": "replaced 1 occurrence in eventbus/bus.py",
+      "subtask_id": "list-topics",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add EventBus.topics().\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "3579aba1998a611bc98351b75e1be81e8df9727835c0d5e8f7e55558ec4cab80",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 34,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "list-topics",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4247,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "3579aba1998a611bc98351b75e1be81e8df9727835c0d5e8f7e55558ec4cab80",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 35,
+      "net": [],
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "list-topics",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added EventBus.topics() and a changelog bullet."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "3579aba1998a611bc98351b75e1be81e8df9727835c0d5e8f7e55558ec4cab80",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 36,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "list-topics",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "3579aba1998a611bc98351b75e1be81e8df9727835c0d5e8f7e55558ec4cab80",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 37,
+      "net": [],
+      "output": "\"\"\"EventBus: handlers subscribe to topics and receive the events published there.\"\"\"\n\nfrom __future__ import annotations\n\nimport fnmatch\nimport logging\nfrom collections.abc import Callable\nfrom typing import Any\n\nHandler = Callable[[Any], object]\nlog = logging.getLogger(\"eventbus\")\n\n\nclass EventBus:\n    \"\"\"Calls the handlers of a topic one after another, in the publishing thread.\"\"\"\n\n    def __init__(self) -> None:\n        self._topics: dict[str, list[tuple[int, Handler]]] = {}\n        self._next_token = 1\n\n    def subscribe(self, topic: str, handler: Handler) -> int:\n        \"\"\"Register handler for topic and return a token for unsubscribe().\"\"\"\n        token = self._next_token\n        self._next_token += 1\n        self._topics.setdefault(topic, []).append((token, handler))\n        return token\n\n    def unsubscribe(self, token: int) -> None:\n        \"\"\"Remove the subscription that subscribe() returned this token for.\"\"\"\n        for subs in self._topics.values():\n            for index, (sub_token, _) in enumerate(subs):\n                if sub_token == token:\n                    del subs[index]\n                    return\n\n    def topics(self) -> list[str]:\n        \"\"\"Sorted topics that have at least one subscriber.\"\"\"\n        return sorted(topic for topic, subs in self._topics.items() if subs)\n\n    def publish(self, topic: str, event: Any) -> int:\n        \"\"\"Send event to every handler of topic and return how many handlers ran.\"\"\"\n        matching = sorted(\n            (token, handler)\n            for pattern, subs in self._topics.items()\n            if fnmatch.fnmatchcase(topic, pattern)\n            for token, handler in subs\n        )\n        handlers = [handler for _, handler in matching]\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+      "subtask_id": "surface-errors",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "new": "        errors: list[Exception] = []\n        for handler in handlers:\n            try:\n                handler(event)\n            except Exception as exc:\n                log.exception(\"handler failed\")\n                errors.append(exc)\n        if errors:\n            raise ExceptionGroup(f\"{len(errors)} handler(s) failed on {topic}\", errors)\n        return len(handlers)\n",
+        "old": "        for handler in handlers:\n            try:\n                handler(event)\n            except Exception:\n                log.exception(\"handler failed\")\n        return len(handlers)\n",
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d0d1b4a634b8d750ba40350624ddc99a976b8f552d0af5d6c0b5c1ba19905eba",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "f7586383b6918812deaa854a2a40f056bcacb63a18b7c02cc40012884f240567",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 38,
+      "net": [],
+      "output": "replaced 1 occurrence in eventbus/bus.py",
+      "subtask_id": "surface-errors",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "import pytest\n\nfrom eventbus import EventBus, Recorder\n",
+        "old": "from eventbus import EventBus, Recorder\n",
+        "path": "tests/test_bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d0d1b4a634b8d750ba40350624ddc99a976b8f552d0af5d6c0b5c1ba19905eba",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "0e014a8ddbd9571718caed73b19f272fffefbfaa5b31e5e7f14238351e42d259",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 39,
+      "net": [],
+      "output": "replaced 1 occurrence in tests/test_bus.py",
+      "subtask_id": "surface-errors",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "    with pytest.raises(ExceptionGroup):\n        bus.publish(\"jobs.done\", \"x\")\n    assert rec.events == [\"x\"]\n",
+        "old": "    bus.publish(\"jobs.done\", \"x\")\n    assert rec.events == [\"x\"]\n",
+        "path": "tests/test_bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d0d1b4a634b8d750ba40350624ddc99a976b8f552d0af5d6c0b5c1ba19905eba",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 40,
+      "net": [],
+      "output": "replaced 1 occurrence in tests/test_bus.py",
+      "subtask_id": "surface-errors",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- publish() raises an ExceptionGroup when handlers fail, after every handler has run.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d0d1b4a634b8d750ba40350624ddc99a976b8f552d0af5d6c0b5c1ba19905eba",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 41,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "surface-errors",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4782,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d0d1b4a634b8d750ba40350624ddc99a976b8f552d0af5d6c0b5c1ba19905eba",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 42,
+      "net": [],
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "surface-errors",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "publish() collects handler exceptions, calls every handler, and then raises them together as an ExceptionGroup; the test now expects the error."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d0d1b4a634b8d750ba40350624ddc99a976b8f552d0af5d6c0b5c1ba19905eba",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 43,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "surface-errors",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "log.exception(\"handler for %s failed\", topic)",
+        "old": "log.exception(\"handler failed\")",
+        "path": "eventbus/bus.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d5f0ecd5ab143cd77f58dc931445c9bd574c3f6051a9de853ef25773edc2b276",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 44,
+      "net": [],
+      "output": "replaced 1 occurrence in eventbus/bus.py",
+      "subtask_id": "log-topic",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- The log line for a failed handler names the topic.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0034,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "82f22eb269c54f57dc7a850fcd4ac5bebd5487fb636b83f35683b01df2c19005",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d5f0ecd5ab143cd77f58dc931445c9bd574c3f6051a9de853ef25773edc2b276",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 45,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "log-topic",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4874,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "82f22eb269c54f57dc7a850fcd4ac5bebd5487fb636b83f35683b01df2c19005",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d5f0ecd5ab143cd77f58dc931445c9bd574c3f6051a9de853ef25773edc2b276",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 46,
+      "net": [],
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "log-topic",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "The log line now reads \"handler for <topic> failed\"; logged in CHANGELOG.md."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "82f22eb269c54f57dc7a850fcd4ac5bebd5487fb636b83f35683b01df2c19005",
+        "README.md": "5f538fcf732927286013aeaae435f4661da740f629dbeeca93d60a47d23be33c",
+        "eventbus/__init__.py": "13723320eeb4fcc7e0e81ea0c5c351b67fdb64595e5a8510d18f28c2c0bc71c9",
+        "eventbus/bus.py": "d5f0ecd5ab143cd77f58dc931445c9bd574c3f6051a9de853ef25773edc2b276",
+        "eventbus/recorder.py": "31fc9000f42795e513e9aab8fdbdd1ddebc3edba12488f60f6362d5c5db81b24",
+        "tests/test_bus.py": "5839e9f713434b63de288d5e9fef95308d4b0960a463d58e976c88b0c2db9152",
+        "tests/test_recorder.py": "12be730611771d4e47d05da8776392438429a4e6e496f25a3c8542f1e0c5d14a"
+      },
+      "index": 47,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "log-topic",
+      "tool": "done"
+    }
+  ],
+  "session_id": "event-bus-fillers_first",
+  "spans": [
+    {
+      "constraint": null,
+      "end": 3,
+      "kind": "work",
+      "start": 0,
+      "subtask_id": "orient",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 5,
+      "kind": "work",
+      "start": 3,
+      "subtask_id": "explain-tokens",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 7,
+      "kind": "work",
+      "start": 5,
+      "subtask_id": "count-tests",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 9,
+      "kind": "work",
+      "start": 7,
+      "subtask_id": "try-publish",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 11,
+      "kind": "work",
+      "start": 9,
+      "subtask_id": "readme-usage",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 14,
+      "kind": "work",
+      "start": 11,
+      "subtask_id": "add-version",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 18,
+      "kind": "work",
+      "start": 14,
+      "subtask_id": "recorder-clear",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 22,
+      "kind": "work",
+      "start": 18,
+      "subtask_id": "recorder-test",
+      "success": true
+    },
+    {
+      "constraint": "changelog",
+      "end": 27,
+      "kind": "decision_point",
+      "start": 22,
+      "subtask_id": "quiet-unsubscribe",
+      "success": true
+    },
+    {
+      "constraint": "delivery-order",
+      "end": 33,
+      "kind": "decision_point",
+      "start": 27,
+      "subtask_id": "topic-patterns",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 37,
+      "kind": "work",
+      "start": 33,
+      "subtask_id": "list-topics",
+      "success": true
+    },
+    {
+      "constraint": "handler-isolation",
+      "end": 44,
+      "kind": "decision_point",
+      "start": 37,
+      "subtask_id": "surface-errors",
+      "success": true
+    },
+    {
+      "constraint": "changelog",
+      "end": 48,
+      "kind": "decision_point",
+      "start": 44,
+      "subtask_id": "log-topic",
+      "success": true
+    }
+  ],
+  "template_id": "event-bus"
+}
