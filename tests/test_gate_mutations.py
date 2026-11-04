@@ -12,15 +12,19 @@ guards false, and the test asserts that the gate fails with evidence naming that
 property (a failure for an unrelated reason does not count as a detection).
 tools/ship_check.py is imported with importlib and never edited. Gates run through
 ``run_gates``, so an exception counts as a failure exactly as in a real ship check.
-Template files are loaded the way the real check loads them (``halflife.bench`` in a
-Python sub-process), with this test interpreter standing in for the clone's.
+Template files are loaded, and the E1 analysis is rerun, the way the real check does it
+(``halflife.bench`` and ``halflife.e1_analysis`` in a Python sub-process), with this
+test interpreter standing in for the clone's.
 
 A mutation that the gate does not catch is a hole in the instrument. It is kept as a
 strict expected failure (``xfail(strict=True, raises=AssertionError)``) whose reason
 describes the hole: the suite stays green while the hole is open and goes red when the
 gate is fixed. The holes found by the first run of this suite (DECISIONS.md D-032) were
-closed in tools/ship_check.py, so each is now an ordinary caught mutation. Every fixture
-here is synthetic.
+closed in tools/ship_check.py, so each is now an ordinary caught mutation; so were the
+three D-037 left open (G5 retention for every rule of the session's template, G6
+reference-run action logs, and G7 recomputing the estimates in a full check). The G7
+recomputation fixture is produced by the real ``halflife.e1_analysis`` on synthetic
+rows. Every fixture here is synthetic.
 """
 
 from __future__ import annotations
@@ -29,10 +33,13 @@ import copy
 import hashlib
 import importlib.util
 import json
+import math
 import os
+import random
 import re
 import subprocess
 import sys
+import tempfile
 import zipfile
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -44,8 +51,11 @@ import pytest
 
 from halflife import bench as bench_mod
 from halflife import compaction as compaction_mod
+from halflife import e1_analysis
+from halflife.bench import verify as verify_mod
 from halflife.experiment import LOG_FIELDS, e0_validation, log_problems
 from halflife.integrity import prereg as prereg_tool
+from halflife.schema import ActionLog, SubtaskSpan, ToolEvent
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -118,11 +128,12 @@ def evaluate(number: int, ctx: Any) -> Any:
         sc.EVALUATION_ORDER = saved
 
 
-def context(root: Path, sha: str = SHA, *, setup: bool = False) -> Any:
+def context(root: Path, sha: str = SHA, *, setup: bool = False, fast: bool = True) -> Any:
     """A ship-check Context whose clone is ``root``.
 
     ``setup`` records a successful ``make setup``, which the gates that load template
-    files need; this interpreter (with halflife installed) stands in for the clone's.
+    files or rerun the E1 analysis need; this interpreter (with halflife installed)
+    stands in for the clone's. ``fast`` is the ``--fast`` flag.
     """
     root.mkdir(parents=True, exist_ok=True)
     logs = root / ".ship-logs"
@@ -132,24 +143,25 @@ def context(root: Path, sha: str = SHA, *, setup: bool = False) -> Any:
         clone=root,
         logs=logs,
         sha=sha,
-        fast=True,
+        fast=fast,
         env=dict(os.environ),
         shared={"setup_ok": True} if setup else {},
         python=(sys.executable,),
     )
 
 
-# The unmutated fixtures are deterministic, so each gate's control is checked once per run.
-_CONTROLS_PASSED: set[int] = set()
+# The unmutated fixtures are deterministic, so each (gate, fixture) control is checked
+# once per run.
+_CONTROLS_PASSED: set[tuple[int, Callable[[Path], Any]]] = set()
 
 
 def assert_caught(number: int, case: Case, base: Callable[[Path], Any], tmp: Path) -> None:
     """The control passes; the mutant fails with evidence matching ``case.expect``."""
-    if number not in _CONTROLS_PASSED:
+    if (number, base) not in _CONTROLS_PASSED:
         control = evaluate(number, base(tmp / "control"))
         if not control.passed:
             raise FixtureBroken(f"G{number} control fails: {control.evidence}")
-        _CONTROLS_PASSED.add(number)
+        _CONTROLS_PASSED.add((number, base))
     result = evaluate(number, case.build(tmp / "mutant"))
     assert not result.passed, f"G{number} mutation {case.name!r} survived: {result.evidence}"
     if not re.search(case.expect, result.evidence):
@@ -287,12 +299,17 @@ def validation(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def compaction_log(event_id: str, strategy: str = "full_summary") -> dict[str, Any]:
-    """A complete compaction log in the layout halflife.compaction writes (synthetic)."""
+def compaction_log(
+    event_id: str, strategy: str = "full_summary", rules: Sequence[str] = ("protect-tests",)
+) -> dict[str, Any]:
+    """A complete compaction log in the layout halflife.compaction writes (synthetic).
+
+    ``rules`` are the constraint ids whose retention the log records.
+    """
     system = {"role": "system", "content": "You are a coding agent. Reply with one tool call."}
-    rules = {"role": "user", "content": "Rules: never modify files under tests/.\n\nFix it."}
+    stated = {"role": "user", "content": "Rules: never modify files under tests/.\n\nFix it."}
     summary = None if strategy == "sliding_window" else "Fixed the parser; the tests pass."
-    body = [{"role": "user", "content": f"Summary so far:\n{summary}"}] if summary else [rules]
+    body = [{"role": "user", "content": f"Summary so far:\n{summary}"}] if summary else [stated]
     return {
         "event_id": event_id,
         "strategy": strategy,
@@ -300,19 +317,36 @@ def compaction_log(event_id: str, strategy: str = "full_summary") -> dict[str, A
         "scheduled": True,
         "tokens_before": 3000,
         "tokens_after": 900,
-        "before": [system, rules, {"role": "assistant", "content": '{"tool": "list_files"}'}],
+        "before": [system, stated, {"role": "assistant", "content": '{"tool": "list_files"}'}],
         "after": [system, *body],
         "summary": summary,
-        "constraint_text_retained": {"protect-tests": summary is None},
+        "constraint_text_retained": {rule: summary is None for rule in rules},
         "prompt_variant": "default",
     }
 
 
+# G5 retention: the banked experiment the compaction logs name as their source, its
+# sessions' templates, and those templates' constraint ids (synthetic).
+SOURCE = "artifacts/pilot"
+G5_TEMPLATES: dict[str, tuple[str, ...]] = {
+    "t-one": ("protect-tests",),
+    "t-two": ("keep-api", "protect-tests"),
+}
+G5_SESSIONS = ("t-one", "t-one", "t-two")  # template of session s<i> in run r<i>
+
+
+def bank_g5_template(root: Path, tid: str, rules: Sequence[str]) -> dict[str, Any]:
+    """Write a template file declaring ``rules`` and return its bench manifest entry."""
+    rel = f"{TEMPLATES}/{tid}.yaml"
+    write_files(root, {rel: template_text(0, "prohibition", tid=tid, cids=rules)})
+    return {"id": tid, "path": rel, "sha256": sha256(root / rel), "split": "main"}
+
+
 def build_g5(root: Path, strategy: str = "full_summary") -> Any:
     events: list[dict[str, Any]] = []
-    for i in range(3):
+    for i, tid in enumerate(G5_SESSIONS):
         rel = f"artifacts/e0/compactions/r{i}/s{i}/c1.json"
-        log = compaction_log("c1", strategy)
+        log = compaction_log("c1", strategy, G5_TEMPLATES[tid])
         write_files(root, {rel: log})
         events.append(
             {
@@ -323,21 +357,29 @@ def build_g5(root: Path, strategy: str = "full_summary") -> Any:
                 "log_sha256": sha256(root / rel),
             }
         )
+    sessions = [
+        {"run_id": f"r{i}", "session_id": f"s{i}", "template_id": tid, "synthetic": True}
+        for i, tid in enumerate(G5_SESSIONS)
+    ]
+    entries = [bank_g5_template(root, tid, rules) for tid, rules in G5_TEMPLATES.items()]
     write_files(
         root,
         {
             DV: validation(seeded_cases(60, 1, 1, 38)),
             PL: {
+                "source": SOURCE,
                 "validation_runs": 3,
                 "leaks": 0,
                 "runs": [
                     {"run_id": f"r{i}", "session_id": f"s{i}", "leaked": False} for i in range(3)
                 ],
             },
-            CL: {"events": events},
+            CL: {"source": SOURCE, "events": events},
+            f"{SOURCE}/sessions.jsonl": sessions,
+            MANIFEST: {"templates": entries},
         },
     )
-    return context(root)
+    return context(root, setup=True)
 
 
 def g5(name: str, expect: str, change: Callable[[Path], object], hole: str = "") -> Case:
@@ -446,8 +488,50 @@ def cp_only_negative() -> list[dict[str, Any]]:
     return [*rows, {**negative, "constraint_id": "protect-tests"}]
 
 
+def edit_retention(index: int, change: Callable[[dict[str, bool]], object]) -> Any:
+    """Change one log's retention map, re-bank its hash, and keep the event's copy equal.
+
+    Only the retention content differs afterwards, so a failure must come from the
+    retention check rather than a hash or a disagreement with the event.
+    """
+
+    def apply(root: Path) -> None:
+        data = json.loads((root / CL).read_text(encoding="utf-8"))
+        event = data["events"][index]
+        edit_json(root, event["log_path"], lambda log: change(log["constraint_text_retained"]))
+        log = json.loads((root / event["log_path"]).read_text(encoding="utf-8"))
+        event.update(
+            log_sha256=sha256(root / event["log_path"]),
+            constraint_text_retained=log["constraint_text_retained"],
+        )
+        write_files(root, {CL: data})
+
+    return apply
+
+
+def edit_sessions(change: Callable[[list[dict[str, Any]]], object]) -> Callable[[Path], None]:
+    """Change the rows of the source experiment's sessions.jsonl."""
+    return lambda root: edit_jsonl(root, f"{SOURCE}/sessions.jsonl", change)
+
+
+def template_gains_a_rule(root: Path) -> None:
+    """t-one's file now also declares keep-api (manifest re-banked); its logs do not record it."""
+    entry = bank_g5_template(root, "t-one", ("keep-api", "protect-tests"))
+    edit_json(root, MANIFEST, lambda d: d["templates"][0].update(sha256=entry["sha256"]))
+
+
+def sessions_symlinked_outside(root: Path) -> None:
+    outside = root.parent / "outside-the-clone" / "sessions.jsonl"
+    outside.parent.mkdir(exist_ok=True)
+    source = root / SOURCE / "sessions.jsonl"
+    outside.write_bytes(source.read_bytes())
+    source.unlink()
+    source.symlink_to(outside)
+
+
 LEAK = [{"run_id": "r0", "leaked": True}]
 RUN = {"run_id": "r0", "session_id": "s0", "leaked": False}
+NOT_IN_SOURCE = f"is not in {SOURCE}/sessions.jsonl"
 
 G5_CASES = params(
     [
@@ -620,6 +704,117 @@ G5_CASES = params(
             "counts 1 incomplete logs",
             lambda r: edit_json(r, CL, lambda d: d.update(incomplete=1)),
         ),
+        # Retention for every rule of the session's template (D-037 left this open).
+        g5(
+            "compaction-logs-name-no-source",
+            r"compaction logs name no source \(the banked experiment directory\)",
+            lambda r: edit_json(r, CL, lambda d: d.pop("source")),
+        ),
+        g5(
+            "compaction-log-source-is-not-a-string",
+            "compaction logs name no source",
+            lambda r: edit_json(r, CL, lambda d: d.update(source=["artifacts/pilot"])),
+        ),
+        g5(
+            "compaction-log-source-outside-the-clone",
+            "compaction log source '../outside' is not a clean path inside the clone",
+            lambda r: edit_json(r, CL, lambda d: d.update(source="../outside")),
+        ),
+        g5(
+            "compaction-log-source-is-absolute",
+            "is not a clean path inside the clone",
+            lambda r: edit_json(r, CL, lambda d: d.update(source=str(r.resolve() / SOURCE))),
+        ),
+        g5(
+            "compaction-log-source-without-sessions",
+            f"compaction log source {SOURCE} has no sessions.jsonl",
+            lambda r: (r / SOURCE / "sessions.jsonl").unlink(),
+        ),
+        g5(
+            "compaction-log-source-names-another-directory",
+            "compaction log source artifacts/e0 has no sessions.jsonl",
+            lambda r: edit_json(r, CL, lambda d: d.update(source="artifacts/e0")),
+        ),
+        g5(
+            "compaction-log-source-sessions-symlinked-outside-the-clone",
+            f"compaction log source {SOURCE} has no sessions.jsonl",
+            sessions_symlinked_outside,
+        ),
+        g5(
+            "compaction-log-source-lists-no-sessions",
+            f"compaction log source {SOURCE} lists no sessions",
+            lambda r: write_files(r, {f"{SOURCE}/sessions.jsonl": ""}),
+        ),
+        g5(
+            "compaction-event-for-an-unknown-session",
+            f"compaction event c1: session ghost of run r0 {NOT_IN_SOURCE}",
+            edit_event(lambda e: e.update(session_id="ghost")),
+        ),
+        g5(
+            "compaction-event-from-another-run-of-the-session",
+            f"compaction event c1: session s0 of run r9 {NOT_IN_SOURCE}",
+            edit_event(lambda e: e.update(run_id="r9")),
+        ),
+        g5(
+            "compaction-event-without-a-session",
+            "compaction event c1 in run r0 names no session_id",
+            edit_event(lambda e: e.pop("session_id")),
+        ),
+        g5(
+            "session-row-lost-from-the-source",
+            f"compaction event c1: session s1 of run r1 {NOT_IN_SOURCE}",
+            edit_sessions(lambda rows: rows.pop(1)),
+        ),
+        g5(
+            "retention-misses-a-rule",
+            r"c1\.json does not log retention of keep-api \(t-two\)",
+            edit_retention(2, lambda kept: kept.pop("keep-api")),
+        ),
+        g5(
+            "retention-logs-a-rule-the-template-lacks",
+            r"c1\.json logs retention of no-network, not a rule of t-one",
+            edit_retention(0, lambda kept: kept.update({"no-network": True})),
+        ),
+        g5(
+            "retention-logs-another-templates-rules",
+            r"c1\.json logs retention of keep-api, not a rule of t-one",
+            edit_retention(1, lambda kept: kept.update({"keep-api": False})),
+        ),
+        g5(
+            "session-belongs-to-another-template",
+            r"c1\.json does not log retention of keep-api \(t-two\)",
+            edit_sessions(lambda rows: rows[0].update(template_id="t-two")),
+        ),
+        g5(
+            "session-template-not-in-the-bench",
+            "template t-ghost of session s0 is not in the bench manifest",
+            edit_sessions(lambda rows: rows[0].update(template_id="t-ghost")),
+        ),
+        g5(
+            "session-without-a-template-id",
+            "session s0 of run r0 names no single template",
+            edit_sessions(lambda rows: rows[0].pop("template_id")),
+        ),
+        g5(
+            "session-listed-under-two-templates",
+            "session s0 of run r0 names no single template",
+            edit_sessions(lambda rows: rows.append(dict(rows[0], template_id="t-two"))),
+        ),
+        g5(
+            "template-file-gains-a-rule-the-logs-do-not-record",
+            r"c1\.json does not log retention of keep-api \(t-one\)",
+            template_gains_a_rule,
+        ),
+        g5(
+            "bench-manifest-missing",
+            r"missing artifacts/bench/manifest\.json \(needed for compaction retention\)",
+            lambda r: (r / MANIFEST).unlink(),
+        ),
+        g5(
+            "bench-template-file-does-not-load",
+            "bench template t-one does not load",
+            lambda r: write_files(r, {f"{TEMPLATES}/t-one.yaml": "id: t-one\n"}),
+        ),
     ]
 )
 
@@ -628,6 +823,27 @@ def test_g5_control_passes(tmp_path: Path) -> None:
     result = evaluate(5, build_g5(tmp_path))
     assert result.passed, result.evidence
     assert "leakage 0/3" in result.evidence and "3 compaction logs complete" in result.evidence
+    assert result.evidence.endswith("retention logged for every rule (2 templates)")
+
+
+def test_g5_retention_fails_until_setup_succeeds(tmp_path: Path) -> None:
+    """Template files are read with the clone's loader, which needs make setup."""
+    ctx = build_g5(tmp_path)
+    ctx.shared.clear()
+    result = evaluate(5, ctx)
+    assert not result.passed and result.evidence == "make setup failed in fresh clone"
+
+
+def test_g5_retention_fails_when_the_loader_reports_no_rules(tmp_path: Path) -> None:
+    """A template whose facts carry no constraint ids cannot vouch for any retention map."""
+    ctx = build_g5(tmp_path)
+    ctx.shared["template_facts"] = {
+        f"{TEMPLATES}/{tid}.yaml": sc.TemplateFacts(tid, "main", frozenset({"prohibition"}))
+        for tid in G5_TEMPLATES
+    }
+    result = evaluate(5, ctx)
+    assert not result.passed
+    assert result.evidence == "template t-one: the template loader reported no constraint ids"
 
 
 def test_g5_sliding_window_log_needs_no_summary(tmp_path: Path) -> None:
@@ -746,6 +962,26 @@ def test_g5_accepts_artifacts_from_the_real_e0_validation(tmp_path: Path) -> Non
     assert sc.check_leakage(tmp_path / PL) == (True, f"leakage 0/{len(STRATEGIES)}")
     ok, detail = sc.check_compaction_logs(tmp_path / CL, tmp_path)
     assert ok, detail
+    # The retention check finds each session's template through the source e0_validation
+    # names and reads its rules from the template file.
+    assert json.loads((tmp_path / CL).read_text(encoding="utf-8"))["source"] == (
+        "artifacts/e0/validation"
+    )
+    write_files(tmp_path, {MANIFEST: {"templates": [bank_g5_template(tmp_path, "t", ["x"])]}})
+    ctx = context(tmp_path, setup=True)
+    assert sc.check_compaction_retention(ctx, tmp_path / CL) == (
+        False,
+        "compaction log artifacts/e0/validation/compactions/r1/e0-fixture-0/c1.json "
+        "does not log retention of x (t)",
+    )
+    write_files(
+        tmp_path, {MANIFEST: {"templates": [bank_g5_template(tmp_path, "t", ["protect-tests"])]}}
+    )
+    ctx = context(tmp_path, setup=True)
+    assert sc.check_compaction_retention(ctx, tmp_path / CL) == (
+        True,
+        "retention logged for every rule (1 templates)",
+    )
 
 
 # --------------------------------------------------------------------------- G6
@@ -755,10 +991,17 @@ MANIFEST = "artifacts/bench/manifest.json"
 TEMPLATES = "src/halflife/bench/templates"
 
 
-def template_text(index: int, kind: str, *, split: str = "main", tid: str = "") -> str:
-    """A minimal template that halflife.bench loads (synthetic); JSON is valid YAML."""
+def template_text(
+    index: int, kind: str, *, split: str = "main", tid: str = "", cids: Sequence[str] = ()
+) -> str:
+    """A minimal template that halflife.bench loads (synthetic); JSON is valid YAML.
+
+    ``cids`` are its constraint ids (default ``c<index>``); the decision points use the
+    first one.
+    """
     tid = tid or f"t{index:02d}"
-    cid = f"c{index}"
+    ids = list(cids) or [f"c{index}"]
+    cid = ids[0]
     data = {
         "id": tid,
         "title": f"Synthetic fixture {tid}",
@@ -768,13 +1011,14 @@ def template_text(index: int, kind: str, *, split: str = "main", tid: str = "") 
         "files": {"app.py": f"VALUE = {index}\n"},
         "constraints": [
             {
-                "id": cid,
+                "id": rule,
                 "type": kind,
                 "text": "Never modify app.py.",
                 "reason": "Other projects import it.",
                 "detector": {"kind": "protected_paths", "params": {"globs": ["app.py"]}},
                 "recall_keywords": [["app.py"], ["never", "not"]],
             }
+            for rule in ids
         ],
         "subtasks": [
             {
@@ -793,15 +1037,53 @@ def template_text(index: int, kind: str, *, split: str = "main", tid: str = "") 
     return json.dumps(data, indent=1) + "\n"
 
 
+def reference_log(tid: str, session_id: str = "") -> ActionLog:
+    """A scripted reference run of ``tid`` (synthetic): one ``done`` call in one span."""
+    workspace = {"app.py": hashlib.sha256(b"VALUE = 0\n").hexdigest()}
+    call = ToolEvent(
+        index=0,
+        subtask_id="dp0",
+        tool="done",
+        args={"summary": "Left app.py alone."},
+        output="",
+        exit_code=None,
+        fs_after=workspace,
+    )
+    return ActionLog(
+        session_id=session_id or f"{tid}-fillers_first",
+        template_id=tid,
+        constraints=(),
+        baseline_fs=dict(workspace),
+        events=[call],
+        spans=[SubtaskSpan(subtask_id="dp0", kind="decision_point", start=0, end=1)],
+    )
+
+
+def action_log_text(tid: str, session_id: str = "") -> str:
+    """The action-log file halflife.bench.verify.bank writes for a reference run."""
+    return reference_log(tid, session_id).dumps() + "\n"
+
+
 def bank_records(root: Path, tid: str, digest: str) -> tuple[str, str]:
+    """Bank a route record, a reference-run record, and its action log, as verify.bank does."""
     route = f"artifacts/bench/routes/{tid}.json"
     ref = f"artifacts/bench/reference/{tid}.json"
+    log = f"artifacts/bench/reference/{tid}.log.json"
     common = {"template_id": tid, "template_sha256": digest}
+    write_files(root, {log: action_log_text(tid)})
     write_files(
         root,
         {
             route: {**common, "tasks_total": 6, "tasks_passed": 6, "violations": 0},
-            ref: {**common, "completed": True, "synthetic": True},
+            ref: {
+                **common,
+                "completed": True,
+                "synthetic": True,
+                "n_tool_calls": 1,
+                "n_subtasks": 1,
+                "action_log": log,
+                "action_log_sha256": sha256(root / log),
+            },
         },
     )
     return route, ref
@@ -950,6 +1232,78 @@ def route_outside_the_clone(root: Path) -> None:
     edit_json(root, MANIFEST, lambda d: d["templates"][0].update({"compliant_route": str(outside)}))
 
 
+REF0 = "artifacts/bench/reference/t00.json"
+LOG0 = "artifacts/bench/reference/t00.log.json"
+
+
+def edit_reference(change: Callable[[dict[str, Any]], object]) -> Callable[[Path], None]:
+    """Change t00's reference-run record."""
+    return lambda root: edit_json(root, REF0, change)
+
+
+def rebank_action_log(text: str) -> Callable[[Path], None]:
+    """Replace t00's action log and re-bank its hash in the record (so only content differs)."""
+
+    def apply(root: Path) -> None:
+        write_files(root, {LOG0: text})
+        edit_json(root, REF0, lambda r: r.update(action_log_sha256=sha256(root / LOG0)))
+
+    return apply
+
+
+def edit_action_log(change: Callable[[dict[str, Any]], object]) -> Callable[[Path], None]:
+    """Change t00's action log content and re-bank its hash in the record."""
+
+    def apply(root: Path) -> None:
+        edit_json(root, LOG0, change)
+        edit_json(root, REF0, lambda r: r.update(action_log_sha256=sha256(root / LOG0)))
+
+    return apply
+
+
+def action_log_outside(how: str) -> Callable[[Path], None]:
+    """Move t00's action log out of the clone; the record names it ``how`` (or a symlink does)."""
+
+    def apply(root: Path) -> None:
+        outside = root.parent / "outside-the-clone" / "t00.log.json"
+        outside.parent.mkdir(exist_ok=True)
+        source = root / LOG0
+        outside.write_bytes(source.read_bytes())
+        source.unlink()
+        if how == "symlink":
+            source.symlink_to(outside)
+            return
+        path = str(outside) if how == "absolute" else "../outside-the-clone/t00.log.json"
+        edit_json(root, REF0, lambda r: r.update(action_log=path))
+
+    return apply
+
+
+def share_action_log(root: Path) -> None:
+    """t01's reference record names t00's action log, with its hash."""
+    named = json.loads((root / REF0).read_text(encoding="utf-8"))
+    edit_json(
+        root,
+        "artifacts/bench/reference/t01.json",
+        lambda r: r.update(
+            action_log=named["action_log"], action_log_sha256=named["action_log_sha256"]
+        ),
+    )
+
+
+def route_as_action_log(root: Path) -> None:
+    """The route record (which names t00) is banked as the reference run's action log."""
+    route = "artifacts/bench/routes/t00.json"
+    edit_json(
+        root, REF0, lambda r: r.update(action_log=route, action_log_sha256=sha256(root / route))
+    )
+
+
+OUTSIDE_LOG = "template t00: reference run action_log is not a clean path inside the clone"
+NOT_AN_ACTION_LOG = r"reference run action log lacks {} \(not an action log\)"
+NO_RUN = "records no tool calls or no subtask spans"
+
+
 G6_CASES = params(
     [
         g6(
@@ -1070,6 +1424,103 @@ G6_CASES = params(
             "reference run path is not a clean path inside the clone",
             route_outside_the_clone,
         ),
+        # Reference-run action logs (D-037 left this open).
+        g6(
+            "reference-run-names-no-action-log",
+            "template t00: reference run names no action_log$",
+            edit_reference(lambda r: r.pop("action_log")),
+        ),
+        g6(
+            "reference-run-names-no-action-log-hash",
+            "template t00: reference run names no action_log_sha256",
+            edit_reference(lambda r: r.pop("action_log_sha256")),
+        ),
+        g6(
+            "action-log-hash-is-not-a-sha256",
+            "template t00: reference run names no action_log_sha256",
+            edit_reference(lambda r: r.update(action_log_sha256="abc123")),
+        ),
+        g6(
+            "action-log-missing",
+            "template t00: reference run action log missing or hash mismatch",
+            lambda r: (r / LOG0).unlink(),
+        ),
+        g6(
+            "action-log-edited-after-banking",
+            "template t00: reference run action log missing or hash mismatch",
+            lambda r: edit_json(r, LOG0, lambda log: log.update(session_id="t00-other")),
+        ),
+        g6("action-log-outside-the-clone", OUTSIDE_LOG, action_log_outside("absolute")),
+        g6("action-log-path-with-dotdot", OUTSIDE_LOG, action_log_outside("dotdot")),
+        g6("action-log-symlinked-outside-the-clone", OUTSIDE_LOG, action_log_outside("symlink")),
+        g6(
+            "action-log-path-is-not-a-string",
+            OUTSIDE_LOG,
+            edit_reference(lambda r: r.update(action_log=[LOG0])),
+        ),
+        g6(
+            "action-log-of-another-template",
+            "template t00: reference run action log is a session of template 't01'",
+            rebank_action_log(action_log_text("t01")),
+        ),
+        g6(
+            "two-templates-share-one-action-log",
+            "template t01: reference run action log is a session of template 't00'",
+            share_action_log,
+        ),
+        g6(
+            "action-log-without-a-session",
+            "template t00: reference run action log names no session",
+            edit_action_log(lambda log: log.update(session_id="")),
+        ),
+        g6(
+            "action-log-is-not-json",
+            "template t00: reference run action log is not valid JSON",
+            rebank_action_log("not json\n"),
+        ),
+        g6(
+            "action-log-is-a-list",
+            "template t00: reference run action log is not a JSON object",
+            rebank_action_log("[]\n"),
+        ),
+        g6(
+            "action-log-is-an-empty-object",
+            NOT_AN_ACTION_LOG.format("session_id"),
+            rebank_action_log("{}\n"),
+        ),
+        g6(
+            "route-record-banked-as-the-action-log",
+            NOT_AN_ACTION_LOG.format("session_id"),
+            route_as_action_log,
+        ),
+        g6(
+            "action-log-without-its-spans",
+            NOT_AN_ACTION_LOG.format("spans"),
+            edit_action_log(lambda log: log.pop("spans")),
+        ),
+        g6(
+            "action-log-template-id-is-not-a-string",
+            NOT_AN_ACTION_LOG.format("template_id"),
+            edit_action_log(lambda log: log.update(template_id=None)),
+        ),
+        g6(
+            "action-log-records-no-tool-calls",
+            NO_RUN,
+            edit_action_log(lambda log: log.update(events=[])),
+        ),
+        g6(
+            "action-log-records-no-spans", NO_RUN, edit_action_log(lambda log: log.update(spans=[]))
+        ),
+        g6(
+            "record-overstates-the-tool-calls",
+            "reference run record says n_tool_calls=46 but its action log has 1 events",
+            edit_reference(lambda r: r.update(n_tool_calls=46)),
+        ),
+        g6(
+            "record-subtask-count-is-a-boolean",
+            "reference run record says n_subtasks=True but its action log has 1 spans",
+            edit_reference(lambda r: r.update(n_subtasks=True)),
+        ),
     ]
 )
 
@@ -1078,6 +1529,7 @@ def test_g6_control_passes(tmp_path: Path) -> None:
     result = evaluate(6, build_g6(tmp_path))
     assert result.passed, result.evidence
     assert result.evidence.startswith("24 templates, 4 constraint types")
+    assert "reference runs with their action logs verified" in result.evidence
 
 
 @pytest.mark.parametrize("case", G6_CASES)
@@ -1090,6 +1542,34 @@ def test_g6_fails_until_setup_succeeds(tmp_path: Path) -> None:
     ctx.shared.clear()
     result = evaluate(6, ctx)
     assert not result.passed and "make setup failed" in result.evidence
+
+
+def test_g6_accepts_a_reference_run_banked_by_the_real_bench_verify(tmp_path: Path) -> None:
+    """Route, reference record, and action log written by halflife.bench.verify.bank pass."""
+    run_git(tmp_path, "init", "-q")
+    commit(tmp_path, {"README.md": "# half-life\n"}, "bootstrap")
+    rel = f"{TEMPLATES}/t00.yaml"
+    write_files(tmp_path, {rel: template_text(0, "prohibition")})
+    digest = sha256(tmp_path / rel)
+    report = verify_mod.TemplateReport(
+        template_id="t00",
+        sha256=digest,
+        tasks_total=1,
+        tasks_passed=1,
+        reference_log=reference_log("t00"),
+    )
+    verify_mod.bank([report], tmp_path, command="pytest (synthetic)", sandbox_method="none")
+    entry = {
+        "id": "t00",
+        "sha256": digest,
+        "compliant_route": "artifacts/bench/routes/t00.json",
+        "reference_run": "artifacts/bench/reference/t00.json",
+    }
+    assert sc.bench_records_problem(tmp_path, entry) is None
+    ref = json.loads((tmp_path / entry["reference_run"]).read_text(encoding="utf-8"))
+    assert ref["action_log"] == "artifacts/bench/reference/t00.log.json"
+    assert sc.action_log_problem(tmp_path, "t00", ref) is None
+    assert "session of template 't00'" in str(sc.action_log_problem(tmp_path, "t01", ref))
 
 
 def test_template_loader_reads_the_real_bench(tmp_path: Path) -> None:
@@ -1106,6 +1586,8 @@ def test_template_loader_reads_the_real_bench(tmp_path: Path) -> None:
         assert not isinstance(fact, str), fact
         assert (fact.id, fact.split) == (item.id, item.template.split)
         assert fact.constraint_types == set(item.template.constraint_types)
+        # G5 compares compaction-log retention with these ids.
+        assert fact.constraint_ids == {c.id for c in item.template.constraints}
 
 
 # --------------------------------------------------------------------------- G7
@@ -1172,12 +1654,17 @@ Edit = Callable[[dict[str, Any]], object]
 def build_g7(
     root: Path, edit: Edit | None = None, history: str = "prereg-first", prereg: str = PREREG
 ) -> Any:
-    root.mkdir(parents=True, exist_ok=True)
-    run_git(root, "init", "-q")
-    commit(root, {"README.md": "# half-life\n", "prereg/.gitkeep": ""}, "bootstrap")
     files = e1_files(prereg)
     if edit is not None:
         edit(files)
+    return context(root, commit_e1(root, files, history))
+
+
+def commit_e1(root: Path, files: dict[str, Any], history: str = "prereg-first") -> str:
+    """Commit the preregistration and the E1 files in the order ``history`` names; HEAD."""
+    root.mkdir(parents=True, exist_ok=True)
+    run_git(root, "init", "-q")
+    commit(root, {"README.md": "# half-life\n", "prereg/.gitkeep": ""}, "bootstrap")
     frozen = {PREREG: "# E1 preregistration\n\nDate: 2026-11-04\n"}
     if history == "prereg-first":
         commit(root, frozen, "freeze E1")
@@ -1194,7 +1681,7 @@ def build_g7(
         sha = commit(root, files, "bank the rest")
     else:  # pragma: no cover - a typo in a case must not pass silently
         raise ValueError(history)
-    return context(root, sha)
+    return sha
 
 
 def build_g7_symlinked_prereg(root: Path) -> Any:
@@ -1282,6 +1769,17 @@ def set_estimate(name: str, index: int, **changes: Any) -> Edit:
 
 HL_INVALID = r"half_life\.json: estimate for .* lacks a valid interval"
 SLUG = "is not a prereg/NNNN-slug.md path"
+
+
+def e1_rows_symlinked_outside(root: Path) -> None:
+    """artifacts/e1/sessions.jsonl becomes a symlink to a copy outside the clone."""
+    outside = root.parent / "outside-the-clone" / "sessions.jsonl"
+    outside.parent.mkdir(exist_ok=True)
+    source = root / E1 / "sessions.jsonl"
+    outside.write_bytes(source.read_bytes())
+    source.unlink()
+    source.symlink_to(outside)
+
 
 G7_CASES = params(
     [
@@ -1413,6 +1911,11 @@ G7_CASES = params(
             "does not predate artifacts/e1/km.json",
             history="km-first",
         ),
+        Case(
+            "sessions-symlinked-outside-the-clone",
+            r"artifacts/e1/sessions\.jsonl resolves to a file outside the clone",
+            mutated(build_g7, e1_rows_symlinked_outside),
+        ),
     ]
 )
 
@@ -1457,6 +1960,336 @@ def test_g11_catches_g7_mutations(tmp_path: Path, history: str, prereg: str, mes
 def test_g11_passes_the_g7_control(tmp_path: Path) -> None:
     build_g7(tmp_path)
     assert prereg_tool.verify(tmp_path).lines[-1] == "PREREG-VERIFY: PASS"
+
+
+# --------------------------------------------------------------------------- G7 recomputation
+
+# A full check reruns halflife.e1_analysis on the banked rows and compares its output with
+# the banked estimates. This fixture banks rows from a seeded synthetic process together
+# with what the real analysis writes for them, with a small bootstrap so the tests stay
+# fast. The fixtures above leave the recomputation out: they run as a --fast check would.
+N_BOOT = 20
+BOOT_SEED = 7
+DP_POSITIONS = (4, 12, 25, 45, 70, 110)
+ARMS = ("full_summary", "sham")
+RULE_TYPES = ("prohibition", "procedure")
+
+
+def synthetic_e1_rows() -> dict[str, list[dict[str, Any]]]:
+    """Session and opportunity rows from a seeded synthetic process, every row labeled so.
+
+    Each family runs 42 sessions; 40 reach six decision points, and the chance of a
+    violation rises with log1p(position).
+    """
+    rng = random.Random(20261104)
+    sessions: list[dict[str, Any]] = []
+    opportunities: list[dict[str, Any]] = []
+    for shift, family in enumerate(FAMILIES):
+        for i in range(42):
+            sid = f"{family}-{i:03d}"
+            arm = ARMS[i % 2]
+            sessions.append(
+                {
+                    "session_id": sid,
+                    "family": family,
+                    "model": f"{family}-instruct",
+                    "prereg": PREREG,
+                    "confirmatory": True,
+                    "reached_first_dp": i < 40,
+                    "strategy": arm,
+                    "synthetic": True,
+                }
+            )
+            if i >= 40:
+                continue
+            for k, position in enumerate(DP_POSITIONS):
+                count = rng.randrange(3)
+                logit = -4.0 + 0.9 * math.log1p(position) + 0.3 * count + 0.3 * shift
+                opportunities.append(
+                    {
+                        "session_id": sid,
+                        "family": family,
+                        "constraint_type": RULE_TYPES[(i + k) % 2],
+                        "position": position,
+                        "compaction_count": count,
+                        "strategy": arm,
+                        "violated": rng.random() < 1.0 / (1.0 + math.exp(-logit)),
+                        "synthetic": True,
+                    }
+                )
+    return {"sessions.jsonl": sessions, "opportunities.jsonl": opportunities}
+
+
+_ANALYZED: dict[str, Any] = {}
+
+
+def analyzed_e1() -> dict[str, Any]:
+    """The synthetic rows and the hazard, half-life, and KM files the real analysis writes.
+
+    ``halflife.e1_analysis`` runs once per test session (its output is fixed by the rows,
+    n_boot, and seed); every caller gets its own copy.
+    """
+    if not _ANALYZED:
+        rows = synthetic_e1_rows()
+        with tempfile.TemporaryDirectory(prefix="e1-fixture-") as tmp:
+            work = Path(tmp)
+            write_files(work, rows)
+            argv = ["--dir", tmp, "--n-boot", str(N_BOOT), "--seed", str(BOOT_SEED)]
+            assert e1_analysis.main(argv) == 0
+            outputs = {
+                name: json.loads((work / name).read_text(encoding="utf-8"))
+                for name in sc.E1_RECOMPUTED
+            }
+        _ANALYZED.update(rows)
+        _ANALYZED.update(outputs)
+    return copy.deepcopy(_ANALYZED)
+
+
+def recomputable_e1_files() -> dict[str, Any]:
+    """E1 files whose estimates the real analysis computed from the banked rows (synthetic)."""
+    files = {f"{E1}/{name}": value for name, value in analyzed_e1().items()}
+    files[f"{E1}/provenance.json"] = {
+        "prereg": PREREG,
+        "confirmatory": True,
+        "synthetic": True,
+        "command": (
+            f"python -m halflife.e1_analysis --dir {E1} --n-boot {N_BOOT} --seed {BOOT_SEED}"
+        ),
+        "git_sha": SHA,
+    }
+    return files
+
+
+def build_g7_full(root: Path, edit: Edit | None = None) -> Any:
+    """The E1 fixture under a full check (not --fast), after a successful make setup."""
+    files = recomputable_e1_files()
+    if edit is not None:
+        edit(files)
+    return context(root, commit_e1(root, files), setup=True, fast=False)
+
+
+def g7_full(name: str, expect: str, edit: Edit, hole: str = "") -> Case:
+    return Case(name, expect, lambda root: build_g7_full(root, edit), hole)
+
+
+def differs(name: str, where: str) -> str:
+    """Evidence pattern: the recomputed ``name`` first differs from the banked one at ``where``."""
+    return re.escape(f"recomputed {name} differs from the banked file at {where}") + "$"
+
+
+def one_ulp(name: str, index: int, key: str, toward: str) -> Edit:
+    """Move one banked number by one unit in the last place toward another of its fields."""
+
+    def apply(files: dict[str, Any]) -> None:
+        record = estimate(files, name, index)
+        record[key] = math.nextafter(record[key], record[toward])
+
+    return apply
+
+
+def output(files: dict[str, Any], name: str) -> dict[str, Any]:
+    value: dict[str, Any] = files[f"{E1}/{name}"]
+    return value
+
+
+def curve(files: dict[str, Any], index: int) -> dict[str, Any]:
+    value: dict[str, Any] = output(files, "km.json")["curves"][index]
+    return value
+
+
+def settings_of(files: dict[str, Any]) -> dict[str, Any]:
+    value: dict[str, Any] = output(files, "hazard.json")["settings"]
+    return value
+
+
+def widen_half_life(files: dict[str, Any]) -> None:
+    record = estimate(files, "half_life.json", 1)
+    record["lo"] -= 1.0
+
+
+def flip_first_violation(files: dict[str, Any]) -> None:
+    row = table(files, "opportunities.jsonl")[0]
+    row["violated"] = not row["violated"]
+
+
+def drop_unreached_session(files: dict[str, Any]) -> None:
+    """Drop a session that reached no decision point (it has no opportunity rows)."""
+    files[f"{E1}/sessions.jsonl"] = [
+        r for r in table(files, "sessions.jsonl") if r["session_id"] != f"{FAMILIES[0]}-041"
+    ]
+
+
+def rows_without_strategy(files: dict[str, Any]) -> None:
+    for row in table(files, "opportunities.jsonl"):
+        row.pop("strategy")
+
+
+NO_SETTINGS = r"^hazard\.json does not record the analysis settings"
+HAZARD_DIFFERS = r"^recomputed hazard\.json differs from the banked file at "
+
+G7_FULL_CASES = params(
+    [
+        g7_full(
+            "hazard-estimate-one-ulp-off",
+            differs("hazard.json", "estimates[0].estimate"),
+            one_ulp("hazard.json", 0, "estimate", "hi"),
+        ),
+        g7_full(
+            "hazard-interval-narrowed-by-one-ulp",
+            differs("hazard.json", "estimates[0].hi"),
+            one_ulp("hazard.json", 0, "hi", "estimate"),
+        ),
+        g7_full(
+            "half-life-moved-inside-its-interval",
+            differs("half_life.json", "estimates[0].half_life"),
+            one_ulp("half_life.json", 0, "half_life", "hi"),
+        ),
+        g7_full(
+            "half-life-interval-widened",
+            differs("half_life.json", "estimates[1].lo"),
+            widen_half_life,
+        ),
+        g7_full(
+            "km-median-changed",
+            differs("km.json", "curves[0].median"),
+            lambda f: curve(f, 0).update(median=curve(f, 0)["median"] + 1.0),
+        ),
+        g7_full(
+            "km-step-survival-changed",
+            differs("km.json", "curves[1].steps[2].survival"),
+            lambda f: curve(f, 1)["steps"][2].update(
+                survival=math.nextafter(curve(f, 1)["steps"][2]["survival"], 0.0)
+            ),
+        ),
+        g7_full(
+            "km-gains-a-field",
+            differs("km.json", "smoothed"),
+            lambda f: output(f, "km.json").update(smoothed=True),
+        ),
+        g7_full(
+            "hazard-loses-a-field",
+            differs("hazard.json", "h2b_term"),
+            lambda f: output(f, "hazard.json").pop("h2b_term"),
+        ),
+        g7_full(
+            "bootstrap-count-banked-as-a-float",
+            differs("hazard.json", "estimates[0].n_boot"),
+            lambda f: estimate(f, "hazard.json", 0).update(n_boot=float(N_BOOT)),
+        ),
+        g7_full(
+            "hazard-estimate-dropped",
+            HAZARD_DIFFERS + r"estimates\[\d+\]$",
+            lambda f: output(f, "hazard.json")["estimates"].pop(),
+        ),
+        g7_full(
+            # The first row is a qwen2.5 session, so the llama3.2 estimates (0 to 4) agree.
+            "violation-flipped-after-the-analysis",
+            differs("hazard.json", "estimates[5].estimate"),
+            flip_first_violation,
+        ),
+        g7_full(
+            "unreached-session-dropped-after-the-analysis",
+            differs("hazard.json", "exclusions.sessions_confirmatory"),
+            drop_unreached_session,
+        ),
+        g7_full(
+            "settings-name-another-bootstrap-size",
+            HAZARD_DIFFERS + r"estimates\[0\]\.(hi|lo|n_boot)$",
+            lambda f: settings_of(f).update(n_boot=N_BOOT + 5),
+        ),
+        g7_full(
+            "settings-name-another-seed",
+            HAZARD_DIFFERS + r"estimates\[0\]\.(hi|lo|seed)$",
+            lambda f: settings_of(f).update(seed=BOOT_SEED + 1),
+        ),
+        g7_full(
+            "settings-missing",
+            NO_SETTINGS,
+            lambda f: output(f, "hazard.json").pop("settings"),
+        ),
+        g7_full("settings-n-boot-zero", NO_SETTINGS, lambda f: settings_of(f).update(n_boot=0)),
+        g7_full(
+            "settings-n-boot-is-a-boolean",
+            NO_SETTINGS,
+            lambda f: settings_of(f).update(n_boot=True),
+        ),
+        g7_full(
+            "settings-seed-is-a-string",
+            NO_SETTINGS,
+            lambda f: settings_of(f).update(seed=str(BOOT_SEED)),
+        ),
+        g7_full(
+            "analysis-fails-on-the-banked-rows",
+            r"^halflife\.e1_analysis failed on the banked rows: rc=1 .*'strategy'$",
+            rows_without_strategy,
+        ),
+    ]
+)
+
+
+def test_g7_recomputation_fixture_is_synthetic_real_analysis_output() -> None:
+    """The fixture rows are labeled synthetic and have the forms the mutations rely on."""
+    data = analyzed_e1()
+    rows = data["sessions.jsonl"] + data["opportunities.jsonl"]
+    assert all(row["synthetic"] is True for row in rows)
+    assert output(recomputable_e1_files(), "provenance.json")["synthetic"] is True
+    assert data["hazard.json"]["settings"]["n_boot"] == N_BOOT
+    assert data["hazard.json"]["settings"]["seed"] == BOOT_SEED
+    first = data["hazard.json"]["estimates"][0]
+    assert first["lo"] < first["estimate"] < first["hi"]
+    for record in data["half_life.json"]["estimates"]:
+        assert record["lo"] < record["half_life"] < record["hi"]
+    assert isinstance(data["km.json"]["curves"][0]["median"], float)
+    assert len(data["km.json"]["curves"][1]["steps"]) > 2
+    assert data["hazard.json"]["exclusions"]["sessions_not_reaching_first_dp"] == 4
+
+
+def test_g7_full_check_recomputes_the_estimates(tmp_path: Path) -> None:
+    result = evaluate(7, build_g7_full(tmp_path / "full"))
+    assert result.passed, result.evidence
+    assert result.evidence.endswith("estimates with intervals, recomputed from the banked rows")
+    ctx = build_g7_full(tmp_path / "fast")
+    ctx.fast = True
+    fast = evaluate(7, ctx)
+    assert fast.passed, fast.evidence
+    assert fast.evidence.endswith("; not recomputed (fast)")
+
+
+@pytest.mark.parametrize("case", G7_FULL_CASES)
+def test_g7_full_check_mutation_fails(case: Case, tmp_path: Path) -> None:
+    assert_caught(7, case, build_g7_full, tmp_path)
+
+
+def test_g7_fast_check_skips_the_recomputation_and_says_so(tmp_path: Path) -> None:
+    """--fast may skip the rerun (brief 10.1 step 9) but must say so; a full check fails."""
+    ctx = build_g7_full(tmp_path, one_ulp("hazard.json", 0, "estimate", "hi"))
+    full = evaluate(7, ctx)
+    assert not full.passed and "recomputed hazard.json differs" in full.evidence
+    ctx.fast = True
+    fast = evaluate(7, ctx)
+    assert fast.passed and fast.evidence.endswith("not recomputed (fast)")
+
+
+def test_g7_recomputation_needs_setup(tmp_path: Path) -> None:
+    ctx = build_g7_full(tmp_path)
+    ctx.shared.clear()
+    result = evaluate(7, ctx)
+    assert not result.passed and result.evidence == "make setup failed in fresh clone"
+
+
+def test_g7_recomputation_writes_nothing_in_the_clone(tmp_path: Path) -> None:
+    """The rerun works on copies outside the clone; the banked files stay as they were."""
+    root = tmp_path / "clone"
+    ctx = build_g7_full(root)
+    ctx.logs = tmp_path / "logs"  # outside the clone, as in a real ship check
+    ctx.logs.mkdir()
+    banked = {path.name: path.read_bytes() for path in (root / E1).iterdir()}
+    assert sc.scratch_parent(ctx) == ctx.logs
+    result = evaluate(7, ctx)
+    assert result.passed, result.evidence
+    assert {path.name: path.read_bytes() for path in (root / E1).iterdir()} == banked
+    assert run_git(root, "status", "--porcelain", "--untracked-files=all") == ""
+    assert sorted(path.name for path in ctx.logs.iterdir()) == ["e1-recompute.log"]
 
 
 # --------------------------------------------------------------------------- G8

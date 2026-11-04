@@ -14,13 +14,15 @@ the clone and all sub-command logs live in a temporary directory.
 
 Stdout is exactly ``HEAD <sha> fresh-clone``, one ``G<n> <PASS|FAIL> <evidence>``
 line per gate, then ``SHIP-CHECK: PASS 14/14`` or ``SHIP-CHECK: FAIL <passed>/14``.
-With ``--fast`` it skips slow steps (re-running ``make ci`` and building the
-wheel) and the last line is ``SHIP-CHECK-FAST (does not count): <passed>/14``.
+With ``--fast`` it skips slow steps (re-running ``make ci``, building the wheel,
+and recomputing the E1 estimates, which G7's evidence then says) and the last
+line is ``SHIP-CHECK-FAST (does not count): <passed>/14``.
 
 The artifact layouts checked for G5 to G9 and G12 are documented in
 docs/ARTIFACTS.md. Stdlib only, Python 3.11+. Benchmark template files are YAML,
-so G6 and G9 read them with the clone's own ``halflife.bench`` loader, run as a
-sub-command in the clone's locked environment after ``make setup``.
+so G5, G6, and G9 read them with the clone's own ``halflife.bench`` loader, run
+as a sub-command in the clone's locked environment after ``make setup``; G7
+reruns the clone's own ``halflife.e1_analysis`` the same way.
 """
 
 from __future__ import annotations
@@ -56,6 +58,7 @@ MIN_E1_SESSIONS_PER_FAMILY = 40
 MIN_E1_FAMILIES = 2
 MIN_E2_MODELS = 2
 SEEDED_INDIRECT_KINDS = frozenset({"sed_inplace", "scripted_write", "git_checkout", "cp"})
+E1_RECOMPUTE_LIMIT_S = 1800.0
 REVIEW_EXEMPT_PREFIXES = ("artifacts/review/",)
 REVIEW_EXEMPT_FILES = frozenset({"STATUS.md", "docs/LOG.md"})
 REPORT_WORDS = (4000, 8000)
@@ -260,6 +263,15 @@ def finite_nonnegative(value: object) -> bool:
         return False
 
 
+def inside(path: Path, root: Path) -> bool:
+    """True when ``path``, with symlinks followed, lies inside ``root`` (or is ``root``)."""
+    try:
+        path.resolve().relative_to(root.resolve())
+    except (OSError, RuntimeError, ValueError):
+        return False
+    return True
+
+
 def clone_file(clone: Path, rel: object) -> Path | None:
     """The path ``rel`` names in the clone, or None unless it is clean and stays inside.
 
@@ -272,11 +284,7 @@ def clone_file(clone: Path, rel: object) -> Path | None:
     if any(part in ("", ".", "..") for part in parts):
         return None
     path = clone.joinpath(*parts)
-    try:
-        path.resolve().relative_to(clone.resolve())
-    except (OSError, RuntimeError, ValueError):
-        return None
-    return path
+    return path if inside(path, clone) else None
 
 
 def first_commit(repo: Path, rel: str) -> str | None:
@@ -322,6 +330,7 @@ for rel in json.loads(sys.argv[2]):
             "id": template.id,
             "split": template.split,
             "constraint_types": sorted({c.type for c in template.constraints}),
+            "constraint_ids": sorted(c.id for c in template.constraints),
         }
     except Exception as exc:
         facts[rel] = {"error": type(exc).__name__ + ": " + str(exc)}
@@ -331,11 +340,16 @@ print("HALFLIFE-TEMPLATE-FACTS " + json.dumps(facts))
 
 @dataclass(frozen=True)
 class TemplateFacts:
-    """What a template file declares, as read by the clone's own loader."""
+    """What a template file declares, as read by the clone's own loader.
+
+    ``constraint_ids`` is empty when the loader reported none; G5 then fails, since
+    every compaction log records retention for at least one constraint.
+    """
 
     id: str
     split: str
     constraint_types: frozenset[str]
+    constraint_ids: frozenset[str] = frozenset()
 
 
 def template_facts(entry: Any) -> TemplateFacts | str:
@@ -345,14 +359,17 @@ def template_facts(entry: Any) -> TemplateFacts | str:
     if "error" in entry:
         return " ".join(str(entry["error"]).split())[:120]
     tid, split, types = entry.get("id"), entry.get("split"), entry.get("constraint_types")
+    cids = entry.get("constraint_ids", [])
     if (
         not isinstance(tid, str)
         or not isinstance(split, str)
         or not isinstance(types, list)
         or not all(isinstance(t, str) for t in types)
+        or not isinstance(cids, list)
+        or not all(isinstance(c, str) for c in cids)
     ):
         return "template loader returned malformed facts"
-    return TemplateFacts(tid, split, frozenset(types))
+    return TemplateFacts(tid, split, frozenset(types), frozenset(cids))
 
 
 def load_templates(ctx: Context, rels: Sequence[str]) -> dict[str, TemplateFacts | str]:
@@ -383,11 +400,17 @@ def load_templates(ctx: Context, rels: Sequence[str]) -> dict[str, TemplateFacts
     return {rel: cache[rel] for rel in rels}
 
 
-def bench_template_facts(ctx: Context) -> tuple[dict[str, TemplateFacts] | None, str]:
-    """Bench templates by id: the files the bench manifest lists, loaded in the clone."""
+def bench_template_facts(
+    ctx: Context, purpose: str = "held-out templates"
+) -> tuple[dict[str, TemplateFacts] | None, str]:
+    """Bench templates by id: the files the bench manifest lists, loaded in the clone.
+
+    ``purpose`` names what the caller needs them for, in the evidence when the
+    manifest is missing.
+    """
     manifest = ctx.clone / "artifacts" / "bench" / "manifest.json"
     if not manifest.is_file():
-        return None, "missing artifacts/bench/manifest.json (needed for held-out templates)"
+        return None, f"missing artifacts/bench/manifest.json (needed for {purpose})"
     entries = load_json(manifest)["templates"]
     ids = [entry.get("id") for entry in entries]
     if len({str(i) for i in ids}) != len(ids):
@@ -840,6 +863,82 @@ def check_compaction_logs(path: Path, root: Path) -> tuple[bool, str]:
     return True, f"{len(events)} compaction logs complete"
 
 
+def source_sessions(clone: Path, source: object) -> tuple[dict[tuple[str, str], list[Any]], str]:
+    """Template ids by ``(run_id, session_id)`` in the banked experiment ``source`` names.
+
+    ``source`` (the ``source`` field of compaction_logs.json, as
+    ``halflife.experiment.e0_validation`` writes it) must be a clean path to a
+    directory inside the clone whose ``sessions.jsonl`` lies inside the clone too.
+    Returns an empty map and the reason when it does not.
+    """
+    if not isinstance(source, str) or not source:
+        return {}, "compaction logs name no source (the banked experiment directory)"
+    directory = clone_file(clone, source)
+    if directory is None:
+        return {}, f"compaction log source {source!r} is not a clean path inside the clone"
+    sessions = clone_file(clone, f"{source}/sessions.jsonl")
+    if not directory.is_dir() or sessions is None or not sessions.is_file():
+        return {}, f"compaction log source {source} has no sessions.jsonl"
+    templates: dict[tuple[str, str], list[Any]] = {}
+    for row in load_jsonl(sessions):
+        run_id, sid = row.get("run_id"), row.get("session_id")
+        if run_id is not None and isinstance(sid, str) and sid:
+            templates.setdefault((str(run_id), sid), []).append(row.get("template_id"))
+    return templates, ""
+
+
+def check_compaction_retention(ctx: Context, path: Path) -> tuple[bool, str]:
+    """Each compaction log records retention for exactly its session's template rules.
+
+    The session of each event (its ``run_id`` and ``session_id``) is looked up in the
+    ``sessions.jsonl`` of the experiment directory the file names as ``source``; the
+    template id found there is resolved through the bench manifest and loaded from the
+    template file with the clone's ``halflife.bench`` (the loader G6 uses). The log's
+    ``constraint_text_retained`` must have exactly that template's constraint ids.
+    Run after :func:`check_compaction_logs` has passed.
+    """
+    data = load_json(path)
+    sessions, why = source_sessions(ctx.clone, data.get("source"))
+    if not sessions:
+        return False, why or f"compaction log source {data['source']} lists no sessions"
+    bench, why = bench_template_facts(ctx, "compaction retention")
+    if bench is None:
+        return False, why
+    source = data["source"]
+    used: set[str] = set()
+    for event in data["events"]:
+        eid, run_id, sid = event["event_id"], event["run_id"], event.get("session_id")
+        if not isinstance(sid, str) or not sid:
+            return False, f"compaction event {eid} in run {run_id} names no session_id"
+        found = sessions.get((str(run_id), sid))
+        if not found:
+            return False, (
+                f"compaction event {eid}: session {sid} of run {run_id} "
+                f"is not in {source}/sessions.jsonl"
+            )
+        tid = found[0]
+        if not isinstance(tid, str) or not tid or any(other != tid for other in found):
+            return False, f"session {sid} of run {run_id} names no single template in {source}"
+        facts = bench.get(tid)
+        if facts is None:
+            return False, f"template {tid} of session {sid} is not in the bench manifest"
+        if not facts.constraint_ids:
+            return False, f"template {tid}: the template loader reported no constraint ids"
+        rel = event["log_path"]
+        log_file = clone_file(ctx.clone, rel)
+        if log_file is None:  # check_compaction_logs rejects this before
+            return False, f"compaction event {eid}: log_path is not a clean path inside the clone"
+        logged = set(json.loads(log_file.read_text(encoding="utf-8"))["constraint_text_retained"])
+        absent = sorted(facts.constraint_ids - logged)
+        if absent:
+            return False, f"compaction log {rel} does not log retention of {absent[0]} ({tid})"
+        extra = sorted(logged - facts.constraint_ids)
+        if extra:
+            return False, f"compaction log {rel} logs retention of {extra[0]}, not a rule of {tid}"
+        used.add(tid)
+    return True, f"retention logged for every rule ({len(used)} templates)"
+
+
 def gate_g5(ctx: Context) -> GateResult:
     base = ctx.clone / "artifacts" / "e0"
     files = [
@@ -858,7 +957,10 @@ def gate_g5(ctx: Context) -> GateResult:
     for ok, detail in results:
         if not ok:
             return fail(detail)
-    return GateResult(True, "; ".join(detail for _, detail in results))
+    ok, retention = check_compaction_retention(ctx, files[2])
+    if not ok:
+        return fail(retention)
+    return GateResult(True, "; ".join([*(detail for _, detail in results), retention]))
 
 
 # ---------------------------------------------------------------- G6
@@ -898,6 +1000,68 @@ def bench_records_problem(clone: Path, template: dict[str, Any]) -> str | None:
         return "compliant route not verified"
     if ref.get("completed") is not True:
         return "reference run incomplete"
+    return action_log_problem(clone, tid, ref)
+
+
+# The fields halflife.schema.ActionLog.to_dict writes, with their JSON types.
+ACTION_LOG_FIELDS: dict[str, type] = {
+    "session_id": str,
+    "template_id": str,
+    "constraints": list,
+    "baseline_fs": dict,
+    "blobs": dict,
+    "events": list,
+    "checks": list,
+    "spans": list,
+}
+# Counts a reference-run record repeats from its action log (halflife.bench.verify.bank).
+REFERENCE_LOG_COUNTS = (("n_tool_calls", "events"), ("n_subtasks", "spans"))
+SHA256_RE = re.compile(r"[0-9a-f]{64}")
+
+
+def action_log_problem(clone: Path, tid: object, ref: dict[str, Any]) -> str | None:
+    """Why a reference run's action log is not the banked log of a run of template ``tid``.
+
+    The record names ``action_log`` and ``action_log_sha256`` (as
+    ``halflife.bench.verify.bank`` writes them): the path must be clean and inside the
+    clone (symlinks followed), and the file must have that SHA-256. The file must be a
+    JSON object in the ``halflife.schema.ActionLog`` layout whose ``template_id`` is the
+    template's id, whose ``session_id`` is a non-empty string, and which records at
+    least one tool call and one subtask span. Counts the record repeats from the log
+    (``n_tool_calls``, ``n_subtasks``), when present, must equal the log's.
+    """
+    rel = ref.get("action_log")
+    if rel is None:
+        return "reference run names no action_log"
+    log_path = clone_file(clone, rel)
+    if log_path is None:
+        return "reference run action_log is not a clean path inside the clone"
+    digest = ref.get("action_log_sha256")
+    if not isinstance(digest, str) or not SHA256_RE.fullmatch(digest):
+        return "reference run names no action_log_sha256"
+    if not log_path.is_file() or sha256_file(log_path) != digest:
+        return "reference run action log missing or hash mismatch"
+    try:
+        log = load_json(log_path)
+    except ValueError:
+        return "reference run action log is not valid JSON"
+    if not isinstance(log, dict):
+        return "reference run action log is not a JSON object"
+    for name, kind in ACTION_LOG_FIELDS.items():
+        if not isinstance(log.get(name), kind):
+            return f"reference run action log lacks {name} (not an action log)"
+    if log["template_id"] != tid:
+        return f"reference run action log is a session of template {log['template_id']!r}"
+    if not log["session_id"]:
+        return "reference run action log names no session"
+    if not log["events"] or not log["spans"]:
+        return "reference run action log records no tool calls or no subtask spans"
+    for count, name in REFERENCE_LOG_COUNTS:
+        if count in ref and (not is_count(ref[count]) or ref[count] != len(log[name])):
+            return (
+                f"reference run record says {count}={ref[count]!r} "
+                f"but its action log has {len(log[name])} {name}"
+            )
     return None
 
 
@@ -950,7 +1114,7 @@ def gate_g6(ctx: Context) -> GateResult:
     return GateResult(
         True,
         f"{len(ids)} templates, {len(types)} constraint types (read from the template files), "
-        "routes and reference runs verified",
+        "routes and reference runs with their action logs verified",
     )
 
 
@@ -1020,11 +1184,125 @@ def check_prereg_link(clone: Path, prereg: str, artifact: str) -> str | None:
     return None
 
 
+# Analysis outputs G7 recomputes from the banked rows (halflife.e1_analysis writes them).
+E1_RECOMPUTED = ("hazard.json", "half_life.json", "km.json")
+E1_ROWS = ("sessions.jsonl", "opportunities.jsonl")
+
+
+def analysis_settings(hazard: Any) -> tuple[int, int] | None:
+    """``(n_boot, seed)`` from the ``settings`` the banked hazard.json records (D-029).
+
+    None unless ``n_boot`` is a positive integer and ``seed`` an integer (booleans are
+    not integers here).
+    """
+    settings = hazard.get("settings") if isinstance(hazard, dict) else None
+    if not isinstance(settings, dict):
+        return None
+    n_boot, seed = settings.get("n_boot"), settings.get("seed")
+    if not is_count(n_boot) or n_boot == 0 or isinstance(seed, bool) or not isinstance(seed, int):
+        return None
+    return n_boot, seed
+
+
+def json_difference(banked: Any, recomputed: Any, where: str = "") -> str | None:
+    """Where two parsed JSON values first differ, or None when they are the same value.
+
+    Object keys are visited in sorted order and array items by index; the result is a
+    path such as ``estimates[2].hi``. Types must match too, so ``1``, ``1.0``, and
+    ``true`` all differ from each other, and NaN differs from everything.
+    """
+    here = where or "(top level)"
+    if type(banked) is not type(recomputed):
+        return here
+    if isinstance(banked, dict):
+        for key in sorted(set(banked) | set(recomputed), key=str):
+            path = f"{where}.{key}" if where else str(key)
+            if key not in banked or key not in recomputed:
+                return path
+            found = json_difference(banked[key], recomputed[key], path)
+            if found is not None:
+                return found
+        return None
+    if isinstance(banked, list):
+        for index, (a, b) in enumerate(zip(banked, recomputed, strict=False)):
+            found = json_difference(a, b, f"{where}[{index}]")
+            if found is not None:
+                return found
+        if len(banked) != len(recomputed):
+            return f"{where}[{min(len(banked), len(recomputed))}]"
+        return None
+    return None if banked == recomputed else here
+
+
+def scratch_parent(ctx: Context) -> Path | None:
+    """Parent for scratch directories: the log directory unless it lies inside the clone.
+
+    None means the system temporary directory (tests keep their logs inside the clone).
+    """
+    return None if inside(ctx.logs, ctx.clone) else ctx.logs
+
+
+def recompute_e1(ctx: Context, base: Path) -> str | None:
+    """Problem text unless rerunning the E1 analysis on the banked rows reproduces its outputs.
+
+    Copies ``sessions.jsonl`` and ``opportunities.jsonl`` into a temporary directory
+    outside the clone, runs ``python -m halflife.e1_analysis --dir <tmp>`` there in the
+    clone's environment with the ``n_boot`` and ``seed`` that hazard.json records, and
+    requires hazard.json, half_life.json, and km.json to equal the banked files as
+    parsed JSON (:func:`json_difference`). The banked files are read before the rerun,
+    and nothing is written inside the clone.
+    """
+    banked = {name: load_json(base / name) for name in E1_RECOMPUTED}
+    settings = analysis_settings(banked["hazard.json"])
+    if settings is None:
+        return "hazard.json does not record the analysis settings (integer n_boot > 0 and seed)"
+    if (blocked := setup_failed(ctx)) is not None:
+        return blocked.evidence
+    n_boot, seed = settings
+    with tempfile.TemporaryDirectory(prefix="e1-recompute-", dir=scratch_parent(ctx)) as tmp:
+        work = Path(tmp)
+        if inside(work, ctx.clone):
+            return "no temporary directory outside the clone for the E1 recomputation"
+        for name in E1_ROWS:
+            shutil.copyfile(base / name, work / name)
+        result = ctx.run(
+            "e1-recompute",
+            [
+                *ctx.python,
+                "-I",
+                "-m",
+                "halflife.e1_analysis",
+                "--dir",
+                str(work),
+                "--n-boot",
+                str(n_boot),
+                "--seed",
+                str(seed),
+            ],
+            timeout=E1_RECOMPUTE_LIMIT_S,
+        )
+        if result.returncode != 0:
+            lines = [line.strip() for line in result.output.splitlines() if line.strip()]
+            last = lines[-1][:100] if lines else "no output"
+            return f"halflife.e1_analysis failed on the banked rows: rc={result.returncode} {last}"
+        for name in E1_RECOMPUTED:
+            produced = work / name
+            if not produced.is_file():
+                return f"halflife.e1_analysis wrote no {name}"
+            where = json_difference(banked[name], load_json(produced))
+            if where is not None:
+                return f"recomputed {name} differs from the banked file at {where}"
+    return None
+
+
 def gate_g7(ctx: Context) -> GateResult:
     base = ctx.clone / "artifacts" / "e1"
     absent = missing([base / n for n in E1_FILES], ctx.clone)
     if absent:
         return fail(f"missing {', '.join(absent)}")
+    for name in E1_FILES:
+        if clone_file(ctx.clone, f"artifacts/e1/{name}") is None:
+            return fail(f"artifacts/e1/{name} resolves to a file outside the clone")
     provenance = load_json(base / "provenance.json")
     prereg = str(provenance.get("prereg", ""))
     for name in E1_FILES:
@@ -1083,9 +1361,13 @@ def gate_g7(ctx: Context) -> GateResult:
     if km.get("descriptive") is not True or not km.get("curves"):
         return fail("km.json missing or not labeled descriptive")
     counts = ", ".join(f"{f}={n}" for f, n in sorted(reached.items()))
-    return GateResult(
-        True, f"E1 preregistered; sessions reaching DP {counts}; estimates with intervals"
-    )
+    summary = f"E1 preregistered; sessions reaching DP {counts}; estimates with intervals"
+    if ctx.fast:
+        return GateResult(True, f"{summary}; not recomputed (fast)")
+    problem = recompute_e1(ctx, base)
+    if problem:
+        return fail(problem)
+    return GateResult(True, f"{summary}, recomputed from the banked rows")
 
 
 # ---------------------------------------------------------------- G8 and G9

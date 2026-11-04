@@ -449,12 +449,16 @@ def _loader_context(tmp_path: Path, clone: Path, python: tuple[str, ...]) -> Any
 
 
 def test_load_templates_reads_the_files_in_a_subprocess(tmp_path: Path) -> None:
+    from halflife import bench
+
     rel = "src/halflife/bench/templates/invoice-ledger.yaml"
     ctx = _loader_context(tmp_path, REPO_ROOT, (sys.executable,))
     facts = sc.load_templates(ctx, [rel, "README.md"])
     loaded = facts[rel]
     assert isinstance(loaded, sc.TemplateFacts) and loaded.id == "invoice-ledger"
     assert loaded.constraint_types and loaded.constraint_types <= sc.CONSTRAINT_TYPES
+    rules = {c.id for c in bench.load(REPO_ROOT / rel).template.constraints}
+    assert loaded.constraint_ids == rules and rules
     assert isinstance(facts["README.md"], str)
     assert ctx.shared["template_facts"][rel] == loaded
 
@@ -465,6 +469,75 @@ def test_load_templates_reports_a_broken_loader(tmp_path: Path) -> None:
     assert facts == {"t.yaml": "template loader failed in the clone (rc=1)"}
 
 
+def test_template_facts_carry_constraint_ids() -> None:
+    entry = {
+        "id": "t",
+        "split": "main",
+        "constraint_types": ["procedure"],
+        "constraint_ids": ["keep-api", "protect-tests"],
+    }
+    assert sc.template_facts(entry) == sc.TemplateFacts(
+        "t", "main", frozenset({"procedure"}), frozenset({"keep-api", "protect-tests"})
+    )
+    malformed: tuple[object, ...] = ("keep-api", [1], None)
+    for bad in malformed:
+        assert sc.template_facts({**entry, "constraint_ids": bad}) == (
+            "template loader returned malformed facts"
+        ), bad
+
+
+def test_inside_and_scratch_parent(tmp_path: Path) -> None:
+    clone = tmp_path / "clone"
+    (clone / "logs").mkdir(parents=True)
+    assert sc.inside(clone / "logs", clone) and sc.inside(clone, clone)
+    assert not sc.inside(tmp_path / "logs", clone)
+    (clone / "out").symlink_to(tmp_path)
+    assert not sc.inside(clone / "out" / "x.json", clone)
+    ctx = _loader_context(tmp_path, clone, (sys.executable,))
+    assert sc.scratch_parent(ctx) == tmp_path / "logs"
+    ctx.logs = clone / "logs"
+    assert sc.scratch_parent(ctx) is None
+
+
+def test_source_sessions_maps_runs_and_sessions_to_templates(tmp_path: Path) -> None:
+    rows = [
+        {"run_id": "r1", "session_id": "s1", "template_id": "t1"},
+        {"run_id": "r2", "session_id": "s1", "template_id": "t2"},
+        {"session_id": "s3", "template_id": "t3"},
+        {"run_id": "r1", "session_id": "", "template_id": "t4"},
+    ]
+    source = tmp_path / "artifacts" / "pilot"
+    source.mkdir(parents=True)
+    text = "".join(json.dumps(row) + "\n" for row in rows)
+    (source / "sessions.jsonl").write_text(text, encoding="utf-8")
+    assert sc.source_sessions(tmp_path, "artifacts/pilot") == (
+        {("r1", "s1"): ["t1"], ("r2", "s1"): ["t2"]},
+        "",
+    )
+    unnamed = "compaction logs name no source (the banked experiment directory)"
+    assert sc.source_sessions(tmp_path, None) == ({}, unnamed)
+    assert sc.source_sessions(tmp_path, "") == ({}, unnamed)
+    assert sc.source_sessions(tmp_path, "../pilot")[1] == (
+        "compaction log source '../pilot' is not a clean path inside the clone"
+    )
+    assert sc.source_sessions(tmp_path, "artifacts")[1] == (
+        "compaction log source artifacts has no sessions.jsonl"
+    )
+    assert sc.source_sessions(tmp_path, "artifacts/pilot/sessions.jsonl")[1].endswith(
+        "has no sessions.jsonl"
+    )
+
+
+def test_bench_records_on_the_banked_bench_pass() -> None:
+    """Every banked route, reference run, and action log passes the hardened G6 checks."""
+    manifest = REPO_ROOT / "artifacts" / "bench" / "manifest.json"
+    if not manifest.is_file():
+        pytest.skip("artifacts/bench/manifest.json is not banked")
+    templates = json.loads(manifest.read_text(encoding="utf-8"))["templates"]
+    problems = {t["id"]: sc.bench_records_problem(REPO_ROOT, t) for t in templates}
+    assert {tid: problem for tid, problem in problems.items() if problem} == {}
+
+
 # ------------------------------------------------------------- G7 and G12 helpers
 
 
@@ -473,6 +546,46 @@ def test_check_interval() -> None:
     assert not sc.check_interval({"lo": 2.5, "estimate": 2, "hi": 3}, "estimate")
     assert not sc.check_interval({"lo": 1, "estimate": float("nan"), "hi": 3}, "estimate")
     assert not sc.check_interval({"estimate": 2}, "estimate")
+
+
+def test_json_difference_names_the_first_differing_key() -> None:
+    banked: dict[str, Any] = {
+        "estimates": [{"family": "a", "hi": 0.3, "lo": 0.1}],
+        "settings": {"n_boot": 20},
+    }
+    assert sc.json_difference(banked, json.loads(json.dumps(banked))) is None
+    changed = json.loads(json.dumps(banked))
+    changed["estimates"][0]["hi"] = 0.31
+    changed["settings"]["n_boot"] = 21
+    assert sc.json_difference(banked, changed) == "estimates[0].hi"
+    assert sc.json_difference(banked, {**banked, "extra": 1}) == "extra"
+    assert sc.json_difference({**banked, "extra": 1}, banked) == "extra"
+    assert sc.json_difference({"n": 1}, {"n": 1.0}) == "n"
+    assert sc.json_difference({"n": 1}, {"n": True}) == "n"
+    assert sc.json_difference({"x": float("nan")}, {"x": float("nan")}) == "x"
+    assert sc.json_difference({"a": [1]}, {"a": []}) == "a[0]"
+    assert sc.json_difference([1, 2], [1, 2, 3]) == "[2]"
+    assert sc.json_difference([], {}) == "(top level)"
+    assert sc.json_difference(None, None) is None
+
+
+def test_analysis_settings_reads_n_boot_and_seed() -> None:
+    settings = {"n_boot": 2000, "seed": 20261104, "level": 0.95, "max_position": 150}
+    assert sc.analysis_settings({"settings": settings}) == (2000, 20261104)
+    unusable: tuple[object, ...] = (
+        {},
+        {"settings": None},
+        {"settings": {"seed": 1}},
+        {"settings": {"n_boot": 20}},
+        {"settings": {"n_boot": 0, "seed": 1}},
+        {"settings": {"n_boot": True, "seed": 1}},
+        {"settings": {"n_boot": 20.0, "seed": 1}},
+        {"settings": {"n_boot": 20, "seed": "1"}},
+        {"settings": {"n_boot": 20, "seed": False}},
+        [],
+    )
+    for bad in unusable:
+        assert sc.analysis_settings(bad) is None, bad
 
 
 def test_prereg_link_requires_strictly_earlier_commit(tmp_path: Path) -> None:
