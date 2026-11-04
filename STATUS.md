@@ -43,7 +43,7 @@ Updated 2026-11-04 08:05 UTC (goal_turn 3). History lives in docs/LOG.md.
 - Done since the usage-limit reset: probe-scoring validation banked (D-038); mitigation kit committed and wired into the E4 arms (D-039); E3 and E4 analysis plans in code before any data, with per-session usage for E4 costs (D-040); E1 power-analysis tool (`halflife.power`); ship-check hardening pass 2, G5 per-rule retention, G6 reference action logs, G7 recomputation (D-041); related work written from verified citations.
 - Pilot amended before any further session (D-042): families must also act at no fewer than half of the decision points they reach; Phi's running session finishes, then SmolLM2, Granite, and Qwen run the other two templates; Phi and Llama run more only if fewer than two of those qualify.
 - Sessions now pad to at least 20 subtasks with neutral read-only fillers for E1, E3, and E4 (D-043, section 4 of the brief).
-- Builders running: the E2 Claude Code driver, and the report pipeline (`make report`, `artifacts/claims.json`, freshness derivations).
+- E2 driver, runbook, design, and analysis step committed (D-044); E2 itself needs Raj. Builder running: the report pipeline (`make report`, `artifacts/claims.json`, freshness derivations).
 
 ## Next three actions
 
@@ -59,7 +59,7 @@ Updated 2026-11-04 08:05 UTC (goal_turn 3). History lives in docs/LOG.md.
 
 ## Needs Raj
 
-1. **Claude backend (blocks E2 in G8, and headless review).** This cloud container sets `ANTHROPIC_BASE_URL` and `CLAUDE_CODE_USE_CCR_V2`, so the billing guard refuses Claude children. To run E2, use a machine where `env | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_)'` prints nothing and `claude` is logged in to the Max plan, then follow docs/E2_RUNBOOK.md (being written).
+1. **Claude backend (blocks E2 in G8, and headless review).** This cloud container sets `ANTHROPIC_BASE_URL` and `CLAUDE_CODE_USE_CCR_V2`, so the billing guard refuses Claude children. To run E2: on a Linux machine with bubblewrap and socat where `env | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_)'` prints nothing and `claude` is logged in to the Max plan, turn off extra usage (paid overage) on the account, then follow docs/E2_RUNBOOK.md (smoke run, plans from `designs/e2.yaml`, two tiers, bank, push). Record any contaminant the smoke run reports (for example a user-level CLAUDE.md) so it can go in DECISIONS.md. E2 needs about 3 days at the capped 6 sessions per day.
 2. **Model licenses (confirm, not blocking).** Llama-3.2-3B-Instruct is under the Llama 3.2 Community License (its acceptable-use policy file is gated and could not be read here) and Qwen2.5-3B-Instruct under the Qwen Research License (non-commercial research and evaluation). This project uses both only for research evaluation and redistributes no weights (D-035). If you do not accept either license, say so and that family's data is dropped and recorded in CORRECTIONS.md.
 
 ## Blocked
