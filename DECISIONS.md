@@ -225,3 +225,7 @@ Closes the hole D-037 and D-041 left open: G9 now reads `artifacts/e4/sessions.j
 ## D-046 2026-11-04: G7 ties the banked analysis settings to the preregistration
 
 Closes the second hole D-041 left open. Each E1 preregistration carries a fenced JSON block, `{"halflife_prereg": {"analysis": "halflife.e1_analysis", "n_boot": ..., "seed": ...}}`, and a full G7 check requires the `n_boot` and `seed` recorded in `hazard.json` to equal it before rerunning the analysis. Seven new mutation tests cover it; two existing mutations that change the recorded settings are now caught by this earlier check, with its message, and still fail.
+
+## D-047 2026-11-04: E1, E3, and E4 session settings from the pilot's session shape (before any preregistration)
+
+The first pilot sessions compacted only on the token budget (about every 15 to 18 tool calls) and never reached a forced compaction, because the [8, 120) window ran past sessions of 18 to 59 calls. E1, E3, and E4 draw 1 or 2 forced compactions in [8, 70) at least 15 calls apart, inside the length of padded sessions of engaged models, so the randomized timing actually varies compaction counts at decision points. The 3,000-token budget stays as the backstop the brief asks for ("a small context budget forces compaction"). With 20 subtasks (D-043) every E1 plan has 20 subtasks, the two compaction arms are balanced, and all 21 main-split templates are used. Raising `n_sessions` keeps earlier plans unchanged up to 63 plans (three blocks of the 21 templates; checked), which bounds the E1 stopping rule.
