@@ -221,3 +221,7 @@ E2 is labeled exploratory and ecological, not confirmatory: `designs/e2.yaml` ru
 ## D-045 2026-11-04: G9 requires banked E4 session rows
 
 Closes the hole D-037 and D-041 left open: G9 now reads `artifacts/e4/sessions.jsonl` and requires `n_sessions` unique rows whose templates are exactly the held-out templates, rows for every reported mitigation, and no row arm the summary does not report (the `none` control aside). Seven mutation tests cover it; the check only tightens G9.
+
+## D-046 2026-11-04: G7 ties the banked analysis settings to the preregistration
+
+Closes the second hole D-041 left open. Each E1 preregistration carries a fenced JSON block, `{"halflife_prereg": {"analysis": "halflife.e1_analysis", "n_boot": ..., "seed": ...}}`, and a full G7 check requires the `n_boot` and `seed` recorded in `hazard.json` to equal it before rerunning the analysis. Seven new mutation tests cover it; two existing mutations that change the recorded settings are now caught by this earlier check, with its message, and still fail.

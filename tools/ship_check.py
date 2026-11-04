@@ -1242,6 +1242,45 @@ def scratch_parent(ctx: Context) -> Path | None:
     return None if inside(ctx.logs, ctx.clone) else ctx.logs
 
 
+PREREG_BLOCK = re.compile(r"^```json[ \t]*\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
+
+
+def prereg_settings(text: str) -> dict[str, Any] | None:
+    """The ``halflife_prereg`` object of the first fenced JSON block that has one, or None."""
+    for match in PREREG_BLOCK.finditer(text):
+        try:
+            data = json.loads(match.group(1))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict) and isinstance(data.get("halflife_prereg"), dict):
+            block: dict[str, Any] = data["halflife_prereg"]
+            return block
+    return None
+
+
+def prereg_settings_problem(ctx: Context, prereg: str, base: Path) -> str | None:
+    """Why the banked E1 analysis settings differ from the preregistered ones, or None.
+
+    The preregistration fixes the analysis module, ``n_boot``, and ``seed`` in a fenced
+    JSON block ``{"halflife_prereg": {...}}``; hazard.json must record the same values.
+    """
+    path = ctx.clone / prereg
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    fixed = prereg_settings(text)
+    if fixed is None:
+        return f"{prereg} has no halflife_prereg settings block"
+    if fixed.get("analysis") != "halflife.e1_analysis":
+        return f"{prereg} names analysis {fixed.get('analysis')}, not halflife.e1_analysis"
+    settings = analysis_settings(load_json(base / "hazard.json"))
+    if settings is None:
+        return None  # malformed settings: recompute_e1 reports them
+    for key, value in zip(("n_boot", "seed"), settings, strict=True):
+        want = fixed.get(key)
+        if not isinstance(want, int) or isinstance(want, bool) or want != value:
+            return f"hazard.json settings {key} {value} != {want!r} fixed in {prereg}"
+    return None
+
+
 def recompute_e1(ctx: Context, base: Path) -> str | None:
     """Problem text unless rerunning the E1 analysis on the banked rows reproduces its outputs.
 
@@ -1364,7 +1403,7 @@ def gate_g7(ctx: Context) -> GateResult:
     summary = f"E1 preregistered; sessions reaching DP {counts}; estimates with intervals"
     if ctx.fast:
         return GateResult(True, f"{summary}; not recomputed (fast)")
-    problem = recompute_e1(ctx, base)
+    problem = prereg_settings_problem(ctx, prereg, base) or recompute_e1(ctx, base)
     if problem:
         return fail(problem)
     return GateResult(True, f"{summary}, recomputed from the banked rows")

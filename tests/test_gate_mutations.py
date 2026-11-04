@@ -1660,12 +1660,24 @@ def build_g7(
     return context(root, commit_e1(root, files, history))
 
 
-def commit_e1(root: Path, files: dict[str, Any], history: str = "prereg-first") -> str:
+def prereg_text(**fixed: Any) -> str:
+    """A preregistration whose settings block fixes ``fixed`` over the fixture's values."""
+    block = {"analysis": "halflife.e1_analysis", "n_boot": N_BOOT, "seed": BOOT_SEED} | fixed
+    return (
+        "# E1 preregistration\n\nDate: 2026-11-04\n\n```json\n"
+        + json.dumps({"halflife_prereg": block})
+        + "\n```\n"
+    )
+
+
+def commit_e1(
+    root: Path, files: dict[str, Any], history: str = "prereg-first", text: str | None = None
+) -> str:
     """Commit the preregistration and the E1 files in the order ``history`` names; HEAD."""
     root.mkdir(parents=True, exist_ok=True)
     run_git(root, "init", "-q")
     commit(root, {"README.md": "# half-life\n", "prereg/.gitkeep": ""}, "bootstrap")
-    frozen = {PREREG: "# E1 preregistration\n\nDate: 2026-11-04\n"}
+    frozen = {PREREG: prereg_text() if text is None else text}
     if history == "prereg-first":
         commit(root, frozen, "freeze E1")
         sha = commit(root, files, "bank E1")
@@ -2060,16 +2072,20 @@ def recomputable_e1_files() -> dict[str, Any]:
     return files
 
 
-def build_g7_full(root: Path, edit: Edit | None = None) -> Any:
+def build_g7_full(root: Path, edit: Edit | None = None, text: str | None = None) -> Any:
     """The E1 fixture under a full check (not --fast), after a successful make setup."""
     files = recomputable_e1_files()
     if edit is not None:
         edit(files)
-    return context(root, commit_e1(root, files), setup=True, fast=False)
+    return context(root, commit_e1(root, files, text=text), setup=True, fast=False)
 
 
 def g7_full(name: str, expect: str, edit: Edit, hole: str = "") -> Case:
     return Case(name, expect, lambda root: build_g7_full(root, edit), hole)
+
+
+def g7_prereg(name: str, expect: str, text: str) -> Case:
+    return Case(name, expect, lambda root: build_g7_full(root, None, text))
 
 
 def differs(name: str, where: str) -> str:
@@ -2129,6 +2145,41 @@ HAZARD_DIFFERS = r"^recomputed hazard\.json differs from the banked file at "
 
 G7_FULL_CASES = params(
     [
+        g7_prereg(
+            "prereg-has-no-settings-block",
+            "prereg/0001-e1.md has no halflife_prereg settings block",
+            "# E1 preregistration\n\nDate: 2026-11-04\n\nn_boot is 20 and the seed is 7.\n",
+        ),
+        g7_prereg(
+            "prereg-settings-block-is-not-json",
+            "prereg/0001-e1.md has no halflife_prereg settings block",
+            prereg_text().replace('"n_boot": 20', '"n_boot": twenty'),
+        ),
+        g7_prereg(
+            "prereg-fixes-another-n-boot",
+            "hazard.json settings n_boot 20 != 2000 fixed in prereg/0001-e1.md",
+            prereg_text(n_boot=2000),
+        ),
+        g7_prereg(
+            "prereg-fixes-another-seed",
+            "hazard.json settings seed 7 != 8 fixed in prereg/0001-e1.md",
+            prereg_text(seed=8),
+        ),
+        g7_prereg(
+            "prereg-n-boot-is-a-string",
+            "hazard.json settings n_boot 20 != '20' fixed in prereg/0001-e1.md",
+            prereg_text(n_boot="20"),
+        ),
+        g7_prereg(
+            "prereg-seed-is-a-boolean",
+            "hazard.json settings seed 7 != True fixed in prereg/0001-e1.md",
+            prereg_text(seed=True),
+        ),
+        g7_prereg(
+            "prereg-names-another-analysis",
+            "names analysis halflife.other, not halflife.e1_analysis",
+            prereg_text(analysis="halflife.other"),
+        ),
         g7_full(
             "hazard-estimate-one-ulp-off",
             differs("hazard.json", "estimates[0].estimate"),
@@ -2194,12 +2245,12 @@ G7_FULL_CASES = params(
         ),
         g7_full(
             "settings-name-another-bootstrap-size",
-            HAZARD_DIFFERS + r"estimates\[0\]\.(hi|lo|n_boot)$",
+            "hazard.json settings n_boot 25 != 20 fixed in prereg/0001-e1.md",
             lambda f: settings_of(f).update(n_boot=N_BOOT + 5),
         ),
         g7_full(
             "settings-name-another-seed",
-            HAZARD_DIFFERS + r"estimates\[0\]\.(hi|lo|seed)$",
+            "hazard.json settings seed 8 != 7 fixed in prereg/0001-e1.md",
             lambda f: settings_of(f).update(seed=BOOT_SEED + 1),
         ),
         g7_full(
