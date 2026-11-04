@@ -33,6 +33,7 @@ from test_derive import (
 )
 
 from halflife import arms_analysis, bench, derive, e1_analysis, experiment, power, report
+from halflife import pilot as pilot_rule
 from halflife.integrity import claimcheck, freshness
 
 REAL = derive.ROOT
@@ -139,6 +140,14 @@ def full_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.chdir(root)
     pilot = ["--pilot", "artifacts/pilot", "--out", "artifacts/power/e1.json"]
     assert power.main([*pilot, "--n-sim", "2", "--seed", "5"]) == 0
+    ledger = [
+        {"experiment": "pilot", "purpose": "step", "model": "syn-a-model", "wall_s": 3.0},
+        {"experiment": "pilot", "purpose": "step", "model": "syn-b-model", "wall_s": 2.0},
+    ]
+    write_rows(root / "artifacts/usage/ledger.jsonl", ledger)
+    templates = [t.id for t in bench.load_all() if t.template.split == "pilot"]
+    choice = ["--dir", "artifacts/pilot", "--ledger", "artifacts/usage/ledger.jsonl"]
+    assert pilot_rule.main([*choice, "--templates", *templates]) == 0
     bank_experiment(root, "e1", synthetic_e1(), "prereg/0001-e1.md")
     assert e1_analysis.main(["--dir", "artifacts/e1", "--n-boot", "20", "--seed", "3"]) == 0
     e2_rows = synthetic_arms("e2", [{}], families=("haiku", "sonnet"), model_key="model")
@@ -186,6 +195,10 @@ def test_full_synthetic_repo_passes_claimcheck_and_freshness(full_repo: Path) ->
     assert "Status: exploratory (not preregistered)." in text  # pilot and E2
     assert "Holm p" in text and "Tokens per session" in text and "halflife-guard took" in text
     assert "Status: synthetic." in text and "(pilot)" in text
+    plain_text = claimcheck.strip_markers(text)
+    assert "| syn-a | 3 | 3 | 9 | 6 | qualifies |" in plain_text
+    assert "| syn-b | 3 | 2 | 6 | 4 | does not qualify |" in plain_text
+    assert "`artifacts/pilot/family_choice.json`" in text and "it names syn-a." in text
     assert "confidence interval" in readme and "docs/figures/e1-hazard.svg" in readme
     for figure in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", text):
         root = ET.parse(full_repo / "docs" / figure).getroot()
@@ -619,3 +632,35 @@ def test_reproduce_plan_without_banked_outputs_uses_defaults(tmp_path: Path) -> 
     write_rows(tmp_path / "artifacts/e1/opportunities.jsonl", opportunities)
     steps = report.reproduce_plan(tmp_path)
     assert [step.args for step in steps] == [("halflife.e1_analysis", "--dir", "artifacts/e1")]
+
+
+def test_pilot_verdicts_follow_the_pilot_module(tmp_path: Path) -> None:
+    """Synthetic pilot rows: a family that skipped a pilot template is not fully piloted."""
+    synthetic_pilot(tmp_path)
+    store = report.Store(tmp_path)
+    sessions, opportunities = (
+        "artifacts/pilot/sessions.jsonl",
+        "artifacts/pilot/opportunities.jsonl",
+    )
+    assert report.pilot_verdicts(store, sessions, opportunities) == {
+        "syn-a": "qualifies",
+        "syn-b": "does not qualify",
+    }
+    rows = [
+        r
+        for r in store.rows(sessions)
+        if not (r["family"] == "syn-a" and r["session_id"] == "syn-pilot-2")
+    ]
+    write_rows(tmp_path / sessions, rows)
+    store = report.Store(tmp_path)
+    assert report.pilot_verdicts(store, sessions, opportunities)["syn-a"] == "not fully piloted"
+    write_rows(tmp_path / sessions, [{"family": "syn-a"}])
+    assert report.pilot_verdicts(report.Store(tmp_path), sessions, opportunities) == {}
+    write_json(tmp_path, "artifacts/pilot/family_choice.json", {"chosen": []})
+    b = report.Build(report.Store(tmp_path), report.Ledger(report.Store(tmp_path)))
+    (tmp_path / opportunities).unlink()
+    text = plain(report.pilot_section(b))
+    assert (
+        "it names no family." in text
+        and "| syn-a | 1 | 0 | not estimable | not estimable |" in text
+    )

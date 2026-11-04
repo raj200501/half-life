@@ -149,22 +149,26 @@ E3_ARMS = [
 E4_ARMS = [{"mitigation": m} for m in ("none", *arms_analysis.MITIGATIONS)]
 
 
-def pilot_template() -> bench.LoadedTemplate:
-    """A real pilot-split template, so compaction logs can name its real constraint ids."""
-    return next(t for t in bench.load_all() if t.template.split == "pilot")
+def pilot_templates() -> list[bench.LoadedTemplate]:
+    """The real pilot-split templates, so compaction logs can name their real constraint ids."""
+    return [t for t in bench.load_all() if t.template.split == "pilot"]
 
 
 def synthetic_pilot(
     root: Path, directory: str = "artifacts/pilot", families: Sequence[str] = ("syn-a", "syn-b")
 ) -> None:
-    """A synthetic banked pilot under ``root``: rows, compaction logs, and provenance."""
-    template = pilot_template()
-    ids = [c.id for c in template.template.constraints]
+    """A synthetic banked pilot under ``root``: rows, compaction logs, and provenance.
+
+    Every family runs one session per pilot template; ``syn-b`` misses its first decision
+    point, so it reaches the first decision point in fewer sessions than ``syn-a``.
+    """
+    templates = pilot_templates()
     out = root / directory
     sessions, opportunities, events = [], [], []
     for f_index, family in enumerate(families):
         run_id = f"syn-pilot-{family}"
-        for i in range(3):
+        for i, template in enumerate(templates):
+            ids = [c.id for c in template.template.constraints]
             sid = f"syn-pilot-{i}"
             reached = not (f_index == 1 and i == 0)
             sessions.append(
@@ -190,6 +194,7 @@ def synthetic_pilot(
                         "run_id": run_id,
                         "family": family,
                         "violated": (i + j) % 3 == 0,
+                        "acted": j != 1,
                         "synthetic": True,
                     }
                 )

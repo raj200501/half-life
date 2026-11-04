@@ -45,7 +45,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from halflife import derive, e1_analysis, stats, svgplot
+from halflife import bench, derive, e1_analysis, stats, svgplot
+from halflife import pilot as pilot_rule
 from halflife.integrity import IntegrityError, load_artifact, load_json
 from halflife.integrity import claimcheck as cc
 
@@ -85,7 +86,6 @@ SYNTHETIC_NOTE = (
 E0_LEVEL = 0.95
 """Level of the Wilson intervals in :mod:`halflife.e0` and :mod:`halflife.probe_validation`."""
 G5_THRESHOLD = 0.95
-PILOT_SHARE = 0.8
 G7_SESSIONS = 40
 
 PROP, DIFF, COEF, TOOLS, COUNT = ".3f", "+.3f", "+.2f", ".1f", "d"
@@ -682,10 +682,34 @@ def e0_section(b: Build) -> list[str]:
 # --------------------------------------------------------------------------- pilot and power
 
 
+def pilot_verdicts(store: Store, sessions: str, opportunities: str) -> dict[str, str]:
+    """Per family: ``qualifies``, ``does not qualify``, or ``not fully piloted``.
+
+    The rule is :func:`halflife.pilot.family_table` itself (D-026 as amended by D-042),
+    run without the usage ledger, which only orders qualifying families by speed.
+    """
+    templates = sorted(t.id for t in bench.load_all() if t.template.split == "pilot")
+    rows = store.rows(opportunities) if store.exists(opportunities) else []
+    try:
+        table = pilot_rule.family_table(store.rows(sessions), rows, [], templates)
+    except (KeyError, stats.StatsError):
+        return {}
+    return {
+        str(row["family"]): (
+            "not fully piloted"
+            if not row["fully_piloted"]
+            else "qualifies"
+            if row["qualifies"]
+            else "does not qualify"
+        )
+        for row in table
+    }
+
+
 def pilot_section(b: Build) -> list[str]:
     """Section 5.3: the family pilot (exploratory)."""
     lines = ["### 5.3 Family pilot", ""]
-    sessions = f"{PILOT}/sessions.jsonl"
+    sessions, opportunities = f"{PILOT}/sessions.jsonl", f"{PILOT}/opportunities.jsonl"
     if not b.store.exists(sessions):
         return [
             *lines,
@@ -695,34 +719,57 @@ def pilot_section(b: Build) -> list[str]:
     led = b.led
     status = status_of(b.store, PILOT, sessions)
     criterion = led.allowed(
-        "80",
-        "at least 80% of its pilot sessions",
-        "pilot qualification threshold from section 5 of the brief (D-026)",
+        pct(pilot_rule.MIN_REACH)[:-1],
+        f"at least {pct(pilot_rule.MIN_REACH)} of its pilot sessions",
+        "pilot reach threshold from section 5 of the brief (D-026, D-042)",
     )
-    families = sorted({str(row.get("family")) for row in b.store.rows(sessions)})
+    verdicts = pilot_verdicts(b.store, sessions, opportunities)
+    has_opps = b.store.exists(opportunities)
     rows = []
-    for family in families:
-        total = led.counted(sessions, {"family": family})
-        reached = led.counted(sessions, {"family": family, "reached_first_dp": True})
-        rows.append(
-            [
-                family,
-                led.count(f"pilot.{slug(family)}.sessions", sessions, {"family": family}),
-                led.count(
-                    f"pilot.{slug(family)}.reached",
-                    sessions,
-                    {"family": family, "reached_first_dp": True},
-                ),
-                "yes" if total and reached >= PILOT_SHARE * total else "no",
+    for family in sorted({str(row.get("family")) for row in b.store.rows(sessions)}):
+        cid = f"pilot.{slug(family)}"
+        row = [
+            family,
+            led.count(f"{cid}.sessions", sessions, {"family": family}),
+            led.count(f"{cid}.reached", sessions, {"family": family, "reached_first_dp": True}),
+        ]
+        if has_opps:
+            row += [
+                led.count(f"{cid}.dps", opportunities, {"family": family}),
+                led.count(f"{cid}.acted", opportunities, {"family": family, "acted": True}),
             ]
-        )
+        else:
+            row += [NOT_ESTIMABLE, NOT_ESTIMABLE]
+        rows.append([*row, verdicts.get(family, NOT_ESTIMABLE)])
     text = (
         f"{status.text} Each candidate family ran the same plans (`designs/pilot.yaml`) on the "
         "pilot-split templates, which E1 does not use, and pilot sessions never enter E1 data. A "
         f"family qualifies for E1 when {criterion} reach the first decision point (section 5 of "
-        "the brief); the families E1 uses are recorded in DECISIONS.md (D-026)."
+        "the brief) and it acts (writes, edits, or runs a command) at no fewer than half of the "
+        "decision points those sessions reach, a criterion D-042 added after one session per "
+        "family; a family that did not run every pilot template is reported as not fully "
+        "piloted, never as failing. E1 takes the qualifying families with the lowest median "
+        "wall time per step call (D-042)."
     )
-    header = ["Family", "Pilot sessions", "Reached the first decision point", "Meets the criterion"]
+    choice = f"{PILOT}/family_choice.json"
+    if b.store.exists(choice):
+        chosen = b.store.obj(choice).get("chosen")
+        names = [str(c) for c in chosen] if isinstance(chosen, list) else []
+        text += (
+            " The choice is banked in `artifacts/pilot/family_choice.json` "
+            "(`python -m halflife.pilot`, which also reads the wall times in the usage ledger); "
+            f"it names {join_and(names) if names else 'no family'}."
+        )
+    else:
+        text += " The family choice has not been banked yet (`python -m halflife.pilot`)."
+    header = [
+        "Family",
+        "Pilot sessions",
+        "Reached the first decision point",
+        "Decision points reached",
+        "Acted at",
+        "Verdict",
+    ]
     return [*lines, text, "", *table(header, rows)]
 
 

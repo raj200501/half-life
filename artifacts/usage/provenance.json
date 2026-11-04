@@ -1,0 +1,7 @@
+{
+  "artifact": "artifacts/usage/ledger.jsonl",
+  "command": "appended by halflife.client.Client on every real model call (python -m halflife.experiment run, tools/bench_models.py, tools/fetch_models.py, halflife.drivers.claude_code); cached replies add no row",
+  "git_sha": "aef4d1257d5dcaa7e54a98f61e1ac9dc4273a4d3",
+  "note": "Raw primary data: each row carries its own ts, run_id, experiment, purpose, model, tokens, and wall time. git_sha is the commit at which this provenance file was written; the client's row format is unchanged since the ledger began.",
+  "raw": true
+}

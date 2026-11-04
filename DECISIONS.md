@@ -229,3 +229,16 @@ Closes the second hole D-041 left open. Each E1 preregistration carries a fenced
 ## D-047 2026-11-04: E1, E3, and E4 session settings from the pilot's session shape (before any preregistration)
 
 The first pilot sessions compacted only on the token budget (about every 15 to 18 tool calls) and never reached a forced compaction, because the [8, 120) window ran past sessions of 18 to 59 calls. E1, E3, and E4 draw 1 or 2 forced compactions in [8, 70) at least 15 calls apart, inside the length of padded sessions of engaged models, so the randomized timing actually varies compaction counts at decision points. The 3,000-token budget stays as the backstop the brief asks for ("a small context budget forces compaction"). With 20 subtasks (D-043) every E1 plan has 20 subtasks, the two compaction arms are balanced, and all 21 main-split templates are used. Raising `n_sessions` keeps earlier plans unchanged up to 63 plans (three blocks of the 21 templates; checked), which bounds the E1 stopping rule.
+
+## D-048 2026-11-04: the report pipeline (`make report`, claims, freshness)
+
+From the report builder (`halflife.report`, `halflife.derive`):
+
+- Every number in the generated REPORT blocks is a claim marker resolved through `artifacts/claims.json`; interval levels and gate thresholds (0.95, 80%, 40 per family) are allowlisted with reasons. Intervals are two claims, open bounds render as `>N`, and unreached half-lives as "not reached within N tool calls" (D-028). p-values below 0.001 render to two significant digits.
+- Readings are descriptive and worded the same for null and positive results ("interval includes zero", "interval above zero"); the generator invents no alpha or decision rule beyond the preregistrations.
+- Confirmatory versus exploratory comes from each `provenance.json`; E0, the pilot, and E2 render as exploratory, and a `synthetic: true` flag labels a section and its figures.
+- Derivations call the preregistration-cited analysis functions unchanged and compare stable pointers only (never timestamps or command strings). Runner output and `detector_validation.json` are raw with provenance; the ledger gets `artifacts/usage/provenance.json` so the pilot family choice, which reads it, can be cited.
+- The E1 hazard curve with its band is computed at report time from the banked rows with the half-life model and the banked settings, and its caption says so.
+- The pilot verdicts come from `halflife.pilot.family_table` (D-042); `--reproduce` re-runs only derivations, never raw producers.
+
+The builder also found two defects in analysis code that the preregistrations will cite; both are fixed, with an adversarial audit of the statistics path, before any preregistration is committed (D-049).
