@@ -177,6 +177,7 @@ def bank_runs(
     for session_dir, record in collect(run_dirs):
         sid = record["session"]["session_id"]
         row = dict(record["session"]) | {"run_id": record["run_id"]}
+        row["probe_leaks"] = list(record.get("summary", {}).get("leaks", []))
         if prereg is not None:
             row["prereg"] = prereg
         sessions.append(row)
@@ -228,3 +229,105 @@ def bank_runs(
         json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return provenance
+
+
+# --------------------------------------------------------------------------- E0 validation runs
+
+LOG_FIELDS = (
+    "event_id",
+    "strategy",
+    "tool_call_index",
+    "scheduled",
+    "tokens_before",
+    "tokens_after",
+    "before",
+    "after",
+    "summary",
+    "constraint_text_retained",
+)
+
+
+def log_problems(log: Mapping[str, Any], constraint_ids: Sequence[str]) -> list[str]:
+    """Ways a compaction log falls short of complete (every field, every constraint)."""
+    problems = [f"missing {name}" for name in LOG_FIELDS if name not in log]
+    if problems:
+        return problems
+    if not log["before"] or not log["after"]:
+        problems.append("empty before or after context")
+    elif log["after"][0].get("role") != "system":
+        problems.append("compacted context lost the system prompt")
+    if log["strategy"] != "sliding_window" and not log["summary"]:
+        problems.append("no summary text")
+    missing = sorted(set(constraint_ids) - set(log["constraint_text_retained"]))
+    if missing:
+        problems.append(f"retention not logged for {', '.join(missing)}")
+    return problems
+
+
+def e0_validation(
+    banked: Path, out_dir: Path, root: Path, constraint_ids: Mapping[str, Sequence[str]]
+) -> dict[str, Any]:
+    """Probe-leakage and compaction-log artifacts for G5 from a banked experiment.
+
+    Args:
+        banked: An experiment directory written by :func:`bank_runs` (its sessions
+            are the validation runs).
+        out_dir: Where to write ``probe_leakage.json`` and ``compaction_logs.json``.
+        root: Repository root (paths in the artifacts are relative to it).
+        constraint_ids: Template id to the constraint ids whose retention every
+            compaction log must record.
+
+    Returns:
+        A summary with the counts written.
+    """
+    sessions = [
+        json.loads(line)
+        for line in (banked / "sessions.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    runs = [
+        {
+            "run_id": s["run_id"],
+            "session_id": s["session_id"],
+            "leaked": bool(s.get("probe_leaks")),
+            "leaks": list(s.get("probe_leaks", [])),
+        }
+        for s in sessions
+    ]
+    templates = {s["session_id"]: s["template_id"] for s in sessions}
+    events = json.loads((banked / "compaction_logs.json").read_text(encoding="utf-8"))["events"]
+    checked = []
+    for event in events:
+        log = json.loads((root / event["log_path"]).read_text(encoding="utf-8"))
+        problems = log_problems(log, constraint_ids.get(templates.get(event["session_id"], ""), ()))
+        checked.append(dict(event) | {"complete": not problems, "problems": problems})
+    source = banked.relative_to(root).as_posix()
+    leakage = {
+        "description": (
+            "Probe leakage across validation runs: probe text found in any main-run model call."
+        ),
+        "source": source,
+        "validation_runs": len(runs),
+        "leaks": sum(1 for r in runs if r["leaked"]),
+        "runs": runs,
+    }
+    logs = {
+        "description": "Compaction logs from validation runs, each checked for completeness.",
+        "source": source,
+        "complete": sum(1 for e in checked if e["complete"]),
+        "incomplete": sum(1 for e in checked if not e["complete"]),
+        "events": checked,
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "probe_leakage.json").write_text(
+        json.dumps(leakage, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    (out_dir / "compaction_logs.json").write_text(
+        json.dumps(logs, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return {
+        "validation_runs": len(runs),
+        "leaks": leakage["leaks"],
+        "events": len(checked),
+        "incomplete": logs["incomplete"],
+    }

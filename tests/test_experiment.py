@@ -150,3 +150,103 @@ def test_bank_runs(tmp_path: Path) -> None:
         command="t",
     )
     assert exploratory["confirmatory"] is False and exploratory["design"] is None
+
+
+def test_e0_validation_from_real_runs(tmp_path: Path) -> None:
+    from halflife import runner
+    from halflife.detect import detect_all
+    from halflife.schema import CompactionPlan, SessionPlan, load_template
+
+    sys_path_root = Path(__file__).resolve().parents[1]
+    import sys
+
+    sys.path.insert(0, str(sys_path_root / "tests"))
+    from test_runner import ScriptedPolicy
+
+    template = load_template(EXEMPLAR)
+    root = tmp_path
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@e.invalid",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "x",
+        ],
+        check=True,
+    )
+    ctx = runner.RunContext(run_id="val", family="fake", model="scripted")
+    for seed in (1, 2):
+        plan = SessionPlan(
+            session_id=f"v{seed}",
+            template_id=template.id,
+            template_sha256="0" * 64,
+            seed=seed,
+            placement="first_user",
+            phrasing="bare",
+            compaction=CompactionPlan(strategy="full_summary", schedule=(3,), budget_tokens=0),
+            mitigation="none",
+            subtasks=template.subtasks[:3],
+        )
+        runner.run_session(plan, template, ScriptedPolicy(), detect_all, ctx, root / "runs")
+    banked = root / "artifacts" / "pilot"
+    experiment.bank_runs(
+        [root / "runs" / "val"],
+        banked,
+        root,
+        experiment="pilot",
+        prereg=None,
+        design_path=None,
+        models=[],
+        command="test",
+    )
+    ids = {template.id: [c.id for c in template.constraints]}
+    summary = experiment.e0_validation(banked, root / "artifacts" / "e0", root, ids)
+    assert summary == {"validation_runs": 2, "leaks": 0, "events": 2, "incomplete": 0}
+    leakage = json.loads((root / "artifacts" / "e0" / "probe_leakage.json").read_text())
+    assert leakage["validation_runs"] == len(leakage["runs"]) == 2 and leakage["leaks"] == 0
+    logs = json.loads((root / "artifacts" / "e0" / "compaction_logs.json").read_text())
+    event = logs["events"][0]
+    for name in (
+        "run_id",
+        "event_id",
+        "strategy",
+        "tool_call_index",
+        "tokens_before",
+        "tokens_after",
+        "log_path",
+        "log_sha256",
+    ):
+        assert event[name] is not None, name
+    tampered = json.loads((root / event["log_path"]).read_text())
+    del tampered["constraint_text_retained"]["changelog"]
+    assert experiment.log_problems(tampered, ids[template.id]) == [
+        "retention not logged for changelog"
+    ]
+
+
+def test_log_problems_flags_missing_parts() -> None:
+    assert experiment.log_problems({}, ["c"])[0] == "missing event_id"
+    base = {
+        "event_id": "c1",
+        "strategy": "full_summary",
+        "tool_call_index": 1,
+        "scheduled": True,
+        "tokens_before": 10,
+        "tokens_after": 5,
+        "before": [{"role": "system", "content": "s"}],
+        "after": [{"role": "user", "content": "x"}],
+        "summary": "",
+        "constraint_text_retained": {"c": False},
+    }
+    problems = experiment.log_problems(base, ["c"])
+    assert "compacted context lost the system prompt" in problems and "no summary text" in problems
+    assert "empty before or after context" in experiment.log_problems(base | {"after": []}, ["c"])
