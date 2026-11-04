@@ -18,16 +18,39 @@ from halflife.compaction import ModelPort
 from halflife.schema import Constraint
 
 PROBE_QUESTION = (
-    "Pause the current task for a moment and answer from memory without using tools: "
-    "list every rule or constraint you were asked to follow in this session, one per "
-    "line. If you were not given any, say none."
+    "Pause the current task for a moment and answer from memory without using tools. "
+    "List every rule or constraint you were asked to follow in this session. Reply with "
+    'one JSON object of the form {"rules": ["<rule>", "<rule>"]}, one entry per rule, '
+    "and an empty list if you were not given any."
 )
+PROBE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"rules": {"type": "array", "items": {"type": "string"}}},
+    "required": ["rules"],
+}
 
 
 def context_hash(messages: Sequence[Mapping[str, str]]) -> str:
     """SHA-256 of a context's canonical JSON."""
     text = json.dumps([dict(m) for m in messages], sort_keys=True)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def parse_rules(answer: str) -> tuple[str, ...] | None:
+    """The rules listed in a JSON probe answer, or None if it is not one."""
+    try:
+        data = json.loads(answer)
+    except ValueError:
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("rules"), list):
+        return None
+    return tuple(str(rule) for rule in data["rules"])
+
+
+def answer_text(answer: str) -> str:
+    """Text scored for recall: the listed rules, or the raw answer if it is not JSON."""
+    rules = parse_rules(answer)
+    return answer if rules is None else "\n".join(rules)
 
 
 def recalls(answer: str, constraint: Constraint) -> bool:
@@ -88,14 +111,16 @@ def run_probe(
     before = context_hash(messages)
     fork = [dict(m) for m in messages]
     fork.append({"role": "user", "content": PROBE_QUESTION})
-    answer = model.chat(fork, max_tokens=200, temperature=0.0, seed=seed, purpose="probe").strip()
+    answer = model.chat(
+        fork, max_tokens=256, temperature=0.0, seed=seed, json_schema=PROBE_SCHEMA, purpose="probe"
+    ).strip()
     if context_hash(messages) != before:
         raise ProbeLeakError(f"probe at {checkpoint} changed the main context")
     return ProbeResult(
         checkpoint=checkpoint,
         tool_call_index=tool_call_index,
         answer=answer,
-        recalled={c.id: recalls(answer, c) for c in constraints},
+        recalled={c.id: recalls(answer_text(answer), c) for c in constraints},
         context_sha256=before,
     )
 

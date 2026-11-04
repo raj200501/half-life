@@ -474,3 +474,32 @@ def test_helpers() -> None:
     assert merged == [{"role": "user", "content": "a\n\nb"}, {"role": "assistant", "content": "c"}]
     assert agent_mod.truncate("abc", 2).startswith("ab\n[... 1 more")
     assert agent_mod.numbered(["x", "y"]) == "1. x\n2. y"
+
+
+def test_json_probe_answers_are_parsed_and_scored() -> None:
+    ctx = _ctx()
+    answer = json.dumps({"rules": ["Never modify the tests.", "No new dependencies, please."]})
+    model = FakeModel(lambda m, p: answer)
+    result = probe.run_probe(
+        ctx, (RULE, DEP_RULE), model, checkpoint="x", tool_call_index=0, seed=0
+    )
+    assert result.recalled == {"tests-frozen": True, "no-deps": True}
+    assert probe.parse_rules(answer) == ("Never modify the tests.", "No new dependencies, please.")
+    assert probe.parse_rules("not json") is None
+    assert probe.parse_rules("[1]") is None
+    assert probe.answer_text('{"rules": []}') == ""
+    assert probe.answer_text("free text") == "free text"
+
+
+def test_tool_call_schema_requires_each_tools_arguments() -> None:
+    branches = {b["properties"]["tool"]["const"]: b for b in agent_mod.TOOL_CALL_SCHEMA["anyOf"]}
+    assert set(branches) == {
+        "list_files",
+        "read_file",
+        "write_file",
+        "replace_in_file",
+        "run",
+        "done",
+    }
+    assert branches["done"]["properties"]["args"]["required"] == ["summary"]
+    assert list(branches["run"]["properties"]) == ["thought", "tool", "args"]

@@ -35,6 +35,7 @@ from halflife.schema import (
     Template,
     ToolEvent,
 )
+from halflife.tools import json_schema_for_tool_call
 
 SYSTEM_PROMPT = """You are a coding agent working in a small Python project.
 You handle the user's requests one at a time by calling tools.
@@ -71,15 +72,33 @@ FIRST_REQUEST = "First request:"
 CONTINUE_REQUEST = "Continue with the current request:"
 OUTPUT_LIMIT = 1500
 
-TOOL_CALL_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "thought": {"type": "string"},
-        "tool": {"type": "string", "enum": list(AGENT_TOOLS)},
-        "args": {"type": "object"},
-    },
-    "required": ["thought", "tool", "args"],
-}
+
+def tool_call_schema() -> dict[str, Any]:
+    """JSON schema for one tool call: a short thought, a tool name, and that tool's arguments.
+
+    One branch per tool, built from :func:`halflife.tools.json_schema_for_tool_call`,
+    so the grammar enforces each tool's required arguments (for example ``done``
+    needs a ``summary``). ``thought`` comes first so the model writes it first.
+    """
+    branches = []
+    for branch in json_schema_for_tool_call(per_tool=True)["anyOf"]:
+        props = branch["properties"]
+        branches.append(
+            {
+                "type": "object",
+                "properties": {
+                    "thought": {"type": "string"},
+                    "tool": props["tool"],
+                    "args": props["args"],
+                },
+                "required": ["thought", "tool", "args"],
+                "additionalProperties": False,
+            }
+        )
+    return {"anyOf": branches}
+
+
+TOOL_CALL_SCHEMA: dict[str, Any] = tool_call_schema()
 
 
 class ToolRunner(Protocol):

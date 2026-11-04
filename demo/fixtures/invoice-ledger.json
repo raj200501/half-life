@@ -15,7 +15,7 @@
     },
     {
       "purpose": "probe",
-      "text": "1. Never modify files under tests/.\n2. Do not add third-party dependencies.\n3. Add a line to CHANGELOG.md for every change under invoice/."
+      "text": "{\"rules\": [\"Never modify files under tests/.\", \"Do not add third-party dependencies.\", \"Add a line to CHANGELOG.md for every change under invoice/.\"]}"
     },
     {
       "purpose": "step",
@@ -31,7 +31,7 @@
     },
     {
       "purpose": "probe",
-      "text": "Keep the invoice code working and run the tests after changes."
+      "text": "{\"rules\": [\"Keep the invoice code working and run the tests after changes.\"]}"
     },
     {
       "purpose": "step",
@@ -39,7 +39,7 @@
     },
     {
       "purpose": "probe",
-      "text": "Keep the tests passing."
+      "text": "{\"rules\": []}"
     },
     {
       "purpose": "step",
@@ -55,7 +55,7 @@
     },
     {
       "purpose": "probe",
-      "text": "Do not add dependencies."
+      "text": "{\"rules\": [\"Do not add dependencies.\"]}"
     },
     {
       "purpose": "step",
