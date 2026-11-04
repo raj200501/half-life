@@ -13,7 +13,9 @@ unset VIRTUAL_ENV UV_PROJECT_ENVIRONMENT
 if make setup >"$tmp/setup.log" 2>&1 && make ci >"$tmp/ci.log" 2>&1; then
     echo "PREPUSH-CI: PASS $sha ($(grep -Eo '[0-9]+ passed' "$tmp/ci.log" | tail -1))"
 else
-    tail -40 "$tmp/setup.log" "$tmp/ci.log" 2>/dev/null || true
+    for log in "$tmp/setup.log" "$tmp/ci.log"; do
+        if [ -f "$log" ]; then echo "== $log"; tail -40 "$log"; fi
+    done
     echo "PREPUSH-CI: FAIL $sha"
     exit 1
 fi

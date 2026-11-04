@@ -96,7 +96,16 @@ def is_proper_ancestor(root: Path, earlier: str, later: str) -> bool:
     if earlier == later:
         return False
     proc = subprocess.run(
-        ["git", "--no-optional-locks", "-C", str(root), "merge-base", "--is-ancestor", earlier, later],
+        [
+            "git",
+            "--no-optional-locks",
+            "-C",
+            str(root),
+            "merge-base",
+            "--is-ancestor",
+            earlier,
+            later,
+        ],
         capture_output=True,
         check=False,
     )
