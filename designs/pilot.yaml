@@ -4,7 +4,7 @@
 # design (seed_base 900000). The same plans run for every candidate family.
 experiment: pilot
 split: pilot
-n_sessions: 6
+n_sessions: 3
 seed_base: 900000
 confirmatory: false
 conditions:
