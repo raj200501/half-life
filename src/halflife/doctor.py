@@ -19,7 +19,8 @@ from dataclasses import asdict, dataclass, field
 from importlib.util import find_spec
 from pathlib import Path
 
-from halflife import billing_guard
+from halflife import billing_guard, sandbox
+from halflife import budget as budget_mod
 from halflife.budget import DEFAULT_BUDGET_PATH, DEFAULT_CAPS
 
 FREE_TIER_KEYS: tuple[str, ...] = ("GEMINI_API_KEY", "OPENROUTER_API_KEY", "GITHUB_MODELS_TOKEN")
@@ -73,6 +74,8 @@ class DoctorReport:
     llama_cpp: bool
     transformers: bool
     sandbox_options: list[str]
+    sandbox_methods: list[str]
+    subject_python: str
     free_tier_confirmed: bool
     free_tier_keys: list[str]
     allow_push: bool
@@ -137,7 +140,7 @@ def derive_backends(report: DoctorReport) -> tuple[dict[str, bool], list[str]]:
     fallbacks: list[str] = []
     if not report.docker_daemon:
         fallbacks.append("no Docker daemon: use the non-Docker sandbox or generated tasks only")
-    if not report.sandbox_options:
+    if not report.sandbox_options and not report.sandbox_methods:
         fallbacks.append("no network sandbox: run only this project's generated tasks")
     if not claude_ok:
         fallbacks.append("Claude backend unusable: E2 and make review need Raj; use local models")
@@ -156,6 +159,7 @@ def collect(
     which: Callable[[str], str | None] = shutil.which,
     root: Path = Path("."),
     guard: billing_guard.GuardReport | None = None,
+    methods: Callable[[], tuple[str, ...]] = sandbox.available_methods,
 ) -> DoctorReport:
     """Probe the environment and return a :class:`DoctorReport`."""
     env = os.environ if env is None else env
@@ -190,19 +194,39 @@ def collect(
         claude_logged_in=claude_logged_in,
         billing_guard_problems=guard.problems(),
         ollama=which("ollama") is not None,
-        llama_cpp=any(which(name) for name in ("llama-cli", "llama-server")),
+        llama_cpp=any(which(name) for name in ("llama-cli", "llama-server"))
+        or find_spec("llama_cpp") is not None,
         transformers=find_spec("transformers") is not None and find_spec("torch") is not None,
         sandbox_options=detect_sandboxes(which, run, docker_daemon),
+        sandbox_methods=[m for m in methods() if m != "none"],
+        subject_python=_subject_python(env),
         free_tier_confirmed=confirmed,
         free_tier_keys=[k for k in FREE_TIER_KEYS if confirmed and env.get(k)],
         allow_push=env.get("ALLOW_PUSH") == "1",
-        cap_share=env.get("CAP_SHARE", "1"),
+        cap_share=_effective_cap_share(env, root),
         recommended_local_max_params_b=recommended_max_params_b(
             ram_gb, DEFAULT_CAPS["local_model_max_params_b"]
         ),
     )
     report.backends, report.fallbacks = derive_backends(report)
     return report
+
+
+def _effective_cap_share(env: Mapping[str, str], root: Path) -> str:
+    """The share the client applies: budget.toml's cap_share lowered by ``CAP_SHARE``."""
+    try:
+        file_share = budget_mod.file_cap_share(root / DEFAULT_BUDGET_PATH)
+        return f"{budget_mod.cap_share(env, file_share=file_share):g}"
+    except (OSError, ValueError):
+        return env.get("CAP_SHARE", "1") + " (budget.toml unreadable)"
+
+
+def _subject_python(env: Mapping[str, str]) -> str:
+    """Where sandboxed commands find ``python``, and whether it is the subject environment."""
+    path = sandbox.subject_bin(env)
+    if path == sandbox.SUBJECT_BIN_DEFAULT or env.get("HALFLIFE_SUBJECT_BIN"):
+        return f"subject environment at {path}"
+    return f"harness interpreter at {path} (run make subject-env)"
 
 
 def _claude_logged_in(child_env: Mapping[str, str]) -> bool | None:
@@ -238,6 +262,8 @@ def render(report: DoctorReport) -> list[str]:
         f"ollama: {yes(report.ollama)}  llama.cpp: {yes(report.llama_cpp)}  "
         f"transformers: {yes(report.transformers)}",
         f"sandboxes: {', '.join(report.sandbox_options) or 'none'}",
+        f"harness sandbox methods: {', '.join(report.sandbox_methods) or 'none (no isolation)'}",
+        f"subject python: {report.subject_python}",
         f"free tier confirmed: {yes(report.free_tier_confirmed)} "
         f"keys: {', '.join(report.free_tier_keys) or 'none'}",
         f"allow_push: {yes(report.allow_push)}  cap_share: {report.cap_share}",
