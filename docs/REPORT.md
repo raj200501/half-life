@@ -14,7 +14,19 @@ This report describes half-life, a measurement of constraint persistence. It has
 
 ## 2. Related work
 
-Pending verified citations (`make citecheck`).
+Every reference below was opened and checked (title, authors, year, and final URL are banked in `artifacts/citecheck.json`), and each is described only as far as the checked page supports.
+
+**Long contexts.** Liu et al. (2023), [Lost in the Middle: How Language Models Use Long Contexts](https://arxiv.org/abs/2307.03172), found that retrieval and question-answering performance is often highest when the relevant information sits at the beginning or end of the input and degrades when it sits in the middle, even for models built for long contexts. A rule stated at the top of a long agent session is information at the beginning of the context until compaction rewrites that context, which is one reason this study manipulates compaction directly instead of only session length.
+
+**Goal drift.** Arike et al. (2025), [Technical Report: Evaluating Goal Drift in Language Model Agents](https://arxiv.org/abs/2505.02709), give an agent a goal in its system prompt and then apply environmental pressure toward competing objectives over long contexts. They report that every model they tested drifted and that drift grew with context length. half-life asks a narrower question about rules rather than goals: whether a stated constraint still governs behavior at a later point where breaking it is the easiest way to finish a request, with no competing objective introduced.
+
+**Agents in the field.** Tang et al. (2026), [How Coding Agents Fail Their Users](https://arxiv.org/abs/2605.29442), analyze real developer-agent sessions and define misalignment through developer pushback. Following rules and bounding actions are among the recurring forms they describe, and their abstract reports that constraint violations grow in share over time. Their study is observational; half-life is a controlled complement in which the timing of rules, decision points, and compaction is randomized.
+
+**Persistence of effort.** Cai et al. (2026), [Push Your Agent: Measuring and Enforcing Quantitative Goal Persistence in Long-Horizon LLM Agents](https://arxiv.org/abs/2605.23574), measure whether agents keep working until a verifier confirms enough valid items. That is persistence of effort toward a goal; this study measures persistence of restraint under rules, and the two can fail independently.
+
+**What production tools do today.** Claude Code documents that the project-root CLAUDE.md is re-read from disk and re-injected after compaction, and that CLAUDE.md is context rather than enforced configuration, so blocking an action needs a hook ([How Claude remembers your project](https://code.claude.com/docs/en/memory)). Its hooks reference documents PreToolUse hooks that can deny a tool call with a reason and SessionStart hooks that fire after compaction ([Hooks reference](https://code.claude.com/docs/en/hooks)). [AGENTS.md](https://agents.md) is an open Markdown format for project instructions to coding agents. These mechanisms are the basis of the pinned-file, re-injection, and policy-guard mitigations in E4.
+
+**Statistics.** The hazard model is a discrete-time survival model fit by logistic regression on the risk set, following Singer and Willett (1993) ([DOI](https://doi.org/10.3102/10769986018002155)). Intervals come from the bootstrap of Efron (1979) ([DOI](https://doi.org/10.1214/aos/1176344552)), resampling whole sessions; rates carry the score intervals of Wilson (1927) ([DOI](https://doi.org/10.1080/01621459.1927.10502953)); and time to first violation is summarized descriptively with the estimator of Kaplan and Meier (1958) ([DOI](https://doi.org/10.1080/01621459.1958.10501452)). Local models run through [llama.cpp](https://github.com/ggml-org/llama.cpp).
 
 ## 3. Method
 

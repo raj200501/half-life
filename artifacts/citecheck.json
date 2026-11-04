@@ -59,7 +59,7 @@
       "content_sha256": "af63ac4b31d2d47748f3ad62081349ff820ca488c577888c8b0289545915c275",
       "hash_source": "curl body",
       "status": "verified",
-      "notes": "7 authors; submitted 6 July 2023."
+      "notes": "7 authors; submitted 6 July 2023. Abstract re-read 2026-11-04 (arXiv abs page, curl body sha256 af63ac4b31d2d47748f3ad62081349ff820ca488c577888c8b0289545915c275): performance is often highest when relevant information is at the beginning or end of the input context and degrades significantly when it is in the middle, even for explicitly long-context models; tasks are multi-document question answering and key-value retrieval."
     },
     {
       "key": "claude-code-memory",
