@@ -8,7 +8,7 @@ to the next index, so slow periods on a shared machine hit every family alike
 which is resumable, so rerunning this script skips finished sessions.
 
 Usage: uv run --frozen python tools/round_robin.py --plans PATH --prefix pilot \
-    --models key1 key2 ... [--indices 0 1 2]
+    --models key1 key2 ... [--indices 0 1 2] [--prereg prereg/NNNN-slug.md]
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--models", nargs="+", required=True)
     parser.add_argument("--indices", nargs="*", type=int, default=None)
     parser.add_argument("--n-ctx", type=int, default=8192)
+    parser.add_argument("--prereg", default=None, help="preregistration that governs the runs")
     args = parser.parse_args(argv)
     total = sum(1 for line in args.plans.read_text(encoding="utf-8").splitlines() if line.strip())
     indices = args.indices if args.indices is not None else list(range(total))
@@ -49,6 +50,7 @@ def main(argv: list[str] | None = None) -> int:
                 model,
                 "--n-ctx",
                 str(args.n_ctx),
+                *(["--prereg", args.prereg] if args.prereg else []),
             ]
             print(json.dumps({"index": index, "model": model, "cmd": cmd}), flush=True)
             code = subprocess.run(cmd, check=False).returncode
