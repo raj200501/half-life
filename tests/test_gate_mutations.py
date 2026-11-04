@@ -2465,6 +2465,16 @@ MITIGATIONS = (
 E4 = "artifacts/e4/summary.json"
 OVERHEAD = "artifacts/e4/overhead.json"
 E1_SESSIONS = "artifacts/e1/sessions.jsonl"
+E4_SESSIONS = "artifacts/e4/sessions.jsonl"
+E4_ROWS = [
+    {
+        "session_id": f"e4s{i}",
+        "model": "m",
+        "template_id": ("h01", "h02")[i % 2],
+        "mitigation": ("none", "guard", "pin")[i % 3],
+    }
+    for i in range(12)
+]
 BENCH_G9 = (("h01", "heldout"), ("h02", "heldout"), ("t01", "main"), ("t02", "main"))
 
 
@@ -2492,6 +2502,7 @@ def build_g9(root: Path) -> Any:
             E4: summary,
             OVERHEAD: overhead,
             E1_SESSIONS: [{"session_id": "s1", "template_id": "t01"}],
+            E4_SESSIONS: [dict(r) for r in E4_ROWS],
             MANIFEST: {"templates": entries},
             "pyproject.toml": PYPROJECT,
             "docs/MITIGATIONS.md": MITIGATIONS,
@@ -2535,9 +2546,51 @@ FENCED_INSTALL = (
 )
 COST_BAD = "lacks cost beside benefit: {} is not a finite number"
 
+
+def edit_e4_rows(change: Callable[[list[dict[str, Any]]], object]) -> Callable[[Path], None]:
+    return edit_rows(E4_SESSIONS, change)
+
+
 G9_CASES = params(
     [
         g9("e4-did-not-run", "E4 summary does not show", edit_e4(lambda d: d.update(ran=False))),
+        g9(
+            "e4-session-rows-not-banked",
+            "missing artifacts/e4/sessions.jsonl",
+            lambda r: (r / E4_SESSIONS).unlink(),
+        ),
+        g9(
+            "e4-session-rows-fewer-than-reported",
+            "E4 n_sessions 12 != 11 banked session rows",
+            edit_e4_rows(lambda rows: rows.pop()),
+        ),
+        g9(
+            "e4-session-row-repeated",
+            r"duplicate session rows \(e4s0\)",
+            edit_e4_rows(lambda rows: rows.__setitem__(1, dict(rows[0]))),
+        ),
+        g9(
+            "e4-session-row-from-a-template-not-held-out",
+            "E4 session rows' templates differ from held_out_templates",
+            edit_e4_rows(lambda rows: rows[0].update(template_id="t02")),
+        ),
+        g9(
+            "e4-summary-held-out-template-without-rows",
+            "E4 session rows' templates differ from held_out_templates",
+            edit_e4_rows(lambda rows: [r.update(template_id="h01") for r in rows]),
+        ),
+        g9(
+            "e4-mitigation-reported-without-rows",
+            "E4 reports mitigation pin with no banked session rows",
+            edit_e4_rows(
+                lambda rows: [r.update(mitigation="none") for r in rows if r["mitigation"] == "pin"]
+            ),
+        ),
+        g9(
+            "e4-rows-name-an-unreported-mitigation",
+            "E4 session rows name mitigation reinject, which the summary does not report",
+            edit_e4_rows(lambda rows: rows[0].update(mitigation="reinject")),
+        ),
         g9(
             "e4-session-count-is-a-boolean",
             "E4 summary does not show",

@@ -1510,6 +1510,32 @@ def has_install_heading(text: str) -> bool:
     return False
 
 
+def e4_rows_problem(
+    ctx: Context, e4: dict[str, Any], held_out: Sequence[str], mitigations: Sequence[Any]
+) -> str | None:
+    """Why the banked E4 session rows do not back the summary, or None.
+
+    ``artifacts/e4/sessions.jsonl`` must hold ``n_sessions`` unique rows, their
+    templates must be exactly the held-out templates, every reported mitigation must
+    have rows, and every row's arm must be a reported mitigation or the ``none`` control.
+    """
+    rows, why = arm_sessions(ctx.clone, "E4", e4)
+    if rows is None:
+        return why
+    templates = {row.get("template_id") for row in rows}
+    if templates != set(held_out):
+        return "E4 session rows' templates differ from held_out_templates"
+    names = {m.get("name") for m in mitigations if isinstance(m, dict)}
+    arms = {row.get("mitigation") for row in rows}
+    for name in sorted(str(n) for n in names):
+        if name not in arms:
+            return f"E4 reports mitigation {name} with no banked session rows"
+    for arm in sorted(str(a) for a in arms):
+        if arm not in names and arm != "none":
+            return f"E4 session rows name mitigation {arm}, which the summary does not report"
+    return None
+
+
 def gate_g9(ctx: Context) -> GateResult:
     e4, why = arm_summary(ctx.clone, "E4")
     if e4 is None:
@@ -1540,6 +1566,9 @@ def gate_g9(ctx: Context) -> GateResult:
                 f"{bad[0]} is not a finite number >= 0"
             )
     problem = held_out_problem(ctx, held_out)
+    if problem:
+        return fail(problem)
+    problem = e4_rows_problem(ctx, e4, held_out, mitigations)
     if problem:
         return fail(problem)
     pyproject = tomllib.loads((ctx.clone / "pyproject.toml").read_text(encoding="utf-8"))

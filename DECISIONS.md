@@ -217,3 +217,7 @@ From the E2 driver builder (`halflife.drivers.claude_code`, `snapshot_hook`, doc
 6. Main-run and probe usage are kept apart in the ledger (`claude_agent_run` and `claude_single_call` rows); probe forks that fail are recorded as skipped, not as recalling nothing.
 
 E2 is labeled exploratory and ecological, not confirmatory: `designs/e2.yaml` runs 8 main-split plans on two tiers, sized to the capped Claude runs (at most 6 sessions per UTC day with `cap_share = 0.2`). `python -m halflife.arms_analysis e2 --dir artifacts/e2` writes the G8 `summary.json` from the banked rows. The fixtures were written from documented formats and the installed CLI's embedded schemas, not captured, so the first real smoke run on Raj's machine is the first end-to-end check; its checks fail closed. E2 compaction logs have a different layout from the minimal agent's (Claude Code does not expose the before and after message lists), so they are not part of the G5 compaction-log check.
+
+## D-045 2026-11-04: G9 requires banked E4 session rows
+
+Closes the hole D-037 and D-041 left open: G9 now reads `artifacts/e4/sessions.jsonl` and requires `n_sessions` unique rows whose templates are exactly the held-out templates, rows for every reported mitigation, and no row arm the summary does not report (the `none` control aside). Seven mutation tests cover it; the check only tightens G9.
