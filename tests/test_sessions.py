@@ -178,3 +178,77 @@ def test_template_sha256(tmp_path: Path) -> None:
 def test_condition_key() -> None:
     assert sessions.Condition().key() == "system.bare.full_summary.none"
     assert isinstance(_template().subtasks[0], Subtask)
+
+
+RULE_TOPICS = (
+    "test",
+    "pytest",
+    "depend",
+    "package",
+    "install",
+    "network",
+    "internet",
+    "git",
+    "changelog",
+    "api",
+    "public",
+    "signature",
+    "rename",
+    "line",
+    "limit",
+    "new file",
+    "delete",
+    "remove",
+    "rule",
+    "constraint",
+)
+
+
+def test_generic_fillers_are_neutral_and_read_only() -> None:
+    ids = [f.id for f in sessions.GENERIC_FILLERS]
+    assert len(ids) == len(set(ids)) and all(i.startswith("generic-") for i in ids)
+    for filler in sessions.GENERIC_FILLERS:
+        assert filler.kind == "work" and filler.success is None and filler.constraint is None
+        lowered = filler.prompt.lower()
+        assert not [w for w in RULE_TOPICS if w in lowered], filler.prompt
+        tools = [a.tool for a in filler.solution]
+        assert tools[-1] == "done" and set(tools[:-1]) <= {"list_files", "read_file"}
+        assert all(a.args.get("path") in {".", "README.md"} for a in filler.solution[:-1])
+
+
+def test_every_template_has_the_readme_generic_fillers_read() -> None:
+    from halflife import bench
+
+    assert all("README.md" in t.template.files for t in bench.load_all())
+
+
+def test_padding_reaches_min_subtasks_with_template_fillers_first() -> None:
+    core = [_sub(f"c{i}") for i in range(5)]
+    fillers = [_sub(f"f{i}") for i in range(4)]
+    out = sessions.interleave_fillers(core, fillers, random.Random(3), 1, min_subtasks=16)
+    ids = [s.id for s in out]
+    assert len(out) == 16 and len(ids) == len(set(ids))
+    assert ids[0] == "c0" and ids[-1] == "c4"
+    assert [i for i in ids if i.startswith("c")] == [f"c{i}" for i in range(5)]
+    assert sum(1 for i in ids if i.startswith("f")) == 4  # every template filler first
+    assert sum(1 for i in ids if i.startswith("generic-")) == 7
+
+
+def test_padding_stops_when_fillers_run_out_and_is_off_by_default() -> None:
+    core = [_sub("c0"), _sub("c1")]
+    short = sessions.interleave_fillers(core, [], random.Random(1), 0, min_subtasks=99)
+    assert len(short) == 2 + len(sessions.GENERIC_FILLERS) and short[-1].id == "c1"
+    single = sessions.interleave_fillers([_sub("c0")], [], random.Random(1), 0, min_subtasks=9)
+    assert [s.id for s in single] == ["c0"]
+    a = sessions.interleave_fillers(core, [_sub("f0")], random.Random(5), 2)
+    b = sessions.interleave_fillers(core, [_sub("f0")], random.Random(5), 2, min_subtasks=0)
+    assert a == b and not any(s.id.startswith("generic-") for s in a)
+
+
+def test_negative_min_subtasks_is_rejected() -> None:
+    with pytest.raises(SchemaError):
+        sessions.PlanSettings(min_subtasks=-1)
+
+
+def _sub(sid: str) -> Subtask:
+    return Subtask.from_dict(_subtask(sid))
