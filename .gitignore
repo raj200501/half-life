@@ -12,7 +12,7 @@ runs/
 *.bin
 *.pt
 *.onnx
-models/
+/models/
 
 # Python and tool caches
 __pycache__/

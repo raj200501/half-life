@@ -53,16 +53,16 @@ demo:
 	@diff -u demo/golden_output.txt $(DEMO_OUT) && echo "DEMO: output matches demo/golden_output.txt"
 
 prereg-verify:
-	@$(PY) tools/not_ready.py prereg-verify "preregistration chain, gate G11"
+	@$(RUN) python -m halflife.integrity.prereg
 
 claimcheck:
-	@$(PY) tools/not_ready.py claimcheck "result-number provenance gate, G10"
+	@$(RUN) python -m halflife.integrity.claimcheck
 
 freshness:
-	@$(PY) tools/not_ready.py freshness "re-derive every live number, G10"
+	@$(RUN) python -m halflife.integrity.freshness
 
 citecheck:
-	@$(PY) tools/not_ready.py citecheck "validate artifacts/citecheck.json, G13"
+	@$(RUN) python -m halflife.integrity.citecheck
 
 secrets-scan:
 	@$(RUN) python -m halflife.secrets_scan .
