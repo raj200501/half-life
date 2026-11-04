@@ -122,3 +122,24 @@ def test_main_prints_and_banks(
     bad = _answers(tmp_path / "b.yaml", [dict(items[0], label=False)])
     assert probe_validation.main(["--answers", str(bad)]) == 0
     assert "DISAGREE invoice-ledger/changelog" in capsys.readouterr().out
+
+
+def test_split_is_deterministic_and_reported() -> None:
+    a = probe_validation.LabeledAnswer("t", "c", "x", True, "paraphrase_close")
+    assert probe_validation.split_of(a) == probe_validation.split_of(a)
+    splits = {
+        probe_validation.split_of(
+            probe_validation.LabeledAnswer("t", "c", f"answer {i}", True, "k")
+        )
+        for i in range(40)
+    }
+    assert splits == {"dev", "test"}
+    items = [
+        probe_validation.LabeledAnswer(
+            "invoice-ledger", "changelog", f"Update CHANGELOG.md, note {i}", True, "p"
+        )
+        for i in range(12)
+    ]
+    result = probe_validation.score_answers(items, INDEX)
+    assert result["by_split"]["dev"]["n"] + result["by_split"]["test"]["n"] == 12
+    assert probe_validation._summary([]) == {"n": 0}

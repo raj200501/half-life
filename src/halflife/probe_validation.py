@@ -13,6 +13,7 @@ intervals) is banked as ``artifacts/e0/probe_scoring.json``.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -81,6 +82,31 @@ def _rate(k: int, n: int) -> dict[str, float | int]:
     return {"value": k / n if n else 0.0, "lo": lo, "hi": hi, "k": k, "n": n}
 
 
+def split_of(item: LabeledAnswer) -> str:
+    """``dev`` or ``test``, fixed by a hash of the answer so it cannot be chosen.
+
+    Keyword groups may be tuned on ``dev`` disagreements; ``test`` is scored once
+    and is the reported agreement.
+    """
+    key = f"{item.template_id}|{item.constraint_id}|{item.kind}|{item.answer}"
+    return "dev" if hashlib.sha256(key.encode("utf-8")).digest()[0] % 2 == 0 else "test"
+
+
+def _summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    tp = sum(1 for r in rows if r["label"] and r["predicted"])
+    tn = sum(1 for r in rows if not r["label"] and not r["predicted"])
+    pos = sum(1 for r in rows if r["label"])
+    neg = len(rows) - pos
+    out: dict[str, Any] = {"n": len(rows)}
+    if pos:
+        out["sensitivity"] = _rate(tp, pos)
+    if neg:
+        out["specificity"] = _rate(tn, neg)
+    if rows:
+        out["accuracy"] = _rate(tp + tn, len(rows))
+    return out
+
+
 def score_answers(
     answers: Sequence[LabeledAnswer], constraints: Mapping[tuple[str, str], Constraint]
 ) -> dict[str, Any]:
@@ -100,6 +126,7 @@ def score_answers(
                 "kind": item.kind,
                 "label": item.label,
                 "predicted": predicted,
+                "split": split_of(item),
             }
         )
     tp = sum(1 for r in rows if r["label"] and r["predicted"])
@@ -116,6 +143,9 @@ def score_answers(
         "sensitivity": _rate(tp, pos),
         "specificity": _rate(tn, neg),
         "accuracy": _rate(tp + tn, len(rows)),
+        "by_split": {
+            split: _summary([r for r in rows if r["split"] == split]) for split in ("dev", "test")
+        },
         "by_kind": dict(sorted(by_kind.items())),
         "disagreements": [r for r in rows if r["label"] != r["predicted"]],
     }
@@ -141,9 +171,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     for name in ("sensitivity", "specificity", "accuracy"):
         r = result[name]
         print(f"{name}={r['value']:.4f} [{r['lo']:.4f}, {r['hi']:.4f}] ({r['k']}/{r['n']})")
+    for split, summary in result["by_split"].items():
+        acc = summary.get("accuracy")
+        if acc:
+            interval = f"[{acc['lo']:.4f}, {acc['hi']:.4f}]"
+            print(f"{split}: accuracy={acc['value']:.4f} {interval} ({acc['k']}/{acc['n']})")
     for row in result["disagreements"]:
         where = f"{row['template_id']}/{row['constraint_id']}"
-        print(f"DISAGREE {where} kind={row['kind']} label={row['label']}")
+        print(f"DISAGREE {where} kind={row['kind']} label={row['label']} split={row['split']}")
     if args.bank:
         out = args.out or root / "artifacts" / "e0" / "probe_scoring.json"
         out.parent.mkdir(parents=True, exist_ok=True)
