@@ -184,3 +184,33 @@ def test_main_writes_every_output(tmp_path: Path, experiment: str) -> None:
     assert {p.stem for p in tmp_path.glob("*.json")} == stems
     summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
     assert summary["arm"] == experiment.upper() and summary["settings"]["n_boot"] == 40
+
+
+def test_e2_summary_is_ecological_and_lists_tiers(tmp_path: Path) -> None:
+    sessions, opportunities = _synthetic("e2", [{}], ("claude",), 4, 6)
+    tiers = ("haiku", "sonnet")
+    tiered_sessions = [dict(s, model=t, confirmatory=False) for t in tiers for s in sessions]
+    tiered_opps = [dict(o, model=t) for t in tiers for o in opportunities]
+    tiered_sessions[0]["reached_first_dp"] = False
+    out = arms_analysis.analyze_e2(tiered_sessions, tiered_opps, FAST)
+    summary = out["summary"]
+    assert summary == {
+        "arm": "E2",
+        "ran": True,
+        "n_sessions": 8,
+        "label": "ecological",
+        "models": ["haiku", "sonnet"],
+        "confirmatory": False,
+        "settings": FAST.__dict__,
+    }
+    by_tier = {r["model"]: r for r in out["rates"]["model"]}
+    assert by_tier["haiku"]["opportunities"] == 12 and by_tier["sonnet"]["opportunities"] == 16
+    assert out["rates"]["exclusions"]["sessions_not_reaching_first_dp"] == 1
+    with pytest.raises(stats.StatsError):
+        arms_analysis.analyze_e2(tiered_sessions, [], FAST)
+    for name, rows in (("sessions", tiered_sessions), ("opportunities", tiered_opps)):
+        (tmp_path / f"{name}.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+        )
+    assert arms_analysis.main(["e2", "--dir", str(tmp_path), "--n-boot", "20"]) == 0
+    assert {p.stem for p in tmp_path.glob("*.json")} == {"rates", "summary"}

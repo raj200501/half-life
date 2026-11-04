@@ -31,6 +31,12 @@ E4, mitigations on held-out templates (RQ5):
   and task success (the share of checked subtasks that passed), each as a mean with a
   session bootstrap interval and as a difference from ``none``.
 
+E2, Claude Code (the ecological arm, exploratory unless a preregistration is banked):
+
+* violation rate and pre-decision-point recall per model tier, with Wilson intervals,
+  over sessions that reached their first decision point; ``summary.json`` follows the G8
+  layout and is labeled ``ecological``.
+
 Every analysis runs per family and pooled over families.
 """
 
@@ -381,16 +387,55 @@ def analyze_e4(
     }
 
 
+def analyze_e2(
+    sessions: Sequence[Mapping[str, Any]],
+    opportunities: Sequence[Mapping[str, Any]],
+    settings: Settings,
+) -> dict[str, dict[str, Any]]:
+    """Every E2 output, keyed by file stem; E2 rows carry the model tier in ``model``."""
+    reached = {(s["model"], s["session_id"]) for s in sessions if s.get("reached_first_dp") is True}
+    rows = [
+        dict(o)
+        for o in opportunities
+        if (o["model"], o["session_id"]) in reached and int(o.get("span_calls", 1)) > 0
+    ]
+    if not rows:
+        raise stats.StatsError("no opportunities in the E2 analysis set")
+    confirmatory = all(s.get("confirmatory") is True for s in sessions)
+    meta = {
+        "settings": settings.__dict__,
+        "label": "ecological",
+        "confirmatory": confirmatory,
+        "exclusions": {
+            "sessions_total": len(sessions),
+            "sessions_not_reaching_first_dp": len(sessions) - len(reached),
+            "opportunities_analyzed": len(rows),
+        },
+    }
+    return {
+        "rates": {"model": rates(rows, ("model",), settings.level)} | meta,
+        "summary": {
+            "arm": "E2",
+            "ran": True,
+            "n_sessions": len(sessions),
+            "label": "ecological",
+            "models": sorted({str(s["model"]) for s in sessions}),
+            "confirmatory": confirmatory,
+        }
+        | {"settings": settings.__dict__},
+    }
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    """``python -m halflife.arms_analysis {e3,e4} --dir artifacts/e3``: write the outputs."""
-    parser = argparse.ArgumentParser(description="E3 and E4 analyses (preregistered).")
-    parser.add_argument("experiment", choices=("e3", "e4"))
+    """``python -m halflife.arms_analysis {e2,e3,e4} --dir artifacts/e3``: write the outputs."""
+    parser = argparse.ArgumentParser(description="E2, E3, and E4 analyses.")
+    parser.add_argument("experiment", choices=("e2", "e3", "e4"))
     parser.add_argument("--dir", type=Path, required=True, help="banked experiment directory")
     parser.add_argument("--n-boot", type=int, default=Settings.n_boot)
     parser.add_argument("--seed", type=int, default=Settings.seed)
     args = parser.parse_args(argv)
     settings = Settings(n_boot=args.n_boot, seed=args.seed)
-    analyze = analyze_e3 if args.experiment == "e3" else analyze_e4
+    analyze = {"e2": analyze_e2, "e3": analyze_e3, "e4": analyze_e4}[args.experiment]
     outputs = analyze(
         load_jsonl(args.dir / "sessions.jsonl"),
         load_jsonl(args.dir / "opportunities.jsonl"),

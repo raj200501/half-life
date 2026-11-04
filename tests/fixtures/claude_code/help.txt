@@ -1,0 +1,63 @@
+Usage: claude [options] [command] [prompt]
+
+Claude Code - starts an interactive session by default, use -p/--print for
+non-interactive output
+
+Arguments:
+  prompt                                Your prompt
+
+Options:
+  --allowedTools, --allowed-tools <tools...>
+      Comma or space-separated list of tool names to allow (e.g. "Bash(git *)
+      Edit")
+  --append-system-prompt <prompt>       Append a system prompt to the default
+                                        system prompt
+  --autocompact <auto|tokens>           Auto-compact window size (auto, or
+                                        100k to 1M tokens)
+  --bare                                Minimal mode: skip hooks, LSP, plugin
+                                        sync, attribution, auto-memory, and
+                                        CLAUDE.md auto-discovery.
+  --dangerously-skip-permissions        Bypass all permission checks.
+  --fallback-model <model>              Enable automatic fallback to specified
+                                        model(s)
+  --fork-session                        When resuming, create a new session ID
+                                        instead of reusing the original (use
+                                        with --resume or --continue)
+  -h, --help                            Display help for command
+  --include-hook-events                 Include all hook lifecycle events in the
+                                        output stream (only works with
+                                        --output-format=stream-json)
+  --model <model>                       Model for the current session.
+  --output-format <format>              Output format (only works with --print):
+                                        "text" (default), "json" (single
+                                        result), or "stream-json" (realtime
+                                        streaming) (choices: "text", "json",
+                                        "stream-json")
+  --permission-mode <mode>              Permission mode to use for the session
+                                        (choices: "acceptEdits", "auto",
+                                        "bypassPermissions", "manual",
+                                        "dontAsk", "plan")
+  -p, --print                           Print response and exit (useful for
+                                        pipes).
+  --restricted                          Restricted mode: removes the built-in
+                                        tools that run commands or code unless
+                                        --tools names them, and ignores user,
+                                        project and local settings files.
+  -r, --resume [value]                  Resume a conversation by session ID or
+                                        name
+  --session-id <uuid>                   Use a specific session ID for the
+                                        conversation (must be a valid UUID)
+  --settings <file-or-json>             Path to a settings JSON file or a JSON
+                                        string to load additional settings from
+  --strict-mcp-config                   Only use MCP servers from --mcp-config,
+                                        ignoring all other MCP configurations
+  --system-prompt-snapshot <on|off>     Record the system prompt once per
+                                        conversation and reuse it verbatim on
+                                        every request and resume. (choices:
+                                        "on", "off")
+  --tools <tools...>                    Specify the list of available tools from
+                                        the built-in set. Use "" to disable all
+                                        tools.
+  --verbose                             Override verbose mode setting from
+                                        config
+  -v, --version                         Output the version number
