@@ -1,0 +1,26 @@
+# E3 placement and phrasing (preregistered in prereg/0002-e3.md before any E3 data).
+# Four placements crossed with two phrasings, assigned by blocked randomization over
+# main-split templates. Compaction as in E1 (full summary, randomized schedule).
+experiment: e3
+split: main
+n_sessions: 64
+seed_base: 300000
+confirmatory: true
+conditions:
+  - {placement: system, phrasing: bare, strategy: full_summary, mitigation: none}
+  - {placement: system, phrasing: reason, strategy: full_summary, mitigation: none}
+  - {placement: first_user, phrasing: bare, strategy: full_summary, mitigation: none}
+  - {placement: first_user, phrasing: reason, strategy: full_summary, mitigation: none}
+  - {placement: pinned_file, phrasing: bare, strategy: full_summary, mitigation: none}
+  - {placement: pinned_file, phrasing: reason, strategy: full_summary, mitigation: none}
+  - {placement: reminder, phrasing: bare, strategy: full_summary, mitigation: none, reminder_every: 20}
+  - {placement: reminder, phrasing: reason, strategy: full_summary, mitigation: none, reminder_every: 20}
+settings:
+  max_tool_calls: 150
+  max_calls_per_subtask: 12
+  max_fillers_per_gap: 3
+  min_subtasks: 20
+  compactions: [1, 2]
+  compaction_window: [8, 70]
+  min_compaction_gap: 15
+  budget_tokens: 3000
