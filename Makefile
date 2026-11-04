@@ -74,10 +74,10 @@ review:
 	@$(PY) tools/review.py
 
 report:
-	@$(PY) tools/not_ready.py report "figures and tables from banked artifacts"
+	@$(RUN) python -m halflife.report
 
 reproduce:
-	@$(PY) tools/not_ready.py reproduce "rebuild every figure from artifacts"
+	@$(RUN) python -m halflife.report --reproduce
 
 ship-check:
 	@$(PY) tools/ship_check.py

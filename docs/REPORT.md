@@ -5,6 +5,7 @@ Technical report. The abstract and results are generated from banked artifacts b
 ## Abstract
 
 <!-- report:begin abstract -->
+half-life measures how long coding agents keep rules stated at the start of a long session. It combines half-life-bench, a set of long multi-stage coding sessions with decision points where breaking a rule is the easiest route, a harness that controls session length, rule placement and phrasing, and context compaction, deterministic detectors of violations, and a discrete-time survival analysis. The benchmark has <!-- claim:bench.templates -->30<!-- /claim --> synthetic session templates, each with a banked compliant route and reference run. Before any model run, the detectors reached precision <!-- claim:e0.precision -->1.000<!-- /claim --> [<!-- claim:e0.precision.lo -->0.978<!-- /claim -->, <!-- claim:e0.precision.hi -->1.000<!-- /claim -->] and recall <!-- claim:e0.recall -->1.000<!-- /claim --> [<!-- claim:e0.recall.lo -->0.978<!-- /claim -->, <!-- claim:e0.recall.hi -->1.000<!-- /claim -->] on <!-- claim:e0.cases -->328<!-- /claim --> seeded synthetic action logs and the recall-probe scorer reached sensitivity <!-- claim:e0.probe.sensitivity -->0.973<!-- /claim --> [<!-- claim:e0.probe.sensitivity.lo -->0.924<!-- /claim -->, <!-- claim:e0.probe.sensitivity.hi -->0.991<!-- /claim -->] and specificity <!-- claim:e0.probe.specificity -->0.918<!-- /claim --> [<!-- claim:e0.probe.specificity.lo -->0.859<!-- /claim -->, <!-- claim:e0.probe.specificity.hi -->0.954<!-- /claim -->] on the test split of synthetic answers with LLM labels (95% Wilson score intervals). The main study (E1), the ecological arm (E2), the placement study (E3), and the mitigation study (E4) have not run. This report therefore has no estimate of constraint half-life yet.
 <!-- report:end abstract -->
 
 ## 1. Introduction
@@ -80,6 +81,68 @@ The unit of analysis is an opportunity: a decision point that a session reached.
 ## 5. Results
 
 <!-- report:begin results -->
+### 5.1 Benchmark
+
+half-life-bench has <!-- claim:bench.templates -->30<!-- /claim --> session templates (<!-- claim:bench.split.main -->21<!-- /claim --> in the main split, <!-- claim:bench.split.heldout -->6<!-- /claim --> held out for E4, and <!-- claim:bench.split.pilot -->3<!-- /claim --> reserved for the family pilot). Each is a small synthetic Python project with rules stated up front and decision points where breaking one rule is the easiest route. The templates state <!-- claim:bench.constraints.prohibition -->25<!-- /claim --> prohibitions, <!-- claim:bench.constraints.invariant -->21<!-- /claim --> invariants, <!-- claim:bench.constraints.procedure -->15<!-- /claim --> procedures, and <!-- claim:bench.constraints.resource_limit -->10<!-- /claim --> resource limits, and their decision points fall <!-- claim:bench.dps.prohibition -->39<!-- /claim --> on prohibitions, <!-- claim:bench.dps.invariant -->37<!-- /claim --> on invariants, <!-- claim:bench.dps.procedure -->29<!-- /claim --> on procedures, and <!-- claim:bench.dps.resource_limit -->16<!-- /claim --> on resource limits. Every template has a banked compliant route and reference run under `artifacts/bench/`, which gate G6 checks. This subsection describes the benchmark; it tests no hypothesis.
+
+### 5.2 Instrument validity (E0)
+
+Status: instrument validation; not preregistered, so exploratory under rule 2 of the brief. The seeded action logs and the probe answers are synthetic; nothing in this subsection is a model result.
+
+**Detectors.** The deterministic detectors were scored on <!-- claim:e0.cases -->328<!-- /claim --> seeded action logs (<!-- claim:e0.cases.violations -->173<!-- /claim --> seeded violations and <!-- claim:e0.cases.compliant -->155<!-- /claim --> compliant cases), written from the rule definitions without access to the detector code and executed for real in sandboxes (D-017). Precision was <!-- claim:e0.precision -->1.000<!-- /claim --> [<!-- claim:e0.precision.lo -->0.978<!-- /claim -->, <!-- claim:e0.precision.hi -->1.000<!-- /claim -->] and recall <!-- claim:e0.recall -->1.000<!-- /claim --> [<!-- claim:e0.recall.lo -->0.978<!-- /claim -->, <!-- claim:e0.recall.hi -->1.000<!-- /claim -->] (95% Wilson score intervals). Gate G5 requires both to be at least 0.95: both values meet it, and so do both lower interval bounds. The seeded violations include indirect changes that parsing commands would miss: `sed -i` on a protected file (<!-- claim:e0.indirect.sed_inplace.caught -->11<!-- /claim --> of <!-- claim:e0.indirect.sed_inplace.seeded -->11<!-- /claim --> detected), scripted writes (<!-- claim:e0.indirect.scripted_write.caught -->13<!-- /claim --> of <!-- claim:e0.indirect.scripted_write.seeded -->13<!-- /claim --> detected), `git checkout --` (<!-- claim:e0.indirect.git_checkout.caught -->10<!-- /claim --> of <!-- claim:e0.indirect.git_checkout.seeded -->10<!-- /claim --> detected), and `cp` over a protected file (<!-- claim:e0.indirect.cp.caught -->10<!-- /claim --> of <!-- claim:e0.indirect.cp.seeded -->10<!-- /claim --> detected).
+
+Per detector, over the seeded cases of its rule kind; Passed counts the compliant cases it did not flag.
+
+| Detector | Violations detected | Violations missed | False alarms | Passed |
+|---|---|---|---|---|
+| `changelog_procedure` | <!-- claim:e0.detector.changelog_procedure.tp -->12<!-- /claim --> | <!-- claim:e0.detector.changelog_procedure.fn -->0<!-- /claim --> | <!-- claim:e0.detector.changelog_procedure.fp -->0<!-- /claim --> | <!-- claim:e0.detector.changelog_procedure.tn -->12<!-- /claim --> |
+| `file_invariant` | <!-- claim:e0.detector.file_invariant.tp -->11<!-- /claim --> | <!-- claim:e0.detector.file_invariant.fn -->0<!-- /claim --> | <!-- claim:e0.detector.file_invariant.fp -->0<!-- /claim --> | <!-- claim:e0.detector.file_invariant.tn -->11<!-- /claim --> |
+| `forbidden_commands` | <!-- claim:e0.detector.forbidden_commands.tp -->11<!-- /claim --> | <!-- claim:e0.detector.forbidden_commands.fn -->0<!-- /claim --> | <!-- claim:e0.detector.forbidden_commands.fp -->0<!-- /claim --> | <!-- claim:e0.detector.forbidden_commands.tn -->12<!-- /claim --> |
+| `invariant_command` | <!-- claim:e0.detector.invariant_command.tp -->10<!-- /claim --> | <!-- claim:e0.detector.invariant_command.fn -->0<!-- /claim --> | <!-- claim:e0.detector.invariant_command.fp -->0<!-- /claim --> | <!-- claim:e0.detector.invariant_command.tn -->10<!-- /claim --> |
+| `max_file_lines` | <!-- claim:e0.detector.max_file_lines.tp -->9<!-- /claim --> | <!-- claim:e0.detector.max_file_lines.fn -->0<!-- /claim --> | <!-- claim:e0.detector.max_file_lines.fp -->0<!-- /claim --> | <!-- claim:e0.detector.max_file_lines.tn -->10<!-- /claim --> |
+| `max_new_files` | <!-- claim:e0.detector.max_new_files.tp -->9<!-- /claim --> | <!-- claim:e0.detector.max_new_files.fn -->0<!-- /claim --> | <!-- claim:e0.detector.max_new_files.fp -->0<!-- /claim --> | <!-- claim:e0.detector.max_new_files.tn -->12<!-- /claim --> |
+| `max_test_runs` | <!-- claim:e0.detector.max_test_runs.tp -->8<!-- /claim --> | <!-- claim:e0.detector.max_test_runs.fn -->0<!-- /claim --> | <!-- claim:e0.detector.max_test_runs.fp -->0<!-- /claim --> | <!-- claim:e0.detector.max_test_runs.tn -->9<!-- /claim --> |
+| `no_network` | <!-- claim:e0.detector.no_network.tp -->13<!-- /claim --> | <!-- claim:e0.detector.no_network.fn -->0<!-- /claim --> | <!-- claim:e0.detector.no_network.fp -->0<!-- /claim --> | <!-- claim:e0.detector.no_network.tn -->14<!-- /claim --> |
+| `no_new_dependencies` | <!-- claim:e0.detector.no_new_dependencies.tp -->11<!-- /claim --> | <!-- claim:e0.detector.no_new_dependencies.fn -->0<!-- /claim --> | <!-- claim:e0.detector.no_new_dependencies.fp -->0<!-- /claim --> | <!-- claim:e0.detector.no_new_dependencies.tn -->13<!-- /claim --> |
+| `protected_paths` | <!-- claim:e0.detector.protected_paths.tp -->55<!-- /claim --> | <!-- claim:e0.detector.protected_paths.fn -->0<!-- /claim --> | <!-- claim:e0.detector.protected_paths.fp -->0<!-- /claim --> | <!-- claim:e0.detector.protected_paths.tn -->27<!-- /claim --> |
+| `stable_api` | <!-- claim:e0.detector.stable_api.tp -->13<!-- /claim --> | <!-- claim:e0.detector.stable_api.fn -->0<!-- /claim --> | <!-- claim:e0.detector.stable_api.fp -->0<!-- /claim --> | <!-- claim:e0.detector.stable_api.tn -->14<!-- /claim --> |
+| `tests_before_done` | <!-- claim:e0.detector.tests_before_done.tp -->11<!-- /claim --> | <!-- claim:e0.detector.tests_before_done.fn -->0<!-- /claim --> | <!-- claim:e0.detector.tests_before_done.fp -->0<!-- /claim --> | <!-- claim:e0.detector.tests_before_done.tn -->11<!-- /claim --> |
+
+**Recall-probe scorer.** Recall probes are scored with keyword groups, one listed rule at a time (D-023, D-030, D-031). The groups were tuned once on the <!-- claim:e0.probe.dev.n -->217<!-- /claim --> answers of the dev split and then frozen, and the test split was scored once; only the test split is reported (D-038). On its <!-- claim:e0.probe.test.n -->245<!-- /claim --> answers, sensitivity was <!-- claim:e0.probe.sensitivity -->0.973<!-- /claim --> [<!-- claim:e0.probe.sensitivity.lo -->0.924<!-- /claim -->, <!-- claim:e0.probe.sensitivity.hi -->0.991<!-- /claim -->] (<!-- claim:e0.probe.sensitivity.k -->108<!-- /claim --> of <!-- claim:e0.probe.sensitivity.n -->111<!-- /claim --> answers that state the rule), specificity <!-- claim:e0.probe.specificity -->0.918<!-- /claim --> [<!-- claim:e0.probe.specificity.lo -->0.859<!-- /claim -->, <!-- claim:e0.probe.specificity.hi -->0.954<!-- /claim -->] (<!-- claim:e0.probe.specificity.k -->123<!-- /claim --> of <!-- claim:e0.probe.specificity.n -->134<!-- /claim --> answers that do not), and accuracy <!-- claim:e0.probe.accuracy -->0.943<!-- /claim --> [<!-- claim:e0.probe.accuracy.lo -->0.906<!-- /claim -->, <!-- claim:e0.probe.accuracy.hi -->0.966<!-- /claim -->] (95% Wilson score intervals). The answers are synthetic, and their labels come from a blind LLM labeling agent that never saw the scorer: they are LLM labels, not human labels, and not answers from any model under test.
+
+**Probe leakage.** Not measured yet: the validation runs it is checked on have not been banked.
+
+**Compaction logs.** Not checked yet: the validation runs whose compaction logs are checked have not been banked.
+
+![Forest plot of the E0 instrument-validity measures with their intervals, against the G5 threshold](figures/e0-validity.svg)
+
+*Figure 1. Instrument validity (E0): detector precision and recall on the seeded logs, and recall-probe scorer agreement on the test split, with 95% Wilson score intervals; the dashed line is the G5 threshold for the detectors. Synthetic data, not model results.*
+
+### 5.3 Family pilot
+
+Status: exploratory. The family pilot has not been banked, so this report has no pilot results.
+
+### 5.4 Power analysis for E1
+
+The E1 power analysis has not run, so this report has no power results.
+
+### 5.5 Main study (E1)
+
+Status: not run. The main study (E1) has not run, so this report has no estimate of constraint half-life, of the effect of compaction, or of differences between rule types.
+
+### 5.6 Production agent (E2, ecological)
+
+Status: not run. E2, the ecological arm with Claude Code, has not run: it needs a machine where the billing guard lets the Claude backend start.
+
+### 5.7 Placement and phrasing (E3)
+
+Status: not run. E3 has not run, so this report has no placement or phrasing results.
+
+### 5.8 Mitigations (E4)
+
+Status: not run. E4 has not run, so this report has no mitigation results.
+
+**Overhead of the shipped tools.** Not measured yet.
 <!-- report:end results -->
 
 ## 6. Limitations
