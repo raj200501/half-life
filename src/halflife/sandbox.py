@@ -291,8 +291,28 @@ def _shell() -> str:
     return shutil.which("bash") or "/bin/sh"
 
 
+SUBJECT_BIN_DEFAULT = Path.home() / ".cache" / "halflife" / "subject-venv" / "bin"
+"""Subject Python environment (Python 3.12 plus pytest only), built by ``make subject-env``."""
+
+
+def subject_bin(base: Mapping[str, str] | None = None) -> Path:
+    """Directory whose ``python`` and ``pytest`` sandboxed commands run.
+
+    ``HALFLIFE_SUBJECT_BIN`` wins when set; otherwise the subject environment
+    from ``make subject-env`` if it exists; otherwise the harness interpreter's
+    directory (so CI and the demo work without it).
+    """
+    source = os.environ if base is None else base
+    override = source.get("HALFLIFE_SUBJECT_BIN")
+    if override:
+        return Path(override)
+    if (SUBJECT_BIN_DEFAULT / "python").exists():
+        return SUBJECT_BIN_DEFAULT
+    return Path(sys.executable).parent
+
+
 def _host_path(base: Mapping[str, str], shim_dir: Path) -> list[str]:
-    entries = [str(shim_dir), str(Path(sys.executable).parent)]
+    entries = [str(shim_dir), str(subject_bin(base))]
     for entry in base.get("PATH", "/usr/local/bin:/usr/bin:/bin").split(os.pathsep):
         if entry and entry not in entries:
             entries.append(entry)
@@ -314,8 +334,8 @@ def sandbox_env(
     ``USER``, and ``LOGNAME`` are copied from ``base`` (default
     ``os.environ``); every token, key, secret, proxy, cloud credential,
     ``ANTHROPIC_*``, ``CLAUDE*``, ``GIT_*``, and ``PYTHON*`` variable is dropped.
-    Then ``PATH`` (shims first, then the harness interpreter's directory, then
-    the host ``PATH``), ``HOME``, ``TMPDIR``, ``GIT_CONFIG_NOSYSTEM=1``,
+    Then ``PATH`` (shims first, then :func:`subject_bin`, then the host
+    ``PATH``), ``HOME``, ``TMPDIR``, ``GIT_CONFIG_NOSYSTEM=1``,
     ``GIT_CONFIG_GLOBAL=/dev/null``, a fixed git identity, ``PYTHONPATH`` (the
     network logger), and ``HALFLIFE_NETLOG`` are set.
 

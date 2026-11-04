@@ -101,3 +101,7 @@ The first demo run showed a keyword-scoring false positive: the probe answer "Ke
 ## D-024 2026-11-04: offline demo v0.1
 
 `make demo` replays a hand-written, synthetic fixture of agent replies (`demo/fixtures/invoice-ledger.json`) through the real agent loop, sandboxed tools, compaction log, probes, detectors, and opportunity extraction, and compares the report byte for byte with `demo/golden_output.txt`. It makes no model calls and needs no network. When a real local-model session is banked, the demo adds a replay of that recorded session (through the replay backend) and the golden output is regenerated in the same commit.
+
+## D-025 2026-11-04: subject Python environment
+
+Sandboxed commands (agent `run` calls, success checks, harness checks) put `halflife.sandbox.subject_bin()` right after the tool shims on PATH: `HALFLIFE_SUBJECT_BIN` if set, else the subject environment built by `make subject-env` (Python 3.12 with only pytest 9.1.1, no pip), else the harness interpreter's directory (CI and machines without the subject environment). Subjects therefore cannot import the harness's own packages (numpy, pyyaml, halflife) by accident, which matters for the no-new-dependency rules. Experiment provenance records the subject Python version.

@@ -13,7 +13,7 @@ DEMO_OUT ?= .cache/demo_output.txt
 
 TARGETS := setup doctor test lint typecheck ci demo prereg-verify claimcheck freshness \
 	citecheck secrets-scan budget review report reproduce ship-check
-.PHONY: help setup-local $(TARGETS)
+.PHONY: help setup-local subject-env $(TARGETS)
 
 help:
 	@echo "targets: $(TARGETS)"
@@ -23,6 +23,12 @@ setup:
 
 setup-local:
 	$(UV) sync --frozen --extra local
+
+# Python environment for sandboxed subject commands: Python 3.12 and pytest only.
+SUBJECT_VENV ?= $(HOME)/.cache/halflife/subject-venv
+subject-env:
+	$(UV) venv -q --allow-existing $(SUBJECT_VENV) --python 3.12
+	$(UV) pip install -q --python $(SUBJECT_VENV)/bin/python "pytest==9.1.1"
 
 doctor:
 	@$(RUN) python -m halflife.doctor

@@ -184,7 +184,7 @@ def test_sandbox_env_is_an_allowlist(tmp_path: Path) -> None:
     assert env["HALFLIFE_NETLOG"] == str(tmp_path / "n")
     path = env["PATH"].split(os.pathsep)
     assert path[0] == str(sandbox.shims_dir())
-    assert path[1] == str(Path(sys.executable).parent)
+    assert path[1] == str(sandbox.subject_bin(base))
     assert "/usr/bin" in path
     assert env["PYTHONPATH"] == str(sandbox.shims_dir())
     assert "HALFLIFE_NET_BLOCK" not in env
@@ -652,3 +652,17 @@ def test_sitecustomize_blocks_without_namespace(
         sock.connect(("1.2.3.4", 80))
     assert sock.calls == []
     assert module.getaddrinfo("localhost", 80) == ["localhost:80"]
+
+
+def test_subject_bin_resolution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    assert sandbox.subject_bin({"HALFLIFE_SUBJECT_BIN": str(tmp_path)}) == tmp_path
+    monkeypatch.setattr(sandbox, "SUBJECT_BIN_DEFAULT", tmp_path / "absent")
+    assert sandbox.subject_bin({}) == Path(sys.executable).parent
+    (tmp_path / "venv").mkdir()
+    (tmp_path / "venv" / "python").write_text("", encoding="utf-8")
+    monkeypatch.setattr(sandbox, "SUBJECT_BIN_DEFAULT", tmp_path / "venv")
+    assert sandbox.subject_bin({}) == tmp_path / "venv"
+    env = sandbox.sandbox_env(
+        home=tmp_path, tmpdir=tmp_path, netlog=tmp_path / "n", method="none", base={}
+    )
+    assert env["PATH"].split(":")[1] == str(tmp_path / "venv")
