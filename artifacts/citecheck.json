@@ -1,0 +1,198 @@
+{
+  "checked_by": "citation-checker",
+  "references": [
+    {
+      "key": "tang2026-coding-agents-fail",
+      "cited_url": "https://arxiv.org/abs/2605.29442",
+      "final_url": "https://arxiv.org/abs/2605.29442",
+      "retrieved": "2026-11-04",
+      "page_title": "How Coding Agents Fail Their Users: A Large-Scale Analysis of Developer-Agent Misalignment in 20,574 Real-World Sessions",
+      "authors": [
+        "Ningzhi Tang"
+      ],
+      "year": 2026,
+      "content_sha256": "2d488c0480657322ee6827cd3b24629d379ae8e8017c8c98b9e0580d2cc71634",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "8 authors total (only first confirmed by name); v1 submitted 28 May 2026. Observational study of 20,574 sessions from 1,639 repos, misalignment defined via developer pushback; 7 recurring forms incl. following rules and bounding actions. Abstract says constraint violations 'grow in share' over time; it does NOT say they are among the most common failures. Abstract does not mention context loss as a cause (annotation axes: form, cause, cost, resolution). Do not claim either without reading the full text."
+    },
+    {
+      "key": "cai2026-pushbench",
+      "cited_url": "https://www.alphaxiv.org/abs/2605.23574",
+      "final_url": "https://arxiv.org/abs/2605.23574",
+      "retrieved": "2026-11-04",
+      "page_title": "Push Your Agent: Measuring and Enforcing Quantitative Goal Persistence in Long-Horizon LLM Agents",
+      "authors": [
+        "Yuandao Cai"
+      ],
+      "year": 2026,
+      "content_sha256": "cbddcbfa5ef5be8c32551fb84606fe699784c76c983ccf360968109a3a51ae65",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Hash is of the arXiv abs page; alphaxiv URL also opened (HTTP 200, no redirect, body sha256 c17b119ec5f5a2be59a03535803b90a581a34a2a56a8369a8cc5801362d83f46) but arXiv is the canonical copy; cite the arXiv URL. 5 authors; submitted 22 May 2026. Studies quantitative goal persistence (keep working until a verifier confirms enough distinct valid items). Does not study prohibitions or compaction per abstract. The name 'PushBench' was not confirmed from the title; check the full text before using it."
+    },
+    {
+      "key": "arike2025-goal-drift",
+      "cited_url": "https://arxiv.org/abs/2505.02709",
+      "final_url": "https://arxiv.org/abs/2505.02709",
+      "retrieved": "2026-11-04",
+      "page_title": "Technical Report: Evaluating Goal Drift in Language Model Agents",
+      "authors": [
+        "Rauno Arike"
+      ],
+      "year": 2025,
+      "content_sha256": "d47605ed106d24a1bad49316067b1f7b4a8b6509b9cc487e45b8abe876f37779",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "4 authors; submitted 5 May 2025. Setup: goal given in system prompt, then environmental pressure from competing objectives; measures drift over long contexts (>100k tokens); all models drifted, scaffolded Claude 3.5 Sonnet best; drift rises with context length. Title on page has the 'Technical Report:' prefix."
+    },
+    {
+      "key": "liu2023-lost-in-the-middle",
+      "cited_url": "https://arxiv.org/abs/2307.03172",
+      "final_url": "https://arxiv.org/abs/2307.03172",
+      "retrieved": "2026-11-04",
+      "page_title": "Lost in the Middle: How Language Models Use Long Contexts",
+      "authors": [
+        "Nelson F. Liu"
+      ],
+      "year": 2023,
+      "content_sha256": "af63ac4b31d2d47748f3ad62081349ff820ca488c577888c8b0289545915c275",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "7 authors; submitted 6 July 2023."
+    },
+    {
+      "key": "claude-code-memory",
+      "cited_url": "https://code.claude.com/docs/en/memory",
+      "final_url": "https://code.claude.com/docs/en/memory",
+      "retrieved": "2026-11-04",
+      "page_title": "How Claude remembers your project",
+      "authors": [],
+      "year": 2026,
+      "content_sha256": "34ec8d6a1591783c45ad3b7341d904f49d0e38be217f53778141c462607a09a4",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Vendor docs, no authors; year is retrieval year. Quote: 'Project-root CLAUDE.md survives compaction: after /compact, Claude re-reads it from disk and re-injects it into the session. Nested CLAUDE.md files in subdirectories and rules with paths: frontmatter load again on demand.' Also: CLAUDE.md is treated as context, not enforced configuration; docs recommend a PreToolUse hook to block actions. Note the sentence is scoped to project-root CLAUDE.md; do not generalize.",
+      "publisher": "code.claude.com"
+    },
+    {
+      "key": "claude-code-hooks",
+      "cited_url": "https://code.claude.com/docs/en/hooks",
+      "final_url": "https://code.claude.com/docs/en/hooks",
+      "retrieved": "2026-11-04",
+      "page_title": "Hooks reference",
+      "authors": [],
+      "year": 2026,
+      "content_sha256": "26c1edea93c6748b9e1c973dd3ae2f0ce1885ff31ed3a8d48bf51c8b8e981454",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Vendor docs. Page text is 286k chars; WebFetch read the first 100k only. Events listed: SessionStart, Setup, SessionEnd, UserPromptSubmit, UserPromptExpansion, Stop, StopFailure, PreToolUse, PermissionRequest, PermissionDenied, PostToolUse, PostToolUseFailure, PostToolBatch, SubagentStart, SubagentStop, TaskCreated, TaskCompleted, TeammateIdle, PreCompact, PostCompact, PreModelSwitch, PostModelSwitch, Elicitation, ElicitationResult, InstructionsLoaded, ConfigChange, CwdChanged, DirectoryAdded, FileChanged, WorktreeCreate, WorktreeRemove, Notification, MessageDisplay. PostCompact exists. SessionStart matcher values: startup, resume, clear, compact, fork (compact fires after compaction). PreCompact/PostCompact matchers: manual, auto. PreToolUse output: {hookSpecificOutput:{hookEventName:'PreToolUse',permissionDecision:'allow|deny|ask|defer',permissionDecisionReason:...}}, optional updatedInput and additionalContext; alternatively exit code 2 blocks with stderr as reason.",
+      "publisher": "code.claude.com"
+    },
+    {
+      "key": "claude-code-headless",
+      "cited_url": "https://code.claude.com/docs/en/headless",
+      "final_url": "https://code.claude.com/docs/en/headless",
+      "retrieved": "2026-11-04",
+      "page_title": "Run Claude Code programmatically",
+      "authors": [],
+      "year": 2026,
+      "content_sha256": "1ce80534799b1177bcca5c4933f28c3295741e01c2b0879e976119c69dffe1e4",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Vendor docs. Flags for scripted runs: -p/--print, --bare (recommended for scripted calls; skips hooks, CLAUDE.md, auto memory, MCP, plugins; needs ANTHROPIC_API_KEY, which conflicts with the project's billing guard rule), --output-format text|json|stream-json (with --verbose, --include-partial-messages), --json-schema, --allowedTools, --permission-mode (auto, dontAsk, acceptEdits), --permission-prompts none (v2.1.259+), --append-system-prompt(-file), --system-prompt, --continue, --resume, --settings, --mcp-config, --agents, --plugin-dir, --max-budget-usd, --forward-subagent-text. json output includes total_cost_usd. No setting controlling the auto-compaction window was found on this page (grep for autocompact/AUTO_COMPACT found nothing); check settings/env-vars docs separately.",
+      "publisher": "code.claude.com"
+    },
+    {
+      "key": "kaplan-meier-1958",
+      "cited_url": "https://doi.org/10.1080/01621459.1958.10501452",
+      "final_url": "https://doi.org/10.1080/01621459.1958.10501452",
+      "retrieved": "2026-11-04",
+      "page_title": "Nonparametric Estimation from Incomplete Observations",
+      "authors": [
+        "E. L. Kaplan",
+        "Paul Meier"
+      ],
+      "year": 1958,
+      "content_sha256": "d95a32f4feb35fcc36ba33a6417b9c69a1b50ce15fdce04a9e36c708c15772a3",
+      "hash_source": "crossref json",
+      "status": "verified",
+      "notes": "Verified via Crossref metadata only: Journal of the American Statistical Association, June 1958; 2 authors (family names Kaplan, Meier). Author names as given by Crossref. Hash and metadata come from api.crossref.org; the publisher page was not opened (bot protection)."
+    },
+    {
+      "key": "singer-willett-1993",
+      "cited_url": "https://doi.org/10.3102/10769986018002155",
+      "final_url": "https://doi.org/10.3102/10769986018002155",
+      "retrieved": "2026-11-04",
+      "page_title": "It's About Time: Using Discrete-Time Survival Analysis to Study Duration and the Timing of Events",
+      "authors": [
+        "Judith D. Singer",
+        "John B. Willett"
+      ],
+      "year": 1993,
+      "content_sha256": "608214df2df4413149b6be9410259c219f69cff4e61b7c28d342b900edf113c9",
+      "hash_source": "crossref json",
+      "status": "verified",
+      "notes": "Verified via Crossref metadata only: Journal of Educational Statistics, 1993; 2 authors (Singer, Willett family names confirmed). Author names as given by Crossref. Hash and metadata come from api.crossref.org; the publisher page was not opened (bot protection)."
+    },
+    {
+      "key": "efron-1979",
+      "cited_url": "https://doi.org/10.1214/aos/1176344552",
+      "final_url": "https://doi.org/10.1214/aos/1176344552",
+      "retrieved": "2026-11-04",
+      "page_title": "Bootstrap Methods: Another Look at the Jackknife",
+      "authors": [
+        "B. Efron"
+      ],
+      "year": 1979,
+      "content_sha256": "0e8be99e5dfdceccf1b42951c4985196a7dba0e431ac63bda3b3be5e403934f0",
+      "hash_source": "crossref json",
+      "status": "verified",
+      "notes": "Verified via Crossref metadata only: The Annals of Statistics, 1979; 1 author (family name Efron). First attempt got HTTP 429 and was retried after a pause. Author names as given by Crossref. Hash and metadata come from api.crossref.org; the publisher page was not opened (bot protection)."
+    },
+    {
+      "key": "wilson-1927",
+      "cited_url": "https://doi.org/10.1080/01621459.1927.10502953",
+      "final_url": "https://doi.org/10.1080/01621459.1927.10502953",
+      "retrieved": "2026-11-04",
+      "page_title": "Probable Inference, the Law of Succession, and Statistical Inference",
+      "authors": [
+        "Edwin B. Wilson"
+      ],
+      "year": 1927,
+      "content_sha256": "23d777d9bb9bff9e8db9868cbdfec9c0247217081e21e6107953f58efdc0a891",
+      "hash_source": "crossref json",
+      "status": "verified",
+      "notes": "Verified via Crossref metadata only: Journal of the American Statistical Association, June 1927; 1 author (family name Wilson). Author names as given by Crossref. Hash and metadata come from api.crossref.org; the publisher page was not opened (bot protection)."
+    },
+    {
+      "key": "agents-md",
+      "cited_url": "https://agents.md",
+      "final_url": "https://agents.md/",
+      "retrieved": "2026-11-04",
+      "page_title": "AGENTS.md",
+      "authors": [],
+      "year": 2026,
+      "content_sha256": "bb8d5fd3950aaa298a860acdb7996d81e06d5d997ec3189c8a32f422d7695f17",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Site describes an open Markdown format for giving coding agents project-specific instructions. Final URL has trailing slash.",
+      "publisher": "agents.md"
+    },
+    {
+      "key": "llama-cpp",
+      "cited_url": "https://github.com/ggml-org/llama.cpp",
+      "final_url": "https://github.com/ggml-org/llama.cpp",
+      "retrieved": "2026-11-04",
+      "page_title": "ggml-org/llama.cpp",
+      "authors": [
+        "ggml-org"
+      ],
+      "year": 2026,
+      "content_sha256": "fc2c66da37a59551996ecef7a05513b60b0a034bd8cf8f0015481dbe9bae033c",
+      "hash_source": "webfetch text",
+      "status": "verified",
+      "notes": "Repo description 'LLM inference in C/C++'; license MIT per page. Hash covers the three-line WebFetch summary, not the raw page, so it is not reproducible from the URL. curl and the GitHub API returned 403 from the proxy, so the page text came from WebFetch; no workaround was attempted."
+    }
+  ]
+}

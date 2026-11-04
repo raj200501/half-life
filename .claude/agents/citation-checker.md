@@ -33,9 +33,10 @@ Write or update `artifacts/citecheck.json`:
       "retrieved": "YYYY-MM-DD",
       "page_title": "exact title as shown",
       "authors": ["First Author", "..."],
+      "publisher": "site or organization (needed when there are no personal authors)",
       "year": 2026,
       "content_sha256": "<hex>",
-      "hash_source": "curl body | webfetch text",
+      "hash_source": "curl body | webfetch text | crossref json",
       "status": "verified | mismatch | unverified",
       "notes": "any discrepancy between the citation and what the page shows"
     }

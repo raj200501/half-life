@@ -383,3 +383,25 @@ def test_main_uses_today(repo: Path, capsys: pytest.CaptureFixture[str]) -> None
 def test_main_outside_a_repository(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert ct.main(["--root", str(tmp_path)]) == 2
     assert capsys.readouterr().out.startswith("CITECHECK: FAIL not inside a git work tree")
+
+
+def test_crossref_hashes_and_publisher_pages_are_accepted() -> None:
+    import datetime as dt
+
+    from halflife.integrity import citecheck as cc
+
+    today = dt.date(2026, 11, 4)
+    assert (
+        cc.reference_problems(
+            reference("k", "https://doi.org/x", hash_source="crossref json"), today
+        )
+        == []
+    )
+    org = reference("docs", "https://docs.example.org/a", authors=[], publisher="docs.example.org")
+    assert cc.reference_problems(org, today) == []
+    no_pub = reference("docs", "https://docs.example.org/a", authors=[])
+    assert any("authors must be" in p for p in cc.reference_problems(no_pub, today))
+    blank_pub = reference("docs", "https://docs.example.org/a", authors=[], publisher=" ")
+    assert any("authors must be" in p for p in cc.reference_problems(blank_pub, today))
+    bad_name = reference("docs", "https://docs.example.org/a", authors=[""], publisher="x")
+    assert any("authors must be" in p for p in cc.reference_problems(bad_name, today))

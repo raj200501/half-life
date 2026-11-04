@@ -10,8 +10,10 @@ It fails when:
   ``cited_url``, a ``status`` of ``verified``, ``mismatch``, or ``unverified``, and a
   string ``notes``; a verified reference also needs an http(s) ``final_url``, a
   ``retrieved`` date (``YYYY-MM-DD``, not in the future), a ``page_title``, a non-empty
-  ``authors`` list, an integer ``year``, a 64-hex ``content_sha256``, and a
-  ``hash_source`` of ``curl body`` or ``webfetch text``; no two references bank the
+  ``authors`` list (empty only for an organizational page with a ``publisher``),
+  an integer ``year``, a 64-hex ``content_sha256``, and a ``hash_source`` of
+  ``curl body``, ``webfetch text``, or ``crossref json`` (DOI metadata when the
+  publisher page is behind bot protection); no two references bank the
   same URL;
 * a URL cited in README.md or docs/REPORT.md (outside code and HTML comments, and not a
   reserved host such as ``localhost`` or ``example.com``) is not banked, or is banked
@@ -60,7 +62,7 @@ CITECHECK = "artifacts/citecheck.json"
 CITED_DOCS = ("README.md", "docs/REPORT.md")
 CHECKED_BY = "citation-checker"
 STATUSES = ("verified", "mismatch", "unverified")
-HASH_SOURCES = ("curl body", "webfetch text")
+HASH_SOURCES = ("curl body", "webfetch text", "crossref json")
 VERIFIED_FIELDS = (
     "key",
     "cited_url",
@@ -200,12 +202,11 @@ def reference_problems(entry: Mapping[str, Any], today: dt.date) -> list[str]:
     ):
         problems.append("page_title is empty")
     authors = entry.get("authors")
-    if "authors" in entry and not (
-        isinstance(authors, list)
-        and authors
-        and all(isinstance(a, str) and a.strip() for a in authors)
-    ):
-        problems.append("authors must be a non-empty list of names")
+    publisher = entry.get("publisher")
+    named = isinstance(authors, list) and all(isinstance(a, str) and a.strip() for a in authors)
+    organizational = isinstance(publisher, str) and bool(publisher.strip())
+    if "authors" in entry and not (named and (authors or organizational)):
+        problems.append("authors must be a non-empty list of names (or empty with a publisher)")
     year = entry.get("year")
     if "year" in entry and not (
         isinstance(year, int) and not isinstance(year, bool) and 1900 <= year <= today.year + 1
