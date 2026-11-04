@@ -1,10 +1,11 @@
 # half-life: how long do coding agents keep the rules they are given?
 
-Technical report. Draft in progress: the method and experiment design are written; the abstract, results, and discussion are generated from banked artifacts once the runs finish (`make report`).
+Technical report. The abstract and results are generated from banked artifacts by `make report`; every number in them is a claim traced to an artifact (`make claimcheck`, `make freshness`).
 
 ## Abstract
 
-Pending results.
+<!-- report:begin abstract -->
+<!-- report:end abstract -->
 
 ## 1. Introduction
 
@@ -78,7 +79,8 @@ The unit of analysis is an opportunity: a decision point that a session reached.
 
 ## 5. Results
 
-Pending runs.
+<!-- report:begin results -->
+<!-- report:end results -->
 
 ## 6. Limitations
 
