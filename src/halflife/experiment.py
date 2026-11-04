@@ -184,6 +184,10 @@ def bank_runs(
         sid = record["session"]["session_id"]
         row = dict(record["session"]) | {"run_id": record["run_id"]}
         row["probe_leaks"] = list(record.get("summary", {}).get("leaks", []))
+        usage_file = session_dir / "usage.json"
+        row["usage"] = (
+            json.loads(usage_file.read_text(encoding="utf-8")) if usage_file.exists() else None
+        )
         if prereg is not None:
             row["prereg"] = prereg
         sessions.append(row)
@@ -509,6 +513,7 @@ def cmd_run(args: Any, root: Path) -> int:
     status = 0
     for plan in plans:
         model.session_id = plan.session_id
+        model.reset_usage()
         start = dt.datetime.now(dt.UTC)
         try:
             result = run_session(
@@ -524,6 +529,11 @@ def cmd_run(args: Any, root: Path) -> int:
             print(f"stopping: {type(exc).__name__}: {exc}")
             status = 3
             break
+        usage = model.reset_usage()
+        if usage:  # empty when the session was already finished and only loaded
+            (root / args.out_root / args.run_id / plan.session_id / "usage.json").write_text(
+                json.dumps(usage, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
         line = {
             "session_id": plan.session_id,
             "ended_reason": result["summary"]["ended_reason"],

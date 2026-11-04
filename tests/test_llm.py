@@ -147,3 +147,17 @@ def test_model_port_respects_the_no_model_calls_switch(tmp_path: Path) -> None:
     with pytest.raises(ModelCallsDisabled):
         model.chat([{"role": "user", "content": "x"}], max_tokens=5, temperature=0.0, seed=0)
     assert model.last_response is None
+
+
+def test_usage_counts_calls_per_purpose_and_resets(tmp_path: Path) -> None:
+    model = ClientModel(make(tmp_path, LocalFake()))
+    context = [{"role": "user", "content": "hello"}]
+    model.chat(context, max_tokens=8, temperature=0.0, seed=1, purpose="step")
+    model.chat(context, max_tokens=8, temperature=0.0, seed=2, purpose="step")
+    model.chat(context, max_tokens=8, temperature=0.0, seed=1, purpose="step")  # cache hit
+    model.chat(context, max_tokens=8, temperature=0.0, seed=3, purpose="probe")
+    usage = model.reset_usage()
+    assert set(usage) == {"step", "probe"}
+    assert usage["step"]["calls"] == 3 and usage["step"]["cached"] == 1
+    assert usage["step"]["prompt_tokens"] > 0 and usage["probe"]["calls"] == 1
+    assert model.usage == {} and model.reset_usage() == {}

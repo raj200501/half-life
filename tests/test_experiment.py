@@ -116,6 +116,8 @@ def test_bank_runs(tmp_path: Path) -> None:
     runs = root / "runs" / "r1"
     _fake_run(runs, "s2")
     _fake_run(runs, "s1")
+    usage = {"step": {"calls": 2, "prompt_tokens": 30, "completion_tokens": 8, "elapsed_s": 1.5}}
+    (runs / "s1" / "usage.json").write_text(json.dumps(usage), encoding="utf-8")
     design = root / "design.yaml"
     shutil.copy(EXEMPLAR, design)
     out = root / "artifacts" / "e1"
@@ -132,6 +134,7 @@ def test_bank_runs(tmp_path: Path) -> None:
     sessions = [json.loads(line) for line in (out / "sessions.jsonl").read_text().splitlines()]
     assert [s["session_id"] for s in sessions] == ["s1", "s2"]
     assert all(s["prereg"] == "prereg/0001-e1.md" for s in sessions)
+    assert sessions[0]["usage"] == usage and sessions[1]["usage"] is None
     events = json.loads((out / "compaction_logs.json").read_text())["events"]
     assert events[0]["log_path"] == "artifacts/e1/compactions/r1/s1/c1.json"
     assert (root / events[0]["log_path"]).is_file()

@@ -31,6 +31,9 @@ class ClientModel:
 
     Attributes:
         last_response: The most recent reply, with token counts and timing.
+        usage: Calls, tokens, and backend seconds per purpose since the last
+            :meth:`reset_usage`. Replies served from the cache count with their
+            original timing, so a resumed session reports its whole path.
     """
 
     def __init__(
@@ -40,6 +43,7 @@ class ClientModel:
         self.session_id = session_id
         self.stop = tuple(stop)
         self.last_response: ChatResponse | None = None
+        self.usage: dict[str, dict[str, float]] = {}
 
     def chat(
         self,
@@ -62,7 +66,21 @@ class ClientModel:
         )
         response = self.client.complete(request, purpose=purpose, session_id=self.session_id)
         self.last_response = response
+        entry = self.usage.setdefault(
+            purpose,
+            {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "elapsed_s": 0.0, "cached": 0},
+        )
+        entry["calls"] += 1
+        entry["prompt_tokens"] += response.prompt_tokens
+        entry["completion_tokens"] += response.completion_tokens
+        entry["elapsed_s"] += response.elapsed_s
+        entry["cached"] += int(response.cached)
         return response.text
+
+    def reset_usage(self) -> dict[str, dict[str, float]]:
+        """Return the usage counted since the last reset and start counting again."""
+        usage, self.usage = self.usage, {}
+        return usage
 
     def count_tokens(self, messages: Sequence[Mapping[str, str]]) -> int:
         """Token count of a context as the backend formats it."""
