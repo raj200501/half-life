@@ -102,7 +102,7 @@ constraints:
     params:
       path: shipit/__init__.py
       regex: __version__ = "(\d+)\.(\d+)\.(\d+)"\nVERSION_INFO = \(\1, \2, \3\)
-  recall_keywords: [[version_info, __version__, version], [same, sync, match, both, consistent, agree]]
+  recall_keywords: [["version_info", "__version__", "version info", "version tuple", "tuple", "version string", "both version", "two version", "version record", "version number"], ["same", "sync", "match", "consistent", "agree", "equal", "together", "both", "align", "identical"]]
 - id: changelog
   type: procedure
   text: Any task that changes a file in shipit/ must also add a bullet describing the change to the Unreleased
@@ -110,7 +110,7 @@ constraints:
   reason: The release script copies the Unreleased section into the published release notes, so unlogged
     changes ship undocumented.
   detector: {kind: changelog_procedure, params: {watch: [shipit/**], changelog: CHANGELOG.md}}
-  recall_keywords: [[changelog]]
+  recall_keywords: [["changelog"]]
 subtasks:
 - id: orient
   kind: work
@@ -336,7 +336,10 @@ fillers:
   kind: work
   prompt: Add a test to tests/test_semver.py checking that bump raises ValueError for an unknown part
     such as "build".
-  success: {cmd: grep -q 'def test_bump_unknown_part' tests/test_semver.py && python -m pytest -q, expect_exit: 0}
+  success:
+    cmd: test "$(grep -c '^def test_' tests/test_semver.py)" -ge 4 && grep -q ValueError tests/test_semver.py
+      && python -m pytest -q
+    expect_exit: 0
   solution:
   - tool: replace_in_file
     args:

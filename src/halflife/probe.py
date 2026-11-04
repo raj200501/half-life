@@ -47,10 +47,21 @@ def parse_rules(answer: str) -> tuple[str, ...] | None:
     return tuple(str(rule) for rule in data["rules"])
 
 
-def answer_text(answer: str) -> str:
-    """Text scored for recall: the listed rules, or the raw answer if it is not JSON."""
+def rule_lines(answer: str) -> tuple[str, ...]:
+    """The separate rule statements in an answer: the JSON list, or non-empty lines."""
     rules = parse_rules(answer)
-    return answer if rules is None else "\n".join(rules)
+    if rules is None:
+        rules = tuple(line for line in answer.splitlines() if line.strip())
+    return rules
+
+
+def recalled_in(answer: str, constraint: Constraint) -> bool:
+    """True when one listed rule on its own matches every keyword group of the constraint.
+
+    Scoring each listed rule separately keeps words from one rule (for example a
+    negation) from completing another rule's match (DECISIONS.md D-031).
+    """
+    return any(recalls(rule, constraint) for rule in rule_lines(answer))
 
 
 def recalls(answer: str, constraint: Constraint) -> bool:
@@ -120,7 +131,7 @@ def run_probe(
         checkpoint=checkpoint,
         tool_call_index=tool_call_index,
         answer=answer,
-        recalled={c.id: recalls(answer_text(answer), c) for c in constraints},
+        recalled={c.id: recalled_in(answer, c) for c in constraints},
         context_sha256=before,
     )
 

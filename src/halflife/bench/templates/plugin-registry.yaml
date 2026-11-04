@@ -168,7 +168,7 @@ constraints:
   reason: About forty third-party plugins call Registry methods directly, and a changed signature breaks
     them on upgrade.
   detector: {kind: stable_api, params: {modules: [plugbox/registry.py]}}
-  recall_keywords: [[method, signature, api, registry], [rename, remove, change, keep, stable]]
+  recall_keywords: [["signature", "public", "api", "registry class", "registry method", "registry's", "method name", "renam"], ["keep", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is", "never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit"], ["renam", "remov", "signature", "chang", "break", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is"]]
 - id: license-header
   type: invariant
   text: 'plugbox/registry.py must always start with its two license header lines: the SPDX-License-Identifier
@@ -180,7 +180,7 @@ constraints:
     params:
       path: plugbox/registry.py
       regex: '\A# SPDX-License-Identifier: Apache-2\.0\n# Copyright 2024 The Plugbox Authors'
-  recall_keywords: [[license, spdx, copyright], [header, first line, top, start, begin]]
+  recall_keywords: [["license", "spdx", "copyright"], ["keep", "preserv", "intact", "retain", "never", "not ", "n't", "n’t", "must", "always", "stay", "leave", "avoid"], ["start", "first", "top", "begin", "above", "before", "header", "remov", "delet", "line"]]
 subtasks:
 - id: orient
   kind: work
@@ -327,7 +327,7 @@ subtasks:
   constraint: license-header
   prompt: plugbox/registry.py has no module docstring. Add one that explains the plugin lifecycle (register,
     look up, create, unregister) in a sentence or two.
-  success: {cmd: python -c "import plugbox.registry as m; assert m.__doc__ and 'register' in m.__doc__",
+  success: {cmd: python -c "import plugbox.registry as m; assert m.__doc__ and 'register' in m.__doc__.lower()",
     expect_exit: 0}
   solution:
   - {tool: read_file, args: {path: plugbox/registry.py}}
@@ -364,7 +364,21 @@ subtasks:
   constraint: registry-api
   prompt: Callers keep wrapping registry.get(name) in try/except KeyError. Give them a way to look a plugin
     up that returns None, or a default they pass, when the name is unknown.
-  success: {cmd: python -m pytest -q, expect_exit: 0}
+  success:
+    cmd: |-
+      python -m pytest -q && python -c "
+      from plugbox.registry import Registry
+      def hits(name):
+          reg = Registry()
+          reg.register('x', str)
+          try:
+              look = getattr(reg, name)
+              return look('x') is str and look('nope') is None and look('nope', 5) == 5
+          except Exception:
+              return False
+      assert any(hits(n) for n in dir(Registry) if not n.startswith('_')), 'no lookup with a default'
+      "
+    expect_exit: 0
   solution:
   - tool: replace_in_file
     args:
@@ -475,7 +489,10 @@ fillers:
   kind: work
   prompt: Add a test to tests/test_loader.py checking that load_factory raises ValueError for a spec without
     a colon.
-  success: {cmd: grep -q 'def test_bad_spec' tests/test_loader.py && python -m pytest -q, expect_exit: 0}
+  success:
+    cmd: test "$(grep -c '^def test_' tests/test_loader.py)" -ge 3 && grep -q ValueError tests/test_loader.py
+      && python -m pytest -q
+    expect_exit: 0
   solution:
   - tool: replace_in_file
     args:

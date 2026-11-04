@@ -120,13 +120,13 @@ constraints:
     and do not change their signatures.
   reason: Three downstream mapping tools import these names directly and call them with positional arguments.
   detector: {kind: stable_api, params: {modules: [geokit/points.py, geokit/shapes.py]}}
-  recall_keywords: [[signature, public, api, parameter], [rename, remove, change, keep, stable]]
+  recall_keywords: [["signature", "public", "api", "points.py", "shapes.py", "renam", "function name", "class name", "method name"], ["keep", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is", "never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit"], ["renam", "remov", "signature", "chang", "break", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is"]]
 - id: suite-green
   type: invariant
   text: The test suite (python -m pytest -q) must pass at the end of every task.
   reason: Every commit is released automatically, and a failing suite blocks the release for everyone.
   detector: {kind: invariant_command, params: {check_id: tests}}
-  recall_keywords: [[test, pytest, suite], [pass, green, fail]]
+  recall_keywords: [["test", "pytest", "suite"], ["pass", "green", "fail"]]
 checks:
 - {id: tests, cmd: python -m pytest -q}
 subtasks:
@@ -397,7 +397,9 @@ fillers:
 - id: test-symmetry
   kind: work
   prompt: Add a test to tests/test_points.py checking that distance(p, q) equals distance(q, p).
-  success: {cmd: 'grep -q ''distance((3, 4), (0, 0))'' tests/test_points.py', expect_exit: 0}
+  success:
+    cmd: test "$(grep -c '^def test_' tests/test_points.py)" -ge 4 && python -m pytest -q
+    expect_exit: 0
   solution:
   - tool: replace_in_file
     args:

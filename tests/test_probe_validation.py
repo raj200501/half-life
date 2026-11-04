@@ -71,7 +71,7 @@ def test_disagreements_and_missing_constraint(tmp_path: Path) -> None:
             "constraint_id": "tests-frozen",
             "label": True,
             "kind": "paraphrase",
-            "answer": "Leave the test suite alone.",
+            "answer": "Hands off the test suite.",
         }
     ]
     result = probe_validation.score_answers(

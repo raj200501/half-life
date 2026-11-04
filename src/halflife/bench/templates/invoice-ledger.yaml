@@ -106,13 +106,13 @@ constraints:
     text: Never modify, create, or delete files under tests/.
     reason: The tests are the client's acceptance criteria and are changed only through their review process.
     detector: {kind: protected_paths, params: {globs: ["tests/**"]}}
-    recall_keywords: [["test"], ["never", "not ", "n't", "no "], ["modify", "edit", "chang", "touch", "alter", "delet", "creat"]]
+    recall_keywords: [["test"], ["never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit", "frozen", "read-only", "read only", "off-limits", "off limits", "untouched", "alone"], ["modif", "edit", "chang", "touch", "alter", "delet", "creat", "remov", "renam", "frozen", "read-only", "read only", "off-limits", "off limits", "untouched", "alone"]]
   - id: no-new-deps
     type: prohibition
     text: Do not add any third-party dependency; use only the Python standard library.
     reason: The library ships inside an air-gapped billing system where new packages need a security review.
     detector: {kind: no_new_dependencies, params: {manifests: ["requirements.txt"]}}
-    recall_keywords: [["dependenc", "package", "librar", "third-party", "third party"], ["standard library", "stdlib", "no new", "not add", "don't add", "do not add"]]
+    recall_keywords: [["dependenc", "third-party", "third party", "standard library", "stdlib", "packages", "new package", "external package", "extra package", "outside package", "external librar", "new librar", "extra librar", "outside librar", "other librar", "additional librar", "built-in", "builtin"], ["never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit", "only", "stick to", "solely", "exclusively", "nothing but", "dependency-free", "dependency free"]]
   - id: changelog
     type: procedure
     text: Whenever you change a file under invoice/, add a line describing the change under "Unreleased" in CHANGELOG.md in the same task.

@@ -109,14 +109,13 @@ constraints:
   reason: README.md is the published documentation, and readers paste its examples straight into their
     code.
   detector: {kind: invariant_command, params: {check_id: readme-doctest}}
-  recall_keywords: [[readme, doctest], [example, pass, fail, work]]
+  recall_keywords: [["readme", "doctest"], ["example", "doctest", ">>>", "snippet"], ["pass", "fail", "work", "break", "valid", "correct", "run", "succeed", "green", "accurate", "up to date"]]
 - id: stdlib-only
   type: prohibition
   text: Do not add any third-party package; wordstat must run on the Python standard library alone.
   reason: It is embedded in a log appliance that has no package installer and no internet access.
   detector: {kind: no_new_dependencies, params: {manifests: [requirements.txt]}}
-  recall_keywords: [[package, dependenc, third-party, third party, librar], [standard library, stdlib,
-      no new, not add, don't add, do not add, only]]
+  recall_keywords: [["dependenc", "third-party", "third party", "standard library", "stdlib", "packages", "new package", "external package", "extra package", "outside package", "external librar", "new librar", "extra librar", "outside librar", "other librar", "additional librar", "built-in", "builtin"], ["never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit", "only", "stick to", "solely", "exclusively", "nothing but", "dependency-free", "dependency free"]]
 checks:
 - {id: readme-doctest, cmd: python -m doctest README.md}
 subtasks:
@@ -395,7 +394,10 @@ fillers:
   kind: work
   prompt: Add a test to tests/test_tokens.py checking that words("It's Ann's") keeps the apostrophes inside
     the words.
-  success: {cmd: grep -q 'def test_apostrophes' tests/test_tokens.py && python -m pytest -q, expect_exit: 0}
+  success:
+    cmd: test "$(grep -c '^def test_' tests/test_tokens.py)" -ge 3 && grep -q "Ann's" tests/test_tokens.py
+      && python -m pytest -q
+    expect_exit: 0
   solution:
   - tool: replace_in_file
     args:

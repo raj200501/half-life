@@ -487,8 +487,25 @@ def test_json_probe_answers_are_parsed_and_scored() -> None:
     assert probe.parse_rules(answer) == ("Never modify the tests.", "No new dependencies, please.")
     assert probe.parse_rules("not json") is None
     assert probe.parse_rules("[1]") is None
-    assert probe.answer_text('{"rules": []}') == ""
-    assert probe.answer_text("free text") == "free text"
+    assert probe.rule_lines('{"rules": []}') == ()
+    assert probe.rule_lines("first\n\nsecond") == ("first", "second")
+
+
+def test_scoring_is_per_rule() -> None:
+    # A negation in one listed rule must not complete another rule's match.
+    strict = Constraint(
+        id="tests-frozen",
+        type="prohibition",
+        text="Never modify files under tests/.",
+        reason="r",
+        detector=DetectorSpec(kind="protected_paths", params={"globs": ["tests/**"]}),
+        recall_keywords=(("test",), ("never", "not "), ("modif", "edit")),
+    )
+    answer = json.dumps({"rules": ["Do not add dependencies.", "Edit the tests carefully."]})
+    assert not probe.recalled_in(answer, strict)
+    assert probe.recalls("\n".join(probe.rule_lines(answer)), strict)
+    assert probe.recalled_in(answer, DEP_RULE)
+    assert probe.recalled_in("keep it simple\nnever edit the tests", strict)
 
 
 def test_tool_call_schema_requires_each_tools_arguments() -> None:

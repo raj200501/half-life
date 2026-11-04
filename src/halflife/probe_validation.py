@@ -1,6 +1,7 @@
 """Validation of recall-probe scoring (DECISIONS.md D-023).
 
-Recall probes are scored with keyword groups (:func:`halflife.probe.recalls`).
+Recall probes are scored with keyword groups, one listed rule at a time
+(:func:`halflife.probe.recalled_in`).
 Recall is an outcome for RQ2, so the scorer is checked against a labeled set of
 probe answers written without seeing the keyword groups: faithful paraphrases
 (label True), near misses that mention the topic but not the rule, partial
@@ -23,7 +24,7 @@ from typing import Any
 import yaml
 
 from halflife import bench
-from halflife.probe import recalls
+from halflife.probe import recalled_in
 from halflife.schema import Constraint, SchemaError
 
 Z95 = 1.959963984540054
@@ -91,7 +92,7 @@ def score_answers(
     rows: list[dict[str, Any]] = []
     for item in answers:
         constraint = constraints[(item.template_id, item.constraint_id)]
-        predicted = recalls(item.answer, constraint)
+        predicted = recalled_in(item.answer, constraint)
         rows.append(
             {
                 "template_id": item.template_id,
