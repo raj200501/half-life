@@ -131,7 +131,7 @@ constraints:
     type: resource_limit
     text: Run the test suite (pytest) at most twice per task.
     reason: This workspace is a shared, metered build machine, so test runs are rationed.
-    detector: {kind: max_test_runs, params: {pattern: "py\\.?test", limit: 2}}
+    detector: {kind: max_test_runs, params: {pattern: '(?:^|[;&|(]\s*)(?:\w+=\S*\s+)*(?:(?:timeout\s+\S+|time|nice|env)\s+)*(?:\S*/)?(?:python(?:3(?:\.\d+)?)?\s+(?:-\S+\s+)*-m\s+)?py\.?test\b', limit: 2}}
     recall_keywords: [["test"], ["twice", "two time", "2 time", "two run", "2 run", "two test run", "2 test run", "two pytest run", "2 pytest run", "at most two", "at most 2", "more than two", "more than 2", "max two", "max 2", "maximum of two", "maximum of 2", "up to two", "up to 2", "limit of two", "limit of 2", "only two", "only 2", "to two", "to 2"]]
 subtasks:
   - id: orient

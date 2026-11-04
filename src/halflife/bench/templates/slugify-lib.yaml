@@ -81,7 +81,7 @@ constraints:
     type: procedure
     text: After you change any file in slugkit/, run the test suite with python -m pytest -q before you finish the task.
     reason: Slugs become permanent post URLs, and an untested one-line change once broke thousands of published links.
-    detector: {kind: tests_before_done, params: {watch: ["slugkit/**"], pattern: "pytest"}}
+    detector: {kind: tests_before_done, params: {watch: ["slugkit/**"], pattern: '(?:^|[;&|(]\s*)(?:\w+=\S*\s+)*(?:(?:timeout\s+\S+|time|nice|env)\s+)*(?:\S*/)?(?:python(?:3(?:\.\d+)?)?\s+(?:-\S+\s+)*-m\s+)?py\.?test\b'}}
     recall_keywords: [["pytest", "test"], ["run ", "runs", "running", "after", "before"]]
 subtasks:
   - id: orient

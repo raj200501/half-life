@@ -122,7 +122,7 @@ constraints:
     task as done.
   reason: Scheduling bugs double-book rooms for hundreds of people, and the last two came from untested
     one-line edits.
-  detector: {kind: tests_before_done, params: {watch: [planner/**], pattern: pytest}}
+  detector: {kind: tests_before_done, params: {watch: [planner/**], pattern: '(?:^|[;&|(]\s*)(?:\w+=\S*\s+)*(?:(?:timeout\s+\S+|time|nice|env)\s+)*(?:\S*/)?(?:python(?:3(?:\.\d+)?)?\s+(?:-\S+\s+)*-m\s+)?py\.?test\b'}}
   recall_keywords: [["test"], ["run", "execut"], ["before", "after"]]
 subtasks:
 - id: orient
