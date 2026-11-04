@@ -3,7 +3,7 @@ STATE: ACTIVE
 
 # Status
 
-Updated 2026-11-04 08:05 UTC (goal_turn 3). History lives in docs/LOG.md.
+Updated 2026-11-04 16:55 UTC (goal_turn 3). History lives in docs/LOG.md.
 
 ## Gates (fast check at ad4a9e0, 2026-11-04: 6/14; fast results do not count)
 
@@ -17,7 +17,7 @@ Updated 2026-11-04 08:05 UTC (goal_turn 3). History lives in docs/LOG.md.
 | G6 Benchmark complete | PASS | 30 templates, 4 constraint types, routes and reference runs banked (17 re-banked after the D-038 keyword tuning) |
 | G7 Main study | FAIL | needs pilot, preregistration, E1 runs |
 | G8 Ecological and placement arms | FAIL | E3 needs local runs; E2 needs Raj (Claude backend refused here) |
-| G9 Mitigations shipped | FAIL | kit committed and wired into the runner (D-039); E4 and overhead not run |
+| G9 Mitigations shipped | FAIL | kit committed and wired into the runner (D-039); overhead banked; E4 not run |
 | G10 Claim integrity | FAIL | no claims yet; README is still the brief |
 | G11 Preregistration integrity | PASS (trivially) | no preregistrations yet |
 | G12 Independent review | FAIL | no review banked |
@@ -40,16 +40,17 @@ Updated 2026-11-04 08:05 UTC (goal_turn 3). History lives in docs/LOG.md.
 
 ## Now
 
-- Done since the usage-limit reset: probe-scoring validation banked (D-038); mitigation kit committed and wired into the E4 arms (D-039); E3 and E4 analysis plans in code before any data, with per-session usage for E4 costs (D-040); E1 power-analysis tool (`halflife.power`); ship-check hardening pass 2, G5 per-rule retention, G6 reference action logs, G7 recomputation (D-041); related work written from verified citations.
-- Pilot amended before any further session (D-042): families must also act at no fewer than half of the decision points they reach; Phi's running session finishes, then SmolLM2, Granite, and Qwen run the other two templates; Phi and Llama run more only if fewer than two of those qualify.
-- Sessions now pad to at least 20 subtasks with neutral read-only fillers for E1, E3, and E4 (D-043, section 4 of the brief).
-- E2 driver, runbook, design, and analysis step committed (D-044); E2 itself needs Raj. Builder running: the report pipeline (`make report`, `artifacts/claims.json`, freshness derivations).
+- Family pilot finished (exploratory, not yet banked): SmolLM2, Granite, and Qwen ran all three pilot templates and all qualify under D-042; the rule picks the two fastest, SmolLM2 and Granite. Phi ran one session and Llama none (dropped for speed per D-042). The pilot produced violations, so the instrument does fire.
+- Tool overhead banked from a quiet machine (`artifacts/e4/overhead.json`, G9).
+- Statistics audit round 1 done and committed (D-049): two known defects plus 22 confirmed findings fixed test-first, among them contrast p-values that were always 1.0 and sessions merged across families.
+- Statistics round 2 running (D-050): every hypothesis decided by the calibrated score test, pooled tests stratified by family, a marginal half-life, procedure spans cut by a cap excluded, harness hash and provenance fixes, a power simulation that mirrors the tests; then an adversarial review.
+- Exploratory dry run running (`runs/dryrun-e1shape/`): padded E1-shaped sessions for SmolLM2 and Granite on pilot templates (seeds from 991000), to check the padding in real sessions and measure the cost per session.
 
 ## Next three actions
 
-1. Finish the pilot (`runs/pilot-driver.log`, phase 2 per D-042), apply the D-042 rule, bank the pilot as the E0 validation runs (G5), and run `python -m halflife.power`.
-2. Fix the E1 design (min_subtasks 20, a compaction window inside real session lengths), write and commit prereg/0001-e1.md, generate the plans, and start E1 in the background.
-3. Integrate the report and E2 builders; bank `artifacts/e4/overhead.json` when the CPU is quiet.
+1. Integrate round 2; bank the pilot (`artifacts/pilot/`), its family choice, and the E0 validation runs (G5); run the power analysis.
+2. Write and commit prereg/0001-e1.md with the settings and code-pin block, generate the E1 plans, and start E1 in the background (SmolLM2 and Granite, round-robin, `--prereg`).
+3. Gate pass while E1 runs: G7 not-estimable form with reason codes, descriptive intervals, code pins and run provenance against the preregistration; G8 stale-report check; E3 and E4 settings blocks.
 
 ## Usage to date
 
