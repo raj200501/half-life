@@ -1,15 +1,26 @@
 name: ci
 
+# Runs only for main and on demand, to save private-repository Actions minutes
+# (DECISIONS.md D-022). Working branches are checked locally with `make ci`
+# before every push.
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:

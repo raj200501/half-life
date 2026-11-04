@@ -85,3 +85,19 @@ Write confinement exists now: the sandbox's strongest working method here is `un
 ## D-020 2026-10-23: detector semantics fixed by the instrument builder
 
 Readings of the DESIGN.md table that the detector code fixes (see the `halflife.detect` module docstring): at most one violation per constraint per tool call; event detectors fire on each offending call, state detectors on each new bad state, subtask detectors at the span's last event index; `protected_paths` fires on any hash change to a matching path, including a restore to baseline content; guard-blocked `run` calls do not count as commands run; globs are anchored at the workspace root, `*` does not cross `/`, a whole `**` segment spans directories. The blind E0 cases used the same definitions independently (identical-content writes are not modifications; manifests are compared as a union of the listed files; any parameter change is a signature change; a failing test run still satisfies `tests_before_done`).
+
+## D-021 2026-11-04: commit authorship (instruction from Raj)
+
+From this point every commit is authored as Raj so it counts toward his GitHub contributions: this repository's git config sets `user.name "Raj Kashikar"` and `user.email "65059626+raj200501@users.noreply.github.com"` (no `GIT_AUTHOR_*` or `GIT_COMMITTER_*` variables are set in this environment; if one appears, each commit passes `--author` instead). Every commit keeps the `Co-Authored-By: Claude` trailer and the session trailer. Existing commits are not rewritten and nothing is force-pushed.
+
+## D-022 2026-11-04: GitHub Actions budget (instruction from Raj)
+
+CI must not spend Raj's private-repository Actions minutes on working branches or email him failures. `.github/workflows/ci.yml` runs only on pushes to `main`, pull requests into `main`, and manual `workflow_dispatch`; never on pushes to `claude/` branches and never on a schedule. It has a concurrency group with `cancel-in-progress: true`, `timeout-minutes: 10` on every job, and lean jobs (secrets scan, lint, typecheck, tests, offline demo; no model downloads or experiments). No other workflows are added. Before every push, `make ci` runs locally in a fresh clone of the commit being pushed and must pass, so nothing that reaches GitHub fails. G3 still holds: the workflow runs `make ci` on Python 3.11 and 3.12.
+
+## D-023 2026-11-04: probe scoring needs its own validation
+
+The first demo run showed a keyword-scoring false positive: the probe answer "Keep the invoice code working and run the tests after changes" counted as recalling "Never modify files under tests/" because its groups were only a test word and a verb list. Recall is an outcome for RQ2, so before E1: every template's `recall_keywords` must include a negation group for prohibitions, and a labeled set of probe answers (synthetic, including near misses like this one) must show the scorer's agreement with human-written labels; the result is banked under `artifacts/e0/` and the scoring rule is fixed in the E1 preregistration. Recall results are reported with that agreement beside them.
+
+## D-024 2026-11-04: offline demo v0.1
+
+`make demo` replays a hand-written, synthetic fixture of agent replies (`demo/fixtures/invoice-ledger.json`) through the real agent loop, sandboxed tools, compaction log, probes, detectors, and opportunity extraction, and compares the report byte for byte with `demo/golden_output.txt`. It makes no model calls and needs no network. When a real local-model session is banked, the demo adds a replay of that recorded session (through the replay backend) and the golden output is regenerated in the same commit.

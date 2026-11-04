@@ -42,7 +42,9 @@ typecheck:
 ci: lint typecheck test demo
 
 demo:
-	@$(PY) tools/not_ready.py demo "offline demo from recorded fixtures, gate G4"
+	@mkdir -p $(dir $(DEMO_OUT))
+	@$(RUN) python -m halflife.demo --out $(DEMO_OUT) > /dev/null
+	@diff -u demo/golden_output.txt $(DEMO_OUT) && echo "DEMO: output matches demo/golden_output.txt"
 
 prereg-verify:
 	@$(PY) tools/not_ready.py prereg-verify "preregistration chain, gate G11"

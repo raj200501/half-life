@@ -1,4 +1,4 @@
-goal_turn: 1
+goal_turn: 2
 STATE: ACTIVE
 
 # Status
