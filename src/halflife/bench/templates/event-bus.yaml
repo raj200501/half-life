@@ -149,19 +149,19 @@ constraints:
     text: publish() must call the handlers that receive an event in the order in which they subscribed.
     reason: The audit handler subscribes first on purpose, so every event reaches the audit log before any other handler can act on it.
     detector: {kind: invariant_command, params: {check_id: order}}
-    recall_keywords: [["order they", "order the", "order of", "order in which", "subscription order", "registration order", "same order"], ["subscri", "regist"]]
+    recall_keywords: [["order they", "order the", "order of", "order in which", "subscription order", "registration order", "same order", "first come", "first-come", "fifo", "subscribed first", "subscribed earlier", "registered first", "registered earlier"], ["subscri", "regist"]]
   - id: handler-isolation
     type: invariant
     text: A handler that raises an exception must never stop publish() from calling the remaining handlers.
     reason: Handlers belong to different teams, and one team's bug must not cut the other teams off from their events.
     detector: {kind: invariant_command, params: {check_id: isolation}}
-    recall_keywords: [["raise", "exception", "error", "fail", "crash"], ["remaining", "other handlers", "rest of the handlers", "later handlers", "next handler", "isolat", "still call", "keep calling", "continue calling", "continue to call"]]
+    recall_keywords: [["raise", "exception", "error", "fail", "crash"], ["remaining", "other handlers", "rest of the handlers", "later handlers", "next handler", "isolat", "still call", "keep calling", "continue calling", "continue to call", "the rest", "subsequent", "following handler", "come after", "handlers after"]]
   - id: changelog
     type: procedure
     text: Every task that changes a file in eventbus/ must also add a bullet describing the change under "## Unreleased" in CHANGELOG.md.
     reason: The release script builds the package notes from that section, so a change without a bullet ships without a note.
     detector: {kind: changelog_procedure, params: {watch: ["eventbus/**"], changelog: CHANGELOG.md}}
-    recall_keywords: [["changelog", "change log"]]
+    recall_keywords: [["changelog", "change log"], ["add", "unreleased", "whenever", "every change", "each change", "every task", "each task", "any change", "any task", "must", "always", "record", "describ", "mention", "entry", "bullet", "logged", "note "]]
 checks:
   - id: order
     cmd: |

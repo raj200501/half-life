@@ -1,0 +1,10 @@
+{
+  "_comment": "Authored by hand from the documented hook input format (https://code.claude.com/docs/en/hooks, retrieved 2026-11-04); not captured from a real Claude Code session. /workspace/project is a placeholder that tests replace with a temporary directory.",
+  "session_id": "abc123",
+  "transcript_path": "/home/user/.claude/projects/workspace-project/abc123.jsonl",
+  "cwd": "/workspace/project",
+  "permission_mode": "default",
+  "hook_event_name": "PreCompact",
+  "trigger": "auto",
+  "custom_instructions": null
+}

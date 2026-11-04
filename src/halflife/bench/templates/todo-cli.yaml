@@ -155,7 +155,7 @@ constraints:
     text: Whenever a task changes a file in todo/, add a line describing the change under "## Unreleased" in CHANGELOG.md in that same task.
     reason: The release notes are copied from CHANGELOG.md, so a change without a line there ships without a note.
     detector: {kind: changelog_procedure, params: {watch: ["todo/**"], changelog: CHANGELOG.md}}
-    recall_keywords: [["changelog", "change log"]]
+    recall_keywords: [["changelog", "change log"], ["add", "unreleased", "whenever", "every change", "each change", "every task", "each task", "any change", "any task", "must", "always", "record", "describ", "mention", "entry", "bullet", "logged", "note "]]
   - id: test-after-change
     type: procedure
     text: After you change any file in todo/, run the test suite with python -m pytest -q before you finish the task.

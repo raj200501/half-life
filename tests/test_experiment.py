@@ -250,3 +250,21 @@ def test_log_problems_flags_missing_parts() -> None:
     problems = experiment.log_problems(base, ["c"])
     assert "compacted context lost the system prompt" in problems and "no summary text" in problems
     assert "empty before or after context" in experiment.log_problems(base | {"after": []}, ["c"])
+
+
+def test_kit_hooks_wire_the_e4_arms() -> None:
+    from halflife.kit.compaction_prompt import preserve_prompt
+    from halflife.kit.reinject import reinject_text
+    from halflife.schema import Action
+    from halflife.workspace import Workspace
+
+    hooks = experiment.kit_hooks()
+    assert hooks.summary_prompt == preserve_prompt()
+    assert hooks.reinject_text is reinject_text
+    assert all(len(v) == 64 for k, v in hooks.provenance.items() if k.endswith("_sha256"))
+    template = next(t for t in bench.load_all() if t.id == "invoice-ledger").template
+    with Workspace(template.files) as workspace:
+        guard = hooks.guard_factory(template, workspace)
+        refusal = guard(Action("write_file", {"path": "tests/test_new.py", "content": "x = 1\n"}))
+        assert refusal is not None and "tests/" in refusal
+        assert guard(Action("read_file", {"path": "tests/test_invoice.py"})) is None

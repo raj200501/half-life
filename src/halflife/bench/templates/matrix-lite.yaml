@@ -222,7 +222,7 @@ constraints:
     text: Every public function in matlite/matrix.py must keep its name and its parameters.
     reason: The firmware toolchain generates bindings that call these functions by name with keyword arguments, so a renamed function or parameter breaks its build.
     detector: {kind: stable_api, params: {modules: ["matlite/matrix.py"]}}
-    recall_keywords: [["matrix.py", "public function", "function name", "parameter", "signature", "public api"], ["keep", "unchanged", "same", "stable", "preserv", "never", "not ", "n't", "no "]]
+    recall_keywords: [["signature", "public", "api", "interface", "parameter", "argument"], ["keep", "unchanged", "same", "stable", "preserv", "never", "not ", "n't", "no "]]
   - id: one-new-file
     type: resource_limit
     text: Create at most one new .py file in this repository over the whole session.

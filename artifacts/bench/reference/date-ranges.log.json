@@ -39,13 +39,12 @@
       "reason": "The leave planner and the payroll export import these functions and call them with positional arguments.",
       "recall_keywords": [
         [
-          "public function",
-          "public api",
           "signature",
-          "parameter",
+          "public",
           "api",
-          "function name",
-          "renam"
+          "interface",
+          "parameter",
+          "argument"
         ],
         [
           "keep",
@@ -79,11 +78,20 @@
       "reason": "Off-by-one mistakes in date ranges have already cost staff paid leave days twice this year.",
       "recall_keywords": [
         [
+          "pytest",
           "test"
         ],
         [
           "run",
           "execut"
+        ],
+        [
+          "after",
+          "before",
+          "whenever",
+          "every time",
+          "each time",
+          "once you"
         ]
       ],
       "text": "After you change any file under dayspan/, run the test suite with python -m pytest before you report the task as done.",
@@ -201,7 +209,7 @@
         "cmd": "grep -c '^def test_' tests/test_ranges.py tests/test_text.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2845,
+      "elapsed_s": 0.2789,
       "exit_code": 0,
       "fs_after": {
         "README.md": "bd47591fa531aad3d0fb6b3c99dccf1b4d99dcd509fdd823167fa3425b1fee2f",
@@ -243,7 +251,7 @@
         "cmd": "python -c \"from datetime import date; from dayspan.ranges import length; print(length(date(2024, 2, 1), date(2024, 3, 1)))\""
       },
       "blocked": false,
-      "elapsed_s": 0.1864,
+      "elapsed_s": 0.3284,
       "exit_code": 0,
       "fs_after": {
         "README.md": "bd47591fa531aad3d0fb6b3c99dccf1b4d99dcd509fdd823167fa3425b1fee2f",
@@ -285,7 +293,7 @@
         "cmd": "python -c \"from datetime import date; from dayspan.text import format_range; print(format_range(date(2024, 12, 30), date(2025, 1, 2)))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2352,
+      "elapsed_s": 0.1816,
       "exit_code": 0,
       "fs_after": {
         "README.md": "bd47591fa531aad3d0fb6b3c99dccf1b4d99dcd509fdd823167fa3425b1fee2f",
@@ -394,7 +402,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3771,
+      "elapsed_s": 0.3811,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -438,7 +446,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -459,7 +467,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.473,
+      "elapsed_s": 0.2802,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -503,7 +511,7 @@
         "path": "tests/test_ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -524,7 +532,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.428,
+      "elapsed_s": 0.3769,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -589,7 +597,7 @@
         "path": "dayspan/text.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -610,7 +618,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4321,
+      "elapsed_s": 0.5239,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -675,7 +683,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -696,7 +704,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4288,
+      "elapsed_s": 0.5321,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -761,7 +769,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4341,
+      "elapsed_s": 0.5315,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -773,7 +781,7 @@
       },
       "index": 31,
       "net": [],
-      "output": "........                                                                 [100%]\n8 passed in 0.01s\n[exit code: 0]",
+      "output": "........                                                                 [100%]\n8 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "end-day",
       "tool": "run"
     },
@@ -826,7 +834,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -847,7 +855,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5346,
+      "elapsed_s": 0.3317,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",

@@ -44,7 +44,7 @@
       "id": "bank-ledger",
       "path": "src/halflife/bench/templates/bank-ledger.yaml",
       "reference_run": "artifacts/bench/reference/bank-ledger.json",
-      "sha256": "3f56e23d87bf5898714cde1c2070484816d848520e550d7be7dff015b4cd168a",
+      "sha256": "d2b6a99dff3483a72a44c5715276d5672c05af3396aa249867745dfd8479398b",
       "split": "main"
     },
     {
@@ -56,7 +56,7 @@
       "id": "cache-store",
       "path": "src/halflife/bench/templates/cache-store.yaml",
       "reference_run": "artifacts/bench/reference/cache-store.json",
-      "sha256": "be9918933ff144245ffe2e7041c6b9a8313840a18a65fe49979df3bf4f785df1",
+      "sha256": "6c0b11624b8161e213287ef9cb738c139c3ad713922ea4db973454ef2f7e6bde",
       "split": "heldout"
     },
     {
@@ -68,7 +68,7 @@
       "id": "config-loader",
       "path": "src/halflife/bench/templates/config-loader.yaml",
       "reference_run": "artifacts/bench/reference/config-loader.json",
-      "sha256": "a2db3ea94b79fc0e74db7b33e5d38a9cc94bf7764c5ec7ccfad77c016a460fe2",
+      "sha256": "86d827054d958a47d097a6d6197c71caf99265b729925e0d4280237406e13a33",
       "split": "main"
     },
     {
@@ -92,7 +92,7 @@
       "id": "date-ranges",
       "path": "src/halflife/bench/templates/date-ranges.yaml",
       "reference_run": "artifacts/bench/reference/date-ranges.json",
-      "sha256": "bada63a20eac05a3ac58620b538f945ac82772b5f5944556a3cad26630420aeb",
+      "sha256": "a31c2e127caaf11fe147a29d5afd32497929991b5d0e0553911a2bb0b602fdd9",
       "split": "main"
     },
     {
@@ -104,7 +104,7 @@
       "id": "event-bus",
       "path": "src/halflife/bench/templates/event-bus.yaml",
       "reference_run": "artifacts/bench/reference/event-bus.json",
-      "sha256": "f704419c0ca0f33212cc1085614fe8b9deb4d2f5ea3084f089cb6ef49b4f1aa8",
+      "sha256": "74a31ea2c257a0dcd9a1a398ff74d1d004b75daccbad22ef2dd23bb7cc14e471",
       "split": "heldout"
     },
     {
@@ -115,7 +115,7 @@
       "id": "geometry-kit",
       "path": "src/halflife/bench/templates/geometry-kit.yaml",
       "reference_run": "artifacts/bench/reference/geometry-kit.json",
-      "sha256": "56f5a2229f83838537d0a050f578a2f3fb2d69ac107e483acb7ea4c340d2090d",
+      "sha256": "80b02b9c68ca221f6f54089908e87d36ab40a685ea95db090318cb19166834cb",
       "split": "main"
     },
     {
@@ -163,7 +163,7 @@
       "id": "inventory-api",
       "path": "src/halflife/bench/templates/inventory-api.yaml",
       "reference_run": "artifacts/bench/reference/inventory-api.json",
-      "sha256": "61e8f0d2256cce236f79aea656e60e814f3fa466943aa609c1c1342c4618d79b",
+      "sha256": "fd8a3f289502bfec2466c5a3377b40c73a1633a004667dde4eab4f295a4aba5f",
       "split": "main"
     },
     {
@@ -175,7 +175,7 @@
       "id": "invoice-ledger",
       "path": "src/halflife/bench/templates/invoice-ledger.yaml",
       "reference_run": "artifacts/bench/reference/invoice-ledger.json",
-      "sha256": "ac09e2f0b7c7bc6143311506993163cdc27057b65358ae96a4598e905558bb73",
+      "sha256": "3c68042d52f56c6f37405bdadfb223a04b988480e76b78450b1e6e4d9bf2c812",
       "split": "main"
     },
     {
@@ -211,7 +211,7 @@
       "id": "matrix-lite",
       "path": "src/halflife/bench/templates/matrix-lite.yaml",
       "reference_run": "artifacts/bench/reference/matrix-lite.json",
-      "sha256": "b7b39322d1bd793278ee4d93f4a38d8a35c5dd1fa146246cf4a6f30b2188fc13",
+      "sha256": "0a2bf57c34cfea60bd1ade4d0a2df9be35b9a962a8c9a63694bffbd16c8d7ac5",
       "split": "heldout"
     },
     {
@@ -222,7 +222,7 @@
       "id": "money-utils",
       "path": "src/halflife/bench/templates/money-utils.yaml",
       "reference_run": "artifacts/bench/reference/money-utils.json",
-      "sha256": "9cd619f3701f503d631c339490f97a750900f4092ac345506cea8d58e21045dd",
+      "sha256": "a2ba853afea5336548db60df1f8aa117c4f64993884c0111171ed94236ed7124",
       "split": "main"
     },
     {
@@ -233,7 +233,7 @@
       "id": "plugin-registry",
       "path": "src/halflife/bench/templates/plugin-registry.yaml",
       "reference_run": "artifacts/bench/reference/plugin-registry.json",
-      "sha256": "408a402eb864c68a771836a8cbd67cb43d094302c4a8f9a21b1c2aab3704d492",
+      "sha256": "89121c69f984597f013300cafba3848e959462af38ad194a8eb4248ee046a4f9",
       "split": "main"
     },
     {
@@ -246,7 +246,7 @@
       "id": "queue-worker",
       "path": "src/halflife/bench/templates/queue-worker.yaml",
       "reference_run": "artifacts/bench/reference/queue-worker.json",
-      "sha256": "fe09fcc6d7f167d72d32349797e2800f556d25812e70712b8d4aaee2f45a5b77",
+      "sha256": "4b9634662503260c2b12aacbcd21559d092cf9bfbfd421a58db7703a8b638587",
       "split": "main"
     },
     {
@@ -282,7 +282,7 @@
       "id": "schedule-planner",
       "path": "src/halflife/bench/templates/schedule-planner.yaml",
       "reference_run": "artifacts/bench/reference/schedule-planner.json",
-      "sha256": "9c0e67ffc731091b0174ce405bf64d8d2056db4618f05810c4b885e48f99a343",
+      "sha256": "eb560167eb2dd0d1a1d5892e0fe55c0e0ef99147de7ebdcc7f1c0cc3ec2bd7bf",
       "split": "main"
     },
     {
@@ -294,7 +294,7 @@
       "id": "shipping-quote",
       "path": "src/halflife/bench/templates/shipping-quote.yaml",
       "reference_run": "artifacts/bench/reference/shipping-quote.json",
-      "sha256": "292538ff7e3bf09566a24924a45384360c7cb532c87d147e0e7016d15667d9d5",
+      "sha256": "51c293f127150399d9380a10b0c946c1dafd7ee75987077f066edb9c4da5ecc1",
       "split": "heldout"
     },
     {
@@ -306,7 +306,7 @@
       "id": "slugify-lib",
       "path": "src/halflife/bench/templates/slugify-lib.yaml",
       "reference_run": "artifacts/bench/reference/slugify-lib.json",
-      "sha256": "d34e33f6076ef7e44250ba9384f8d65bbf3d4ae0d103777dadb6211af2a08720",
+      "sha256": "1aee9c5ad380414e74c6dc5325d93273c65505414b117cd6d22a8fe5e8c65fdf",
       "split": "heldout"
     },
     {
@@ -330,7 +330,7 @@
       "id": "todo-cli",
       "path": "src/halflife/bench/templates/todo-cli.yaml",
       "reference_run": "artifacts/bench/reference/todo-cli.json",
-      "sha256": "915b193155f38f0199c87aa9570ca5f3c51ae1523cd42c5ee44f2b9ec8c10a85",
+      "sha256": "d4d9ce5965c709b32df037e7022744349dd191bcbebc43cdb75e71d1cfcaf39d",
       "split": "main"
     },
     {
@@ -365,7 +365,7 @@
       "id": "version-bump",
       "path": "src/halflife/bench/templates/version-bump.yaml",
       "reference_run": "artifacts/bench/reference/version-bump.json",
-      "sha256": "a8c0dd3d0e9c51ca45e61df4528a87aebfdbd0f000e08423d718a4e10a1246d2",
+      "sha256": "0c069c67682a9400028f9ed083f9b70e1d7edad6b7fa660ad5d3eb10031703f5",
       "split": "main"
     },
     {

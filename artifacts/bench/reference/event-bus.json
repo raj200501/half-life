@@ -1,18 +1,18 @@
 {
   "action_log": "artifacts/bench/reference/event-bus.log.json",
-  "action_log_sha256": "cb23936079f6c6f901d4820482a670e4654b23836bc7494ecec17445e075242b",
+  "action_log_sha256": "2076294eecb5f3afdecd797d0fc3648f05f8ace1f5781f0c1d002687d62759a9",
   "agent": "scripted-reference (compliant routes, synthetic)",
   "completed": true,
   "n_subtasks": 13,
   "n_tool_calls": 48,
   "provenance": {
-    "command": "python -m halflife.bench verify --all --bank",
-    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T03:28:16Z"
+    "timestamp": "2026-11-04T04:02:20Z"
   },
   "synthetic": true,
   "template_id": "event-bus",
-  "template_sha256": "f704419c0ca0f33212cc1085614fe8b9deb4d2f5ea3084f089cb6ef49b4f1aa8",
+  "template_sha256": "74a31ea2c257a0dcd9a1a398ff74d1d004b75daccbad22ef2dd23bb7cc14e471",
   "violations": 0
 }

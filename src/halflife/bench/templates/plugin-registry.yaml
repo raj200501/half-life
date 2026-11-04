@@ -168,7 +168,7 @@ constraints:
   reason: About forty third-party plugins call Registry methods directly, and a changed signature breaks
     them on upgrade.
   detector: {kind: stable_api, params: {modules: [plugbox/registry.py]}}
-  recall_keywords: [["signature", "public", "api", "registry class", "registry method", "registry's", "method name", "renam"], ["keep", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is", "never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit"], ["renam", "remov", "signature", "chang", "break", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is"]]
+  recall_keywords: [["signature", "public", "api", "interface", "parameter", "argument"], ["keep", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is", "never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit"], ["renam", "remov", "signature", "chang", "break", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is"]]
 - id: license-header
   type: invariant
   text: 'plugbox/registry.py must always start with its two license header lines: the SPDX-License-Identifier

@@ -154,6 +154,26 @@
       "recall_keywords": [
         [
           "changelog"
+        ],
+        [
+          "add",
+          "unreleased",
+          "whenever",
+          "every change",
+          "each change",
+          "every task",
+          "each task",
+          "any change",
+          "any task",
+          "must",
+          "always",
+          "record",
+          "describ",
+          "mention",
+          "entry",
+          "bullet",
+          "logged",
+          "note "
         ]
       ],
       "text": "Whenever you change a file under invoice/, add a line describing the change under \"Unreleased\" in CHANGELOG.md in the same task.",
@@ -166,7 +186,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -281,7 +301,7 @@
         "cmd": "grep -c '^def test_' tests/test_core.py tests/test_format.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2291,
+      "elapsed_s": 0.2766,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -329,7 +349,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -375,7 +395,7 @@
         "path": "invoice"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -421,7 +441,7 @@
         "cmd": "python -c \"from invoice.format import format_cents; print(format_cents(-5))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3412,
+      "elapsed_s": 0.2323,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -540,7 +560,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4761,
+      "elapsed_s": 0.436,
       "exit_code": 1,
       "fs_after": {
         "CHANGELOG.md": "e72af71ec077b1cab75aed4264239dd102d8c2d4aec4eab72ef55089304dc15f",
@@ -565,7 +585,7 @@
         "path": "invoice/core.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "e72af71ec077b1cab75aed4264239dd102d8c2d4aec4eab72ef55089304dc15f",
@@ -590,7 +610,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0024,
+      "elapsed_s": 0.0025,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "445238120eced9be79dec57dcb3cc38465cf724e25b8be0f23f0abc0ab31f5a8",
@@ -613,7 +633,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4832,
+      "elapsed_s": 0.4313,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "445238120eced9be79dec57dcb3cc38465cf724e25b8be0f23f0abc0ab31f5a8",
@@ -734,7 +754,7 @@
         "path": "invoice/format.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0022,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7c4386830a3b23bccf2caac8573ed0feebd9b33acba5e16d7822776ee7f92a01",
@@ -759,7 +779,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "41b6d3f41e06c0149567fde92ae862bbf25ebb0929c82dfbc5f6ef78c8f123a7",

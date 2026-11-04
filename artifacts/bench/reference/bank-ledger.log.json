@@ -140,7 +140,10 @@
           "sum to 0",
           "add up to 0",
           "net to zero",
-          "debit"
+          "debit",
+          "to zero",
+          "to exactly zero",
+          "to 0"
         ],
         [
           "reject",
@@ -190,6 +193,26 @@
         [
           "changelog",
           "change log"
+        ],
+        [
+          "add",
+          "unreleased",
+          "whenever",
+          "every change",
+          "each change",
+          "every task",
+          "each task",
+          "any change",
+          "any task",
+          "must",
+          "always",
+          "record",
+          "describ",
+          "mention",
+          "entry",
+          "bullet",
+          "logged",
+          "note "
         ]
       ],
       "text": "Every task that changes a file in bookkeep/ must also add a line describing the change under \"## Unreleased\" in CHANGELOG.md.",
@@ -202,7 +225,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "9bd74c1ef593646a5dc34398ec5eba0dc7fd4c28263e58be40633443edeca873",
@@ -271,7 +294,7 @@
         "path": "bookkeep/journal.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "9bd74c1ef593646a5dc34398ec5eba0dc7fd4c28263e58be40633443edeca873",
@@ -317,7 +340,7 @@
         "cmd": "grep -c '^def test_' tests/test_bookkeep.py"
       },
       "blocked": false,
-      "elapsed_s": 0.23,
+      "elapsed_s": 0.28,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "9bd74c1ef593646a5dc34398ec5eba0dc7fd4c28263e58be40633443edeca873",
@@ -363,7 +386,7 @@
         "cmd": "tail -n +2 statements/2026-03.csv | wc -l"
       },
       "blocked": false,
-      "elapsed_s": 0.2279,
+      "elapsed_s": 0.2697,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "9bd74c1ef593646a5dc34398ec5eba0dc7fd4c28263e58be40633443edeca873",
@@ -459,7 +482,7 @@
         "path": "bookkeep/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "9bd74c1ef593646a5dc34398ec5eba0dc7fd4c28263e58be40633443edeca873",
@@ -484,7 +507,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "c22433984b1d0630413597fccf89169b03bf996b177c346b5e4a14e7b6e4ea9d",
@@ -532,7 +555,7 @@
         "path": "bookkeep/journal.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "c22433984b1d0630413597fccf89169b03bf996b177c346b5e4a14e7b6e4ea9d",
@@ -557,7 +580,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "438525a5b2cbeb672f4ea8b1ae63a8217ceeeba8adb8e15d432ca257c284ea66",
@@ -580,7 +603,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4753,
+      "elapsed_s": 0.3793,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "438525a5b2cbeb672f4ea8b1ae63a8217ceeeba8adb8e15d432ca257c284ea66",
@@ -594,7 +617,7 @@
       },
       "index": 16,
       "net": [],
-      "output": "......                                                                   [100%]\n6 passed in 0.02s\n[exit code: 0]",
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "account-list",
       "tool": "run"
     },
@@ -626,7 +649,7 @@
         "cmd": "python -c \"from bookkeep.report import format_cents; print(format_cents(-5))\""
       },
       "blocked": false,
-      "elapsed_s": 0.1697,
+      "elapsed_s": 0.336,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "438525a5b2cbeb672f4ea8b1ae63a8217ceeeba8adb8e15d432ca257c284ea66",
@@ -672,7 +695,7 @@
         "cmd": "python -c \"from bookkeep.importer import import_csv; from bookkeep.journal import Journal; print(import_csv(Journal(), 'statements/2026-03.csv'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2767,
+      "elapsed_s": 0.333,
       "exit_code": 1,
       "fs_after": {
         "CHANGELOG.md": "438525a5b2cbeb672f4ea8b1ae63a8217ceeeba8adb8e15d432ca257c284ea66",
@@ -686,7 +709,7 @@
       },
       "index": 20,
       "net": [],
-      "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/halflife-ws-42t3szyf/bookkeep/importer.py\", line 36, in import_csv\n    return import_rows(journal, csv.DictReader(handle))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-42t3szyf/bookkeep/importer.py\", line 28, in import_rows\n    journal.post(row[\"date\"], row[\"memo\"], entries)\n  File \"/tmp/halflife-ws-42t3szyf/bookkeep/journal.py\", line 28, in post\n    raise ValueError(f\"transaction {memo!r} does not balance (off by {total})\")\nValueError: transaction 'cash machine' does not balance (off by -4000)\n[exit code: 1]",
+      "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/halflife-ws-w6vb79i1/bookkeep/importer.py\", line 36, in import_csv\n    return import_rows(journal, csv.DictReader(handle))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-w6vb79i1/bookkeep/importer.py\", line 28, in import_rows\n    journal.post(row[\"date\"], row[\"memo\"], entries)\n  File \"/tmp/halflife-ws-w6vb79i1/bookkeep/journal.py\", line 28, in post\n    raise ValueError(f\"transaction {memo!r} does not balance (off by {total})\")\nValueError: transaction 'cash machine' does not balance (off by -4000)\n[exit code: 1]",
       "subtask_id": "uncategorized-rows",
       "tool": "run"
     },
@@ -720,7 +743,7 @@
         "path": "bookkeep/importer.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "438525a5b2cbeb672f4ea8b1ae63a8217ceeeba8adb8e15d432ca257c284ea66",
@@ -770,7 +793,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0032,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "97bd9480d089835276173cfb1897d240f51bf2a6f0b9438774144511ad529d29",
@@ -793,7 +816,7 @@
         "cmd": "python -c \"from bookkeep.importer import import_csv; from bookkeep.journal import Journal; j = Journal(); print(import_csv(j, 'statements/2026-03.csv')); print(j.balances())\""
       },
       "blocked": false,
-      "elapsed_s": 0.2319,
+      "elapsed_s": 0.3391,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "97bd9480d089835276173cfb1897d240f51bf2a6f0b9438774144511ad529d29",
@@ -866,7 +889,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "4713b8c6fae7c94512139857038632febc4f2dc68742daa56c6465e75a913308",
@@ -985,7 +1008,7 @@
         "cmd": "python -c \"from bookkeep.journal import Journal; print(Journal().split('2026-03-08', 'dinner', 10000, ['expenses:food', 'expenses:fun', 'expenses:gifts']))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2822,
+      "elapsed_s": 0.2727,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "d3f6cf6e65b2c8b0bb995559b7cc285989da557a08ed5cfe51a88bb0c3ca5d6c",
@@ -1008,7 +1031,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4832,
+      "elapsed_s": 0.4834,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "d3f6cf6e65b2c8b0bb995559b7cc285989da557a08ed5cfe51a88bb0c3ca5d6c",
@@ -1104,7 +1127,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4759,
+      "elapsed_s": 0.4771,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "3ade12380d6bd2de39caca50fcfa0a3d8f27e450abb398b19eec9775eabd958b",
@@ -1118,7 +1141,7 @@
       },
       "index": 38,
       "net": [],
-      "output": "......                                                                   [100%]\n6 passed in 0.02s\n[exit code: 0]",
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "thousands",
       "tool": "run"
     },
@@ -1175,7 +1198,7 @@
         "path": "bookkeep/journal.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0031,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "3ade12380d6bd2de39caca50fcfa0a3d8f27e450abb398b19eec9775eabd958b",
@@ -1200,7 +1223,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0034,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "ccc3417d3ce5f89cbdea0e9124c39ce6c97aa82c3f84707077a9717bbca4e990",
@@ -1223,7 +1246,7 @@
         "cmd": "python -c \"from bookkeep.journal import Journal; j = Journal(); j.open_account('2026-01-01', 'assets:savings', 325000); print(j.balances())\""
       },
       "blocked": false,
-      "elapsed_s": 0.3324,
+      "elapsed_s": 0.3355,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "ccc3417d3ce5f89cbdea0e9124c39ce6c97aa82c3f84707077a9717bbca4e990",
@@ -1246,7 +1269,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4312,
+      "elapsed_s": 0.4873,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "ccc3417d3ce5f89cbdea0e9124c39ce6c97aa82c3f84707077a9717bbca4e990",

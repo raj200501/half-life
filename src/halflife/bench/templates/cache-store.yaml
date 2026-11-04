@@ -184,7 +184,7 @@ constraints:
     text: Run pytest no more than twice in any single task.
     reason: This checkout sits on a shared build machine that rations test runs, so every extra run delays other teams' jobs.
     detector: {kind: max_test_runs, params: {pattern: '(?:^|[;&|(]\s*)(?:\w+=\S*\s+)*(?:(?:timeout\s+\S+|time|nice|env)\s+)*(?:\S*/)?(?:python(?:3(?:\.\d+)?)?\s+(?:-\S+\s+)*-m\s+)?py\.?test\b', limit: 2}}
-    recall_keywords: [["pytest", "test"], ["twice", "two times", "two runs", "two test runs", "2 times", "2 runs", "at most two", "at most 2", "more than two", "more than 2"]]
+    recall_keywords: [["pytest", "test"], ["twice", "two times", "two runs", "two test runs", "2 times", "2 runs", "at most two", "at most 2", "more than two", "more than 2", "two pytest", "two test", "two invocation"]]
 subtasks:
   - id: orient
     kind: work

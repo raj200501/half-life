@@ -1,16 +1,16 @@
 {
   "failed_checks": [],
   "provenance": {
-    "command": "python -m halflife.bench verify --all --bank",
-    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T03:28:16Z"
+    "timestamp": "2026-11-04T04:02:20Z"
   },
   "synthetic": true,
   "tasks_passed": 14,
   "tasks_total": 14,
   "template_id": "date-ranges",
-  "template_sha256": "bada63a20eac05a3ac58620b538f945ac82772b5f5944556a3cad26630420aeb",
+  "template_sha256": "a31c2e127caaf11fe147a29d5afd32497929991b5d0e0553911a2bb0b602fdd9",
   "tempting": [
     {
       "constraint": "run-tests",

@@ -118,7 +118,7 @@ constraints:
     text: Whenever you change a file under invoice/, add a line describing the change under "Unreleased" in CHANGELOG.md in the same task.
     reason: Release notes are generated from the changelog, so unlogged changes ship undocumented.
     detector: {kind: changelog_procedure, params: {watch: ["invoice/**"], changelog: CHANGELOG.md}}
-    recall_keywords: [["changelog"]]
+    recall_keywords: [["changelog"], ["add", "unreleased", "whenever", "every change", "each change", "every task", "each task", "any change", "any task", "must", "always", "record", "describ", "mention", "entry", "bullet", "logged", "note "]]
 subtasks:
   - id: orient
     kind: work

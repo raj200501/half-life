@@ -128,12 +128,9 @@
           "signature",
           "public",
           "api",
-          "money.py",
-          "convert.py",
-          "renam",
-          "function name",
-          "class name",
-          "method name"
+          "interface",
+          "parameter",
+          "argument"
         ],
         [
           "keep",
@@ -205,7 +202,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "4fce2369de1ddac5be2807d9af1bc9f6c44cbdfc1bc20a899c2ef95b14539559",
@@ -228,7 +225,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "4fce2369de1ddac5be2807d9af1bc9f6c44cbdfc1bc20a899c2ef95b14539559",
@@ -320,7 +317,7 @@
         "cmd": "python -c \"from cashkit.money import Money; print(Money(100, 'USD').split(3))\""
       },
       "blocked": false,
-      "elapsed_s": 0.28,
+      "elapsed_s": 0.3284,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4fce2369de1ddac5be2807d9af1bc9f6c44cbdfc1bc20a899c2ef95b14539559",
@@ -416,7 +413,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -439,7 +436,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4772,
+      "elapsed_s": 0.4866,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -487,7 +484,7 @@
         "path": "tests/test_money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -510,7 +507,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4267,
+      "elapsed_s": 0.3768,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -556,7 +553,7 @@
         "cmd": "python -c \"from cashkit.money import Money; print(Money(7, 'USD').multiply(0.5))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2784,
+      "elapsed_s": 0.3299,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -602,7 +599,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5207,
+      "elapsed_s": 0.4788,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -648,7 +645,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -673,7 +670,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0032,
+      "elapsed_s": 0.0033,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -696,7 +693,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5392,
+      "elapsed_s": 0.3875,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -743,7 +740,7 @@
         "path": "cashkit/rates.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -769,7 +766,7 @@
         "path": "cashkit/convert.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -793,7 +790,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4428,
+      "elapsed_s": 0.5319,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -817,7 +814,7 @@
         "summary": "RATES now lives in cashkit/rates.py and convert.py imports it."
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -843,7 +840,7 @@
         "path": "cashkit/fmt.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -895,7 +892,7 @@
         "path": "tests/test_fmt.py"
       },
       "blocked": false,
-      "elapsed_s": 0.006,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -919,7 +916,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5351,
+      "elapsed_s": 0.4824,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -934,7 +931,7 @@
       },
       "index": 30,
       "net": [],
-      "output": ".........                                                                [100%]\n9 passed in 0.02s\n[exit code: 0]",
+      "output": ".........                                                                [100%]\n9 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "code-after-amount",
       "tool": "run"
     },
@@ -967,7 +964,7 @@
         "path": "cashkit/convert.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -993,7 +990,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0009,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -1019,7 +1016,7 @@
         "path": "cashkit/convert.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0053,
+      "elapsed_s": 0.0046,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -1043,7 +1040,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5353,
+      "elapsed_s": 0.4871,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",

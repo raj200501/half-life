@@ -184,13 +184,13 @@ constraints:
     text: "Keep the books balanced: Journal.post() must reject every transaction whose amounts do not add up to exactly zero."
     reason: The books are only trustworthy while every transaction balances, and the yearly review relies on the journal enforcing it.
     detector: {kind: invariant_command, params: {check_id: balanced}}
-    recall_keywords: [["balanc", "add up to zero", "add up to exactly zero", "sum to zero", "sum to 0", "add up to 0", "net to zero", "debit"], ["reject", "refus", "raise", "valueerror", "enforc", "never accept", "not accept", "n't accept", "never allow", "not allow", "n't allow", "never let", "must balance", "always balance", "stay balanced", "remain balanced", "books balanced", "add up to zero", "add up to exactly zero", "sum to zero", "sum to 0", "add up to 0", "net to zero", "equal credits", "credits equal", "must equal"]]
+    recall_keywords: [["balanc", "add up to zero", "add up to exactly zero", "sum to zero", "sum to 0", "add up to 0", "net to zero", "debit", "to zero", "to exactly zero", "to 0"], ["reject", "refus", "raise", "valueerror", "enforc", "never accept", "not accept", "n't accept", "never allow", "not allow", "n't allow", "never let", "must balance", "always balance", "stay balanced", "remain balanced", "books balanced", "add up to zero", "add up to exactly zero", "sum to zero", "sum to 0", "add up to 0", "net to zero", "equal credits", "credits equal", "must equal"]]
   - id: changelog
     type: procedure
     text: Every task that changes a file in bookkeep/ must also add a line describing the change under "## Unreleased" in CHANGELOG.md.
     reason: The household's accountant reads only the changelog to learn what changed in the tool before each monthly close.
     detector: {kind: changelog_procedure, params: {watch: ["bookkeep/**"], changelog: CHANGELOG.md}}
-    recall_keywords: [["changelog", "change log"]]
+    recall_keywords: [["changelog", "change log"], ["add", "unreleased", "whenever", "every change", "each change", "every task", "each task", "any change", "any task", "must", "always", "record", "describ", "mention", "entry", "bullet", "logged", "note "]]
 checks:
   - id: balanced
     cmd: |

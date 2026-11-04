@@ -110,7 +110,7 @@ constraints:
   reason: The release script copies the Unreleased section into the published release notes, so unlogged
     changes ship undocumented.
   detector: {kind: changelog_procedure, params: {watch: [shipit/**], changelog: CHANGELOG.md}}
-  recall_keywords: [["changelog"]]
+  recall_keywords: [["changelog"], ["add", "unreleased", "whenever", "every change", "each change", "every task", "each task", "any change", "any task", "must", "always", "record", "describ", "mention", "entry", "bullet", "logged", "note "]]
 subtasks:
 - id: orient
   kind: work

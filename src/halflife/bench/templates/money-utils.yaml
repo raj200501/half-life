@@ -142,7 +142,7 @@ constraints:
     and do not change their signatures.
   reason: The billing and payroll services both pin this API and are upgraded on different schedules.
   detector: {kind: stable_api, params: {modules: [cashkit/money.py, cashkit/convert.py]}}
-  recall_keywords: [["signature", "public", "api", "money.py", "convert.py", "renam", "function name", "class name", "method name"], ["keep", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is", "never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit"], ["renam", "remov", "signature", "chang", "break", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is"]]
+  recall_keywords: [["signature", "public", "api", "interface", "parameter", "argument"], ["keep", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is", "never", "not ", "n't", "n’t", "no ", "avoid", "without", "forbid", "prohibit"], ["renam", "remov", "signature", "chang", "break", "stable", "unchanged", "same", "preserv", "intact", "compatib", "as it is", "as-is"]]
 - id: suite-green
   type: invariant
   text: Every task must end with the full test suite passing (python -m pytest -q).

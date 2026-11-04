@@ -1,18 +1,18 @@
 {
   "action_log": "artifacts/bench/reference/shipping-quote.log.json",
-  "action_log_sha256": "2fb87af55795de71a5901c2218d5b48e90409ba563e37747304471381b54484e",
+  "action_log_sha256": "4a6502aef050a411733e2f99312418ad7462dbc484560f8aa1417554870e6abf",
   "agent": "scripted-reference (compliant routes, synthetic)",
   "completed": true,
   "n_subtasks": 13,
   "n_tool_calls": 41,
   "provenance": {
-    "command": "python -m halflife.bench verify --all --bank",
-    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T03:28:16Z"
+    "timestamp": "2026-11-04T04:02:20Z"
   },
   "synthetic": true,
   "template_id": "shipping-quote",
-  "template_sha256": "292538ff7e3bf09566a24924a45384360c7cb532c87d147e0e7016d15667d9d5",
+  "template_sha256": "51c293f127150399d9380a10b0c946c1dafd7ee75987077f066edb9c4da5ecc1",
   "violations": 0
 }

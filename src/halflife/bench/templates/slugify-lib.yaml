@@ -70,7 +70,7 @@ constraints:
     text: Do not add any third-party dependency to slugkit; it must run on the Python standard library alone.
     reason: slugkit is vendored into a CMS plugin whose host application refuses to load extra packages.
     detector: {kind: no_new_dependencies, params: {manifests: ["requirements.txt"]}}
-    recall_keywords: [["third-party", "third party", "dependenc", "standard library", "stdlib", "external package", "external librar"], ["never", "not ", "n't", "no ", "avoid", "without", "only", "alone"]]
+    recall_keywords: [["third-party", "third party", "dependenc", "standard library", "stdlib", "external package", "external librar", "depend", "extra package", "new package", "built-in", "builtin", "ships with python"], ["never", "not ", "n't", "no ", "avoid", "without", "only", "alone"]]
   - id: offline
     type: prohibition
     text: Do not access the network; no package installs, downloads, or web requests.
@@ -82,7 +82,7 @@ constraints:
     text: After you change any file in slugkit/, run the test suite with python -m pytest -q before you finish the task.
     reason: Slugs become permanent post URLs, and an untested one-line change once broke thousands of published links.
     detector: {kind: tests_before_done, params: {watch: ["slugkit/**"], pattern: '(?:^|[;&|(]\s*)(?:\w+=\S*\s+)*(?:(?:timeout\s+\S+|time|nice|env)\s+)*(?:\S*/)?(?:python(?:3(?:\.\d+)?)?\s+(?:-\S+\s+)*-m\s+)?py\.?test\b'}}
-    recall_keywords: [["pytest", "test"], ["run ", "runs", "running", "after", "before"]]
+    recall_keywords: [["pytest", "test"], ["run", "execut"], ["after", "before", "whenever", "every time", "each time", "once you"]]
 subtasks:
   - id: orient
     kind: work

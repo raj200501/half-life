@@ -3,26 +3,26 @@ STATE: ACTIVE
 
 # Status
 
-Updated 2026-11-04 (goal_turn 2). History lives in docs/LOG.md.
+Updated 2026-11-04 07:30 UTC (goal_turn 2). History lives in docs/LOG.md.
 
-## Gates (fast check at f3db2ec, 2026-11-04: 5/14; fast results do not count)
+## Gates (fast check at ad4a9e0, 2026-11-04: 6/14; fast results do not count)
 
 | Gate | State | Evidence |
 |---|---|---|
-| G1 Build and tests | PASS | 413 tests, core line coverage 92.1% |
+| G1 Build and tests | PASS | full suite passes on a fresh clone (`tools/prepush_ci.sh`), coverage gate 85% |
 | G2 Static quality | PASS | ruff check, ruff format, mypy --strict clean |
 | G3 CI parity | PASS (fast) | workflow runs `make ci` on 3.11 and 3.12; `make ci` passes on a fresh clone |
-| G4 Offline demo | PASS | demo v0.1 replays a synthetic fixture in a network namespace, matches golden |
-| G5 Instrument validity | FAIL | detector validation banked (E0); probe leakage and compaction logs need validation runs |
-| G6 Benchmark complete | FAIL | 15 templates verify; 15 more being written; manifest not banked |
+| G4 Offline demo | PASS | demo replays a synthetic fixture in a network namespace, matches golden |
+| G5 Instrument validity | FAIL | detector validation and probe-scoring validation banked (E0); probe leakage and compaction logs wait for the pilot sessions |
+| G6 Benchmark complete | PASS | 30 templates, 4 constraint types, routes and reference runs banked (17 re-banked after the D-038 keyword tuning) |
 | G7 Main study | FAIL | needs pilot, preregistration, E1 runs |
 | G8 Ecological and placement arms | FAIL | E3 needs local runs; E2 needs Raj (Claude backend refused here) |
-| G9 Mitigations shipped | FAIL | kit being built; E4 not run |
-| G10 Claim integrity | FAIL | claimcheck and freshness being built; no docs/REPORT.md |
-| G11 Preregistration integrity | FAIL | prereg-verify being built |
+| G9 Mitigations shipped | FAIL | kit committed and wired into the runner (D-039); E4 and overhead not run |
+| G10 Claim integrity | FAIL | no claims yet; README is still the brief |
+| G11 Preregistration integrity | PASS (trivially) | no preregistrations yet |
 | G12 Independent review | FAIL | no review banked |
-| G13 Documentation | FAIL | README is still the brief; no docs/REPORT.md; citations being verified |
-| G14 Hygiene | PASS | secrets clean, cash_usd = 0, caps ok, private/ untracked, tree clean |
+| G13 Documentation | FAIL | README is still the brief; docs/REPORT.md is a draft |
+| G14 Hygiene | FAIL (expected) | tree dirty while builders and the pilot write; clean at ship time |
 
 ## Environment (`make doctor`, 2026-11-04)
 
@@ -40,18 +40,22 @@ Updated 2026-11-04 (goal_turn 2). History lives in docs/LOG.md.
 
 ## Now
 
-Done this session: offline demo v0.1 (tag v0.1); per-tool tool-call grammar and JSON recall probes scored one rule at a time (D-027, D-031); E0 detector validation banked; 21 bench templates committed (15 main, 2 pilot, 4 held-out) with 9 more being written; stats and SVG figures; model client, llama.cpp backend, five pinned local models, planning benchmark; integrity tools (prereg-verify, claimcheck, freshness, citecheck) with a gate mutation suite; 13 citations verified; E1 analysis fixed in code before any data; experiment CLI (plan, run, bank, e0-validate). Running now: gate hardening (26 surviving ship-check mutations), the mitigation kit, two template authors, then the E2 driver.
+- Probe-scoring validation done (D-038): blind LLM-labeled answers, keyword groups tuned on dev only, test split scored once and banked in `artifacts/e0/probe_scoring.json`.
+- Mitigation kit (halflife-guard, halflife-pin, reinject, preserve prompt) committed and wired into `experiment run` for the E4 arms (D-039).
+- Family pilot (designs/pilot.yaml, D-026) running in the background (`runs/pilot-driver.log`): index 0 done for three of five families; the 03:49 worker restart killed the driver during phi, restarted at 07:12.
+- Builders running again after the Claude usage limit reset (both hit "weekly limit, resets 07:00 UTC" at about 04:00): gate hardening pass 2 (G5, G6, G7 recomputation) and the E2 Claude Code driver.
 
 ## Next three actions
 
-1. Family pilot (designs/pilot.yaml, D-026) once the third pilot template lands: five families round-robin, then the E1 family choice; the pilot sessions are the E0 validation runs for probe leakage and compaction logs (G5).
-2. Bank all 30 templates (bench verify --all --bank, manifest) for G6, and the probe-scoring validation set (D-023).
-3. Power analysis from the pilot, the E1 preregistration (prereg/0001-e1.md citing designs/e1.yaml and halflife.e1_analysis), then E1 in the background.
+1. Finish the pilot (indices 0 and 2, then grade-book), analyze reach, engagement, and session lengths, make the E1 family choice (D-026), and bank the pilot sessions as the E0 validation runs for probe leakage and compaction logs (G5).
+2. Power analysis from the pilot, then prereg/0001-e1.md (designs/e1.yaml, `halflife.e1_analysis`, scorer frozen per D-038), then E1 in the background.
+3. Bank `artifacts/e4/overhead.json` with the kit's overhead module; integrate the gate-hardening and E2 driver builders when they finish.
 
 ## Usage to date
 
 - cash_usd = 0. Claude subject runs 0, single calls 0, review runs 0.
-- Local model calls in the ledger: 90 (dry runs and the planning benchmark; no study data yet).
+- Ledger rows: 266, all local llama.cpp calls (dry runs, the planning benchmark, fixture recording, and pilot sessions); no study data yet.
+- Claude plan usage: subagent builders hit the weekly limit at about 04:00 UTC on 2026-11-04 (reset 07:00 UTC); relaunched after the reset.
 
 ## Needs Raj
 

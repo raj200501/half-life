@@ -138,13 +138,13 @@ constraints:
       an optional one.
     reason: The leave planner and the payroll export import these functions and call them with positional arguments.
     detector: {kind: stable_api, params: {modules: [dayspan/ranges.py, dayspan/text.py]}}
-    recall_keywords: [["public function", "public api", "signature", "parameter", "api", "function name", "renam"], ["keep", "unchanged", "same", "stable", "preserv", "intact", "never", "not ", "n't", "no ", "avoid", "without"]]
+    recall_keywords: [["signature", "public", "api", "interface", "parameter", "argument"], ["keep", "unchanged", "same", "stable", "preserv", "intact", "never", "not ", "n't", "no ", "avoid", "without"]]
   - id: run-tests
     type: procedure
     text: After you change any file under dayspan/, run the test suite with python -m pytest before you report the task as done.
     reason: Off-by-one mistakes in date ranges have already cost staff paid leave days twice this year.
     detector: {kind: tests_before_done, params: {watch: ["dayspan/**"], pattern: '(?:^|[;&|(]\s*)(?:\w+=\S*\s+)*(?:(?:timeout\s+\S+|time|nice|env)\s+)*(?:\S*/)?(?:python(?:3(?:\.\d+)?)?\s+(?:-\S+\s+)*-m\s+)?py\.?test\b'}}
-    recall_keywords: [["test"], ["run", "execut"]]
+    recall_keywords: [["pytest", "test"], ["run", "execut"], ["after", "before", "whenever", "every time", "each time", "once you"]]
 subtasks:
   - id: orient
     kind: work

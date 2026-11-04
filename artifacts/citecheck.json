@@ -193,6 +193,62 @@
       "hash_source": "webfetch text",
       "status": "verified",
       "notes": "Repo description 'LLM inference in C/C++'; license MIT per page. Hash covers the three-line WebFetch summary, not the raw page, so it is not reproducible from the URL. curl and the GitHub API returned 403 from the proxy, so the page text came from WebFetch; no workaround was attempted."
+    },
+    {
+      "key": "claude-code-hooks-guide",
+      "cited_url": "https://code.claude.com/docs/en/hooks-guide",
+      "final_url": "https://code.claude.com/docs/en/hooks-guide",
+      "retrieved": "2026-11-04",
+      "page_title": "Automate actions with hooks",
+      "authors": [],
+      "publisher": "code.claude.com",
+      "year": 2026,
+      "content_sha256": "98d4bd0133f65a46a5943851c76ecef692390beeb28d455096abea3e33f3a8c0",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Vendor docs. Shows a SessionStart hook with matcher 'compact' that re-injects reminders after compaction (section 'Re-inject context after compaction'). Cited in docs/MITIGATIONS.md."
+    },
+    {
+      "key": "claude-code-context-window",
+      "cited_url": "https://code.claude.com/docs/en/context-window",
+      "final_url": "https://code.claude.com/docs/en/context-window",
+      "retrieved": "2026-11-04",
+      "page_title": "Explore the context window",
+      "authors": [],
+      "publisher": "code.claude.com",
+      "year": 2026,
+      "content_sha256": "ea745dc5d72f448519042e4c1465abc5d74c3256fbfade3bf7e74de2c1fd9b01",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Vendor docs. Lists what survives compaction, including SessionStart hooks that match the compact source (their output is added to the compacted context) and a re-read of CLAUDE.md right after compaction. Cited in docs/MITIGATIONS.md."
+    },
+    {
+      "key": "claude-code-how-it-works",
+      "cited_url": "https://code.claude.com/docs/en/how-claude-code-works",
+      "final_url": "https://code.claude.com/docs/en/how-claude-code-works",
+      "retrieved": "2026-11-04",
+      "page_title": "How Claude Code works",
+      "authors": [],
+      "publisher": "code.claude.com",
+      "year": 2026,
+      "content_sha256": "a8ce73f64cc1eec852fb39487fdf2a7360c2c37bb70c510349e3b6c1b8b690e2",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Vendor docs. Says a 'Compact Instructions' section in CLAUDE.md, or /compact with a focus, controls what compaction preserves. Cited in docs/MITIGATIONS.md."
+    },
+    {
+      "key": "claude-code-tools-reference",
+      "cited_url": "https://code.claude.com/docs/en/tools-reference",
+      "final_url": "https://code.claude.com/docs/en/tools-reference",
+      "retrieved": "2026-11-04",
+      "page_title": "Tools reference",
+      "authors": [],
+      "publisher": "code.claude.com",
+      "year": 2026,
+      "content_sha256": "97c3028c16a6a74cc30972a84e87dad5b1e5ae790cfc5fa87d2fa5cd36971221",
+      "hash_source": "curl body",
+      "status": "verified",
+      "notes": "Vendor docs. Has sections on NotebookEdit tool behavior and the PowerShell tool. Cited in docs/MITIGATIONS.md."
     }
   ]
 }

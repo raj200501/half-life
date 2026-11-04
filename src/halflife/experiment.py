@@ -28,16 +28,21 @@ import random
 import shutil
 import subprocess
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import yaml
 
 from halflife import bench
 from halflife.schema import SchemaError, SessionPlan
 from halflife.sessions import Condition, PlanSettings, generate_plan
+
+if TYPE_CHECKING:
+    from halflife.agent import Guard
+    from halflife.schema import Template
+    from halflife.workspace import Workspace
 
 T = TypeVar("T")
 
@@ -381,6 +386,46 @@ def cmd_plan(design_path: Path, out: Path) -> int:
     return 0
 
 
+@dataclass(frozen=True)
+class KitHooks:
+    """The E4 mitigation hooks from :mod:`halflife.kit` and their provenance.
+
+    The agent uses each hook only in its own arm (``guard``, ``preserve``,
+    ``reinject``), so passing them to every run leaves other arms unchanged.
+    """
+
+    summary_prompt: str
+    reinject_text: Callable[[Sequence[str]], str]
+    guard_factory: Callable[[Template, Workspace], Guard]
+    provenance: dict[str, str]
+
+
+def kit_hooks() -> KitHooks:
+    """Build the hooks that ``python -m halflife.experiment run`` passes to every session."""
+    from halflife.kit.compaction_prompt import preserve_prompt
+    from halflife.kit.guard import minimal_agent_guard
+    from halflife.kit.reinject import reinject_text
+
+    prompt = preserve_prompt()
+
+    def guard_factory(template: Template, workspace: Workspace) -> Guard:
+        return minimal_agent_guard(template.constraints, workspace.root)
+
+    return KitHooks(
+        summary_prompt=prompt,
+        reinject_text=reinject_text,
+        guard_factory=guard_factory,
+        provenance={
+            "guard": "halflife.kit.guard.minimal_agent_guard",
+            "preserve_prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+            "reinject": "halflife.kit.reinject.reinject_text",
+            "reinject_example_sha256": hashlib.sha256(
+                reinject_text(["<rule one>", "<rule two>"]).encode("utf-8")
+            ).hexdigest(),
+        },
+    )
+
+
 def cmd_run(args: Any, root: Path) -> int:
     """Run plans with a pinned local model; resumable; writes runs/<run_id>/."""
     import os
@@ -409,6 +454,7 @@ def cmd_run(args: Any, root: Path) -> int:
     pid_file = run_dir / "pid"
     pid_file.write_text(f"{os.getpid()}\n", encoding="utf-8")
     spec = models_mod.get_spec(args.model)
+    hooks = kit_hooks()
     settings = AgentSettings(
         temperature=args.temperature,
         max_step_tokens=args.max_step_tokens,
@@ -432,6 +478,7 @@ def cmd_run(args: Any, root: Path) -> int:
         "command": " ".join(sys.argv),
         "started": _now(),
         "cpu_count": os.cpu_count(),
+        "kit": hooks.provenance,
     }
     with (run_dir / "invocations.jsonl").open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, sort_keys=True) + "\n")
@@ -455,6 +502,8 @@ def cmd_run(args: Any, root: Path) -> int:
         model=spec.key,
         prereg=args.prereg,
         settings=settings,
+        summary_prompt=hooks.summary_prompt,
+        reinject_text=hooks.reinject_text,
     )
     progress = run_dir / "progress.jsonl"
     status = 0
@@ -469,6 +518,7 @@ def cmd_run(args: Any, root: Path) -> int:
                 detect_all,
                 ctx,
                 root / args.out_root,
+                guard_factory=hooks.guard_factory,
             )
         except (CapExceeded, ModelCallsDisabled) as exc:
             print(f"stopping: {type(exc).__name__}: {exc}")

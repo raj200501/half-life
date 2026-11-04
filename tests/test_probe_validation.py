@@ -106,7 +106,7 @@ def test_main_prints_and_banks(
             "constraint_id": "changelog",
             "label": True,
             "kind": "paraphrase",
-            "answer": "Update the changelog every time.",
+            "answer": "Add a line to the changelog every time.",
         }
     ]
     path = _answers(tmp_path / "a.yaml", items)
@@ -119,6 +119,8 @@ def test_main_prints_and_banks(
     banked = json.loads(out.read_text(encoding="utf-8"))
     assert banked["synthetic"] is True and banked["answers"] == "a.yaml"
     assert banked["accuracy"]["n"] == 1 and "invoice-ledger" in banked["templates_sha256"]
+    assert banked["reported_split"] == "test" and len(banked["answers_sha256"]) == 64
+    assert banked["command"].startswith("python -m halflife.probe_validation --answers")
     bad = _answers(tmp_path / "b.yaml", [dict(items[0], label=False)])
     assert probe_validation.main(["--answers", str(bad)]) == 0
     assert "DISAGREE invoice-ledger/changelog" in capsys.readouterr().out

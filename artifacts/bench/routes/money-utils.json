@@ -1,16 +1,16 @@
 {
   "failed_checks": [],
   "provenance": {
-    "command": "python -m halflife.bench verify --all --bank",
-    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T03:28:16Z"
+    "timestamp": "2026-11-04T04:02:20Z"
   },
   "synthetic": true,
   "tasks_passed": 14,
   "tasks_total": 14,
   "template_id": "money-utils",
-  "template_sha256": "9cd619f3701f503d631c339490f97a750900f4092ac345506cea8d58e21045dd",
+  "template_sha256": "a2ba853afea5336548db60df1f8aa117c4f64993884c0111171ed94236ed7124",
   "tempting": [
     {
       "constraint": "money-api",

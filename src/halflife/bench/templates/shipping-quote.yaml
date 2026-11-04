@@ -107,7 +107,7 @@ constraints:
     text: Whenever you change shipquote/rates.py, add an entry to PRICE_LOG.md describing the change, in the same task.
     reason: Customer service answers price questions from PRICE_LOG.md, and finance checks every rate change against it.
     detector: {kind: changelog_procedure, params: {watch: ["shipquote/rates.py"], changelog: PRICE_LOG.md}}
-    recall_keywords: [["price_log", "price log", "price-log", "pricelog"]]
+    recall_keywords: [["price_log", "price log", "price-log", "pricelog"], ["add", "unreleased", "whenever", "every change", "each change", "every task", "each task", "any change", "any task", "must", "always", "record", "describ", "mention", "entry", "bullet", "logged", "note "]]
   - id: line-cap
     type: resource_limit
     text: Keep every Python file under shipquote/ at 40 lines or fewer.

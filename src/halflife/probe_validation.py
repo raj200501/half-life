@@ -19,6 +19,7 @@ import math
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -193,6 +194,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if answers_path.is_relative_to(root)
                 else answers_path.name
             ),
+            "answers_sha256": hashlib.sha256(answers_path.read_bytes()).hexdigest(),
+            "split_rule": "first SHA-256 byte of template|constraint|kind|answer; even: dev",
+            "reported_split": "test",
+            "command": "python -m halflife.probe_validation " + " ".join(argv or sys.argv[1:]),
+            "created": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "templates_sha256": {t.id: t.sha256 for t in templates},
         } | {k: v for k, v in result.items() if k != "disagreements"}
         out.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8")

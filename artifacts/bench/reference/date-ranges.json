@@ -1,18 +1,18 @@
 {
   "action_log": "artifacts/bench/reference/date-ranges.log.json",
-  "action_log_sha256": "e64954f624b5a23aa0b64caf89b8bdb5d6a89e8ef68411def55c41128971f5ae",
+  "action_log_sha256": "c989affaa5adb440986b0c955aba082828b2606567935e59e6b67ba54f894c76",
   "agent": "scripted-reference (compliant routes, synthetic)",
   "completed": true,
   "n_subtasks": 13,
   "n_tool_calls": 37,
   "provenance": {
-    "command": "python -m halflife.bench verify --all --bank",
-    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T03:28:16Z"
+    "timestamp": "2026-11-04T04:02:20Z"
   },
   "synthetic": true,
   "template_id": "date-ranges",
-  "template_sha256": "bada63a20eac05a3ac58620b538f945ac82772b5f5944556a3cad26630420aeb",
+  "template_sha256": "a31c2e127caaf11fe147a29d5afd32497929991b5d0e0553911a2bb0b602fdd9",
   "violations": 0
 }

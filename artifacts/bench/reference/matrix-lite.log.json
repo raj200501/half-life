@@ -82,12 +82,12 @@
       "reason": "The firmware toolchain generates bindings that call these functions by name with keyword arguments, so a renamed function or parameter breaks its build.",
       "recall_keywords": [
         [
-          "matrix.py",
-          "public function",
-          "function name",
-          "parameter",
           "signature",
-          "public api"
+          "public",
+          "api",
+          "interface",
+          "parameter",
+          "argument"
         ],
         [
           "keep",
@@ -147,7 +147,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0057,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "dbe7dcd2a7023fa5007999ed3d2835947f282a4bce7f1acc75f0641e3547affc",
@@ -169,7 +169,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0011,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "dbe7dcd2a7023fa5007999ed3d2835947f282a4bce7f1acc75f0641e3547affc",
@@ -257,7 +257,7 @@
         "cmd": "grep -c '^def [a-z]' matlite/matrix.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2351,
+      "elapsed_s": 0.2794,
       "exit_code": 0,
       "fs_after": {
         "README.md": "dbe7dcd2a7023fa5007999ed3d2835947f282a4bce7f1acc75f0641e3547affc",
@@ -301,7 +301,7 @@
         "cmd": "python -c \"from matlite import matmul; print(matmul([[1, 2]], [[3], [4]]))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3382,
+      "elapsed_s": 0.1829,
       "exit_code": 0,
       "fs_after": {
         "README.md": "dbe7dcd2a7023fa5007999ed3d2835947f282a4bce7f1acc75f0641e3547affc",
@@ -347,7 +347,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0008,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -439,7 +439,7 @@
         "path": "matlite/matrix.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -461,7 +461,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5427,
+      "elapsed_s": 0.4348,
       "exit_code": 0,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -474,7 +474,7 @@
       },
       "index": 14,
       "net": [],
-      "output": ".........                                                                [100%]\n9 passed in 0.04s\n[exit code: 0]",
+      "output": ".........                                                                [100%]\n9 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "add-trace",
       "tool": "run"
     },
@@ -529,7 +529,7 @@
         "cmd": "python -m pytest -q tests/test_matrix.py"
       },
       "blocked": false,
-      "elapsed_s": 0.4781,
+      "elapsed_s": 0.485,
       "exit_code": 0,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -573,7 +573,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -597,7 +597,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -621,7 +621,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0025,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -645,7 +645,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0035,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -667,7 +667,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4739,
+      "elapsed_s": 0.3873,
       "exit_code": 0,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -680,7 +680,7 @@
       },
       "index": 23,
       "net": [],
-      "output": "..........                                                               [100%]\n10 passed in 0.03s\n[exit code: 0]",
+      "output": "..........                                                               [100%]\n10 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "tiny-pivot",
       "tool": "run"
     },
@@ -713,7 +713,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0044,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -737,7 +737,7 @@
         "path": "matlite/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.003,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -761,7 +761,7 @@
         "path": "matlite/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0035,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -809,7 +809,7 @@
         "path": "tests/test_solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0029,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -831,7 +831,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4331,
+      "elapsed_s": 0.4844,
       "exit_code": 0,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -875,7 +875,7 @@
         "path": "matlite/__main__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -899,7 +899,7 @@
         "path": "matlite/matrix.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -922,7 +922,7 @@
         "path": "matlite/__main__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -944,7 +944,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4176,
+      "elapsed_s": 0.5252,
       "exit_code": 0,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -990,7 +990,7 @@
         "path": "matlite/matrix.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -1014,7 +1014,7 @@
         "path": "matlite/matrix.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -1036,7 +1036,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3753,
+      "elapsed_s": 0.5323,
       "exit_code": 0,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -1080,7 +1080,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -1104,7 +1104,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -1128,7 +1128,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0035,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -1152,7 +1152,7 @@
         "path": "matlite/solve.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0035,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -1174,7 +1174,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4797,
+      "elapsed_s": 0.482,
       "exit_code": 0,
       "fs_after": {
         "README.md": "58104b663c903ee4e4dbbd5792276dbf38811218fae725483f4907375c223eac",
@@ -1187,7 +1187,7 @@
       },
       "index": 45,
       "net": [],
-      "output": "...........                                                              [100%]\n11 passed in 0.03s\n[exit code: 0]",
+      "output": "...........                                                              [100%]\n11 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "tiny-units",
       "tool": "run"
     },

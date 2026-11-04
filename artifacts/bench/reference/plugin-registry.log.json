@@ -44,11 +44,9 @@
           "signature",
           "public",
           "api",
-          "registry class",
-          "registry method",
-          "registry's",
-          "method name",
-          "renam"
+          "interface",
+          "parameter",
+          "argument"
         ],
         [
           "keep",
@@ -367,7 +365,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.435,
+      "elapsed_s": 0.3352,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -389,7 +387,7 @@
         "summary": "Added the Title plugin."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -435,7 +433,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4829,
+      "elapsed_s": 0.4348,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -481,7 +479,7 @@
         "path": "tests/test_loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -505,7 +503,7 @@
         "path": "tests/test_loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -527,7 +525,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4796,
+      "elapsed_s": 0.4305,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -571,7 +569,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.34,
+      "elapsed_s": 0.432,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -638,7 +636,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -660,7 +658,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4852,
+      "elapsed_s": 0.5375,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -682,7 +680,7 @@
         "summary": "Registry now stores plugins in a single dict; the tests pass."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -706,7 +704,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0041,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -728,7 +726,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.328,
+      "elapsed_s": 0.4831,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -772,7 +770,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -796,7 +794,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0029,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -842,7 +840,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0041,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -864,7 +862,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5236,
+      "elapsed_s": 0.4871,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",

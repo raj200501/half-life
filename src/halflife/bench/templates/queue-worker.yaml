@@ -169,7 +169,7 @@ constraints:
     text: Whenever a task changes a file in jobq/, add a line describing the change under "## Unreleased" in CHANGELOG.md in the same task.
     reason: The operations team reads the changelog before every deploy to learn what the workers will do differently.
     detector: {kind: changelog_procedure, params: {watch: ["jobq/**"], changelog: CHANGELOG.md}}
-    recall_keywords: [["changelog", "change log"]]
+    recall_keywords: [["changelog", "change log"], ["add", "unreleased", "whenever", "every change", "each change", "every task", "each task", "any change", "any task", "must", "always", "record", "describ", "mention", "entry", "bullet", "logged", "note "]]
   - id: offline
     type: prohibition
     text: "Do not access the network: no package installs, no downloads, and no requests to any web service."

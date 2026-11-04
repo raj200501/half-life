@@ -1,0 +1,93 @@
+# Example halflife.yaml: a portable constraint spec, format version 1.
+#
+# Illustrative rules for a hypothetical Python project; this file is an example,
+# not study data. Copy it to your project root as halflife.yaml and edit it.
+# The same file drives every kit tool (docs/MITIGATIONS.md):
+#
+#   halflife-guard   Claude Code PreToolUse hook that refuses tool calls breaking a rule
+#   halflife-pin     writes the rules into CLAUDE.md or AGENTS.md
+#   python -m halflife.kit.reinject
+#                    SessionStart hook (matcher "compact") that re-adds the rules
+#                    after context compaction
+#
+# Globs are relative to the project root: * and ? never match "/", a whole **
+# segment matches any number of directories, and a trailing / means everything
+# under that directory. recall_keywords is optional; it only matters when you
+# score recall probes against this spec.
+version: 1
+constraints:
+  - id: tests-frozen
+    type: prohibition
+    text: Never modify, create, or delete files under tests/.
+    reason: The tests encode the behavior the maintainers agreed on; change the code, not the tests.
+    detector:
+      kind: protected_paths
+      params: {globs: ["tests/**"]}
+    recall_keywords:
+      - ["test"]
+      - ["never", "not ", "n't", "no ", "avoid", "frozen", "read-only", "untouched"]
+      - ["modif", "edit", "chang", "touch", "delet", "creat", "frozen", "read-only", "untouched"]
+
+  - id: migrations-applied
+    type: prohibition
+    text: Never edit the applied migrations migrations/001_init.sql and migrations/002_users.sql.
+    reason: They have already run against production databases; add a new migration instead.
+    detector:
+      kind: protected_paths
+      params: {globs: ["migrations/001_init.sql", "migrations/002_users.sql"]}
+
+  - id: offline
+    type: prohibition
+    text: Do not access the network; no package installs, downloads, or web requests.
+    reason: The build machines have no internet access.
+    detector:
+      kind: no_network
+
+  - id: stdlib-only
+    type: prohibition
+    text: Do not add any third-party dependency; the package must run on the Python standard library alone.
+    reason: The tool is copied onto locked-down servers where nothing else can be installed.
+    detector:
+      kind: no_new_dependencies
+      params: {manifests: ["requirements.txt", "pyproject.toml"]}
+
+  - id: safe-git
+    type: prohibition
+    text: Never run git push, git reset --hard, or git clean.
+    reason: Pushing and history-destroying commands need a human review.
+    detector:
+      kind: forbidden_commands
+      params:
+        patterns: ['\bgit\b.*\bpush\b', '\bgit\b.*\breset\b.*--hard', '\bgit\b.*\bclean\b']
+
+  - id: short-modules
+    type: resource_limit
+    text: Keep every module in mypkg/ at 300 lines or fewer.
+    reason: The review checklist rejects modules that do not fit in one review sitting.
+    detector:
+      kind: max_file_lines
+      params: {globs: ["mypkg/*.py"], limit: 300}
+
+  - id: timeout-fixed
+    type: invariant
+    text: DEFAULT_TIMEOUT in mypkg/config.py must stay exactly 30.
+    reason: Downstream services are tuned to this timeout.
+    detector:
+      kind: file_invariant
+      params: {path: mypkg/config.py, regex: "(?m)^DEFAULT_TIMEOUT = 30$"}
+
+  - id: public-api
+    type: invariant
+    text: Every public function and class in mypkg/api.py must keep its name and its parameters.
+    reason: Other teams import these functions.
+    detector:
+      kind: stable_api
+      params: {modules: ["mypkg/api.py"]}
+
+  - id: changelog
+    type: procedure
+    text: Every change to mypkg/ must add a line under "## Unreleased" in CHANGELOG.md.
+    reason: Release notes are assembled from the changelog.
+    detector:
+      kind: changelog_procedure
+      params: {watch: ["mypkg/**"], changelog: CHANGELOG.md}

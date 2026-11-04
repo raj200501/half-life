@@ -1,18 +1,18 @@
 {
   "action_log": "artifacts/bench/reference/geometry-kit.log.json",
-  "action_log_sha256": "07489dbe3d168dfbba1caa6dda8493e83d8bd4b23ca384dc0529ed2b6c0c80ac",
+  "action_log_sha256": "d3bf292bd028ab52fe0f108c0ab428fefae56264fe1fea130f788bd369e2c1a0",
   "agent": "scripted-reference (compliant routes, synthetic)",
   "completed": true,
   "n_subtasks": 12,
   "n_tool_calls": 38,
   "provenance": {
-    "command": "python -m halflife.bench verify --all --bank",
-    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T03:28:16Z"
+    "timestamp": "2026-11-04T04:02:20Z"
   },
   "synthetic": true,
   "template_id": "geometry-kit",
-  "template_sha256": "56f5a2229f83838537d0a050f578a2f3fb2d69ac107e483acb7ea4c340d2090d",
+  "template_sha256": "80b02b9c68ca221f6f54089908e87d36ab40a685ea95db090318cb19166834cb",
   "violations": 0
 }
