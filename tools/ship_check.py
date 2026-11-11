@@ -1186,6 +1186,37 @@ def check_prereg_link(clone: Path, prereg: str, artifact: str) -> str | None:
     return None
 
 
+GIT_SHA_RE = re.compile(r"[0-9a-f]{40}")
+
+
+def run_provenance_problem(
+    clone: Path, pre_commit: str, row: dict[str, Any], contains: dict[str, bool]
+) -> str | None:
+    """Problem text unless a confirmatory session ran after its preregistration.
+
+    ``halflife.runner.save_session`` stamps every session with ``run_provenance``
+    (DECISIONS.md D-050, item 6). The stamp must name a commit that is the
+    preregistration's commit or descends from it, and a clean checkout
+    (``git_dirty`` false), so the session ran under code that already held the frozen
+    preregistration. A commit the clone does not have fails. ``contains`` caches the
+    ancestry answer per commit.
+    """
+    sid = row.get("session_id")
+    stamp = row.get("run_provenance")
+    if not isinstance(stamp, dict):
+        return f"session {sid} has no run_provenance stamp"
+    sha = stamp.get("git_sha")
+    if not isinstance(sha, str) or not GIT_SHA_RE.fullmatch(sha):
+        return f"session {sid}: run_provenance names no git commit"
+    if stamp.get("git_dirty") is not False:
+        return f"session {sid} did not run from a clean checkout (git_dirty must be false)"
+    if sha not in contains:
+        contains[sha] = sha == pre_commit or strictly_predates(clone, pre_commit, sha)
+    if not contains[sha]:
+        return f"session {sid} ran at {sha[:12]}, which does not contain the preregistration commit"
+    return None
+
+
 # Analysis outputs G7 recomputes from the banked rows (halflife.e1_analysis writes them).
 E1_RECOMPUTED = ("hazard.json", "half_life.json", "km.json")
 E1_ROWS = ("sessions.jsonl", "opportunities.jsonl")
@@ -1350,6 +1381,10 @@ def gate_g7(ctx: Context) -> GateResult:
         problem = check_prereg_link(ctx.clone, prereg, f"artifacts/e1/{name}")
         if problem:
             return fail(problem)
+    pre_commit = first_commit(ctx.clone, prereg)
+    if pre_commit is None:  # pragma: no cover - check_prereg_link already required it
+        return fail(f"{prereg} is not committed")
+    contains: dict[str, bool] = {}
     sessions = load_jsonl(base / "sessions.jsonl")
     reached: dict[str, int] = {}
     keys: set[tuple[str, str]] = set()
@@ -1358,6 +1393,9 @@ def gate_g7(ctx: Context) -> GateResult:
         sid = row.get("session_id")
         if row.get("prereg") != provenance["prereg"] or row.get("confirmatory") is not True:
             return fail(f"session {sid} not tagged with the E1 preregistration")
+        problem = run_provenance_problem(ctx.clone, pre_commit, row, contains)
+        if problem:
+            return fail(problem)
         family = row.get("family")
         if not isinstance(sid, str) or not sid or not isinstance(family, str) or not family:
             return fail(f"session {sid} lacks a session_id or model family")

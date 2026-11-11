@@ -1598,6 +1598,32 @@ E1 = "artifacts/e1"
 # Histories in which one E1 file is committed before the preregistration.
 EARLY = {"opportunities-first": "opportunities.jsonl", "km-first": "km.json"}
 
+# Placeholders in fixture run_provenance stamps (D-050 item 6), resolved when committed:
+RUN_COMMIT = "<run-commit>"  # HEAD when the session rows are committed
+BOOTSTRAP_COMMIT = "<bootstrap>"  # the fixture repository's first commit
+
+
+def stamp(git_sha: str = RUN_COMMIT, **fields: Any) -> dict[str, Any]:
+    """A session's run_provenance stamp as halflife.runner.save_session writes it."""
+    return {
+        "run_id": "e1-r1",
+        "prereg": PREREG,
+        "git_sha": git_sha,
+        "git_dirty": False,
+        "started": "2026-11-05T10:00:00Z",
+        "finished": "2026-11-05T10:20:00Z",
+    } | fields
+
+
+def resolve_stamps(root: Path, files: dict[str, Any], bootstrap: str) -> None:
+    """Replace the stamp placeholders in the E1 session rows about to be committed."""
+    head = run_git(root, "rev-parse", "HEAD")
+    for row in files.get(f"{E1}/sessions.jsonl", []):
+        provenance = row.get("run_provenance")
+        if isinstance(provenance, dict):
+            sha = provenance.get("git_sha")
+            provenance["git_sha"] = {RUN_COMMIT: head, BOOTSTRAP_COMMIT: bootstrap}.get(sha, sha)
+
 
 def e1_files(prereg: str = PREREG) -> dict[str, Any]:
     sessions = []
@@ -1613,6 +1639,7 @@ def e1_files(prereg: str = PREREG) -> dict[str, Any]:
                     "prereg": prereg,
                     "confirmatory": True,
                     "reached_first_dp": i < 40,
+                    "run_provenance": stamp(prereg=prereg),
                 }
             )
             if i < 40:
@@ -1676,20 +1703,24 @@ def commit_e1(
     """Commit the preregistration and the E1 files in the order ``history`` names; HEAD."""
     root.mkdir(parents=True, exist_ok=True)
     run_git(root, "init", "-q")
-    commit(root, {"README.md": "# half-life\n", "prereg/.gitkeep": ""}, "bootstrap")
+    boot = commit(root, {"README.md": "# half-life\n", "prereg/.gitkeep": ""}, "bootstrap")
     frozen = {PREREG: prereg_text() if text is None else text}
     if history == "prereg-first":
         commit(root, frozen, "freeze E1")
+        resolve_stamps(root, files, boot)
         sha = commit(root, files, "bank E1")
     elif history == "same-commit":
+        resolve_stamps(root, files, boot)
         sha = commit(root, {**frozen, **files}, "freeze and bank together")
     elif history == "artifacts-first":
+        resolve_stamps(root, files, boot)
         commit(root, files, "bank E1")
         sha = commit(root, frozen, "freeze E1 afterwards")
     elif history in EARLY:
         name = f"{E1}/{EARLY[history]}"
         commit(root, {name: files.pop(name)}, f"{EARLY[history]} before the preregistration")
         commit(root, frozen, "freeze E1")
+        resolve_stamps(root, files, boot)
         sha = commit(root, files, "bank the rest")
     else:  # pragma: no cover - a typo in a case must not pass silently
         raise ValueError(history)
@@ -1809,6 +1840,38 @@ G7_CASES = params(
             "session-not-confirmatory",
             "not tagged with the E1 preregistration",
             lambda f: table(f, "sessions.jsonl")[3].update({"confirmatory": False}),
+        ),
+        g7(
+            "session-without-a-run-provenance-stamp",
+            "has no run_provenance stamp",
+            lambda f: table(f, "sessions.jsonl")[0].pop("run_provenance"),
+        ),
+        g7(
+            "session-ran-from-a-dirty-checkout",
+            "did not run from a clean checkout",
+            lambda f: table(f, "sessions.jsonl")[1]["run_provenance"].update(git_dirty=True),
+        ),
+        g7(
+            "session-dirty-flag-unknown",
+            "did not run from a clean checkout",
+            lambda f: table(f, "sessions.jsonl")[1]["run_provenance"].update(git_dirty=None),
+        ),
+        g7(
+            "session-ran-before-the-preregistration",
+            "does not contain the preregistration commit",
+            lambda f: table(f, "sessions.jsonl")[83]["run_provenance"].update(
+                git_sha=BOOTSTRAP_COMMIT
+            ),
+        ),
+        g7(
+            "session-ran-at-a-commit-the-repository-lacks",
+            "does not contain the preregistration commit",
+            lambda f: table(f, "sessions.jsonl")[2]["run_provenance"].update(git_sha="f" * 40),
+        ),
+        g7(
+            "session-run-provenance-names-no-commit",
+            "names no git commit",
+            lambda f: table(f, "sessions.jsonl")[2]["run_provenance"].update(git_sha="HEAD"),
         ),
         g7(
             "session-cites-another-preregistration",
@@ -2010,6 +2073,7 @@ def synthetic_e1_rows() -> dict[str, list[dict[str, Any]]]:
                     "reached_first_dp": i < 40,
                     "strategy": arm,
                     "synthetic": True,
+                    "run_provenance": stamp(),
                 }
             )
             if i >= 40:
