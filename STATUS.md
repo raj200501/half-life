@@ -40,6 +40,7 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Now
 
+- Crunch time (Raj, 2026-11-11): main holds the release commit (merge of pull request #1) and the repository is public. Order: finish D-050 and freeze the E1 preregistration; run E1 (G7); run E3 (G8; E2 stays for Raj's machine); run E4 (G9); a fresh review (G12). Main is updated at RELEASE-READY points under D-056. The heartbeat runs every 30 minutes in this session.
 - Review 3 (BLOCK at af5ddc6) fixed: `report --check` now finds embedded images in every Markdown and HTML form (B1); every bench template carries the half-life-bench canary and the bench routes, reference runs, manifest, and probe-scoring hashes are re-banked with their scripts (B2, D-055); README.md no longer calls the analysis preregistered, plus four smaller wording fixes (B3, CORRECTIONS.md).
 - D-050 gate pass, first part: G7 now requires every confirmatory session's `run_provenance` to show a clean checkout at or after the preregistration's commit (six mutation tests). `make ci` passes on Python 3.11 as well as 3.12 at 526ae0d.
 - D-050 item 5, harness side: every span records how it ended (`done` or the cap that cut it) and opportunity rows carry `span_end`; the statistics items run in a subagent.
@@ -50,9 +51,9 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Next three actions
 
-1. Resume the independent review on the release commit and fix what it finds until it records SHIP (G12).
-2. Implement statistics round 2 (D-050) with its adversarial review, then run `python -m halflife.power --pilot artifacts/pilot --out artifacts/power/e1.json`; decide how the bench canary goes in before E1 (backlog item 1).
-3. Fill in and commit prereg/0001-e1.md (settings and code-pin block per D-046), generate the E1 plans, and run E1 for SmolLM2 and Granite with `tools/round_robin.py ... --prereg prereg/0001-e1.md` (about two days on this CPU); while it runs, the gate pass D-050 lists, then E3 and E4 preregistrations and runs; E2 on Raj's machine.
+1. Finish statistics round 2 (D-050 items 1 to 4 in a subagent; then the report decisions, the power simulation, the `min_events` calibration, and the rest of the gate pass), with its adversarial review.
+2. Fill in and commit prereg/0001-e1.md (settings and code-pin block per D-046, sample size from the power run), generate the E1 plans, and start E1 for SmolLM2 and Granite with `tools/round_robin.py ... --prereg prereg/0001-e1.md` in the background (about two days on this CPU).
+3. After E1: E3, then E4 on the held-out templates, one model-heavy run at a time; E2 on Raj's machine; a fresh review when the daily allowance permits.
 
 ## Usage to date
 
@@ -64,7 +65,7 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 ## Needs Raj
 
 1. **Claude backend (blocks E2 in G8, and headless review).** This cloud container sets `ANTHROPIC_BASE_URL` and `CLAUDE_CODE_USE_CCR_V2`, so the billing guard refuses Claude children. To run E2: on a Linux machine with bubblewrap and socat where `env | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_)'` prints nothing and `claude` is logged in to the Max plan, turn off extra usage (paid overage) on the account, then follow docs/E2_RUNBOOK.md (smoke run, plans from `designs/e2.yaml`, two tiers, bank, push). Record any contaminant the smoke run reports (for example a user-level CLAUDE.md) so it can go in DECISIONS.md. E2 needs about 3 days at the capped 6 sessions per day.
-2. **Before making the repository public: move `main` to this branch while the repository is still private.** `main` still holds only the first commit (the build brief), and GitHub shows the default branch to visitors. This branch is a fast-forward of `main`: from a machine with push rights run `git fetch origin && git push origin origin/claude/brave-albattani-c5c7e2:main`. Do not use Squash and merge or Rebase and merge: banked provenance cites these commit SHAs and `make prereg-verify` reads commit order, so `main` must contain the same commits; keep the branch until it does. The push starts the first GitHub Actions run of `make ci` on Python 3.11 and 3.12 (D-022); make the repository public after both jobs pass, and check that Settings shows `main` as the default branch. To accept private security reports as SECURITY.md describes, turn on private vulnerability reporting in the repository's security settings.
+2. **Private vulnerability reporting (not blocking).** To accept private security reports as SECURITY.md describes, turn on private vulnerability reporting in the repository's security settings.
 3. **Model licenses (confirm, not blocking).** Llama-3.2-3B-Instruct is under the Llama 3.2 Community License (its acceptable-use policy file is gated and could not be read here) and Qwen2.5-3B-Instruct under the Qwen Research License (non-commercial research and evaluation). This project uses both only for research evaluation and redistributes no weights (D-035). If you do not accept either license, say so and that family's data is dropped and recorded in CORRECTIONS.md.
 
 ## Blocked
