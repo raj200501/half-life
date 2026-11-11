@@ -22,3 +22,10 @@ Every changed or withdrawn claim gets a dated entry here (rule 3 of the build br
 - **What changed:** no preregistration is committed, so the README now says the analysis was written and audited before any confirmatory data and will be frozen by a preregistration. The number sentence now covers result numbers, since counts that describe the design (thirty templates, two or three rules each) are design parameters. The guard sentence now says only that the overhead of the guard and the pin is measured, since no model-call latency is banked beside it. D-050 is described as decided and not implemented. The G12 line no longer says which findings are fixed.
 - **Why:** the third independent review (REVIEW: BLOCK at af5ddc6, B3 and non-blocking items) showed that each sentence claimed more than the repository supports. Rule 2 labels anything not preregistered as exploratory.
 - **Support:** `prereg/` holds no preregistration; `artifacts/e4/overhead.json` holds the measured overhead; `artifacts/review/latest.json` holds the review.
+
+## 2026-11-11: what report-check finds in documents
+
+- **Claim as stated:** docs/ARTIFACTS.md (commit c33bad4) said `make report-check` finds embedded images "in every form a renderer shows".
+- **What changed:** the hand-written parser behind it missed forms GitHub renders: an unclosed `![[` stopped the scan, link definitions in block quotes or list items or split across lines were not seen, and a decoy definition the renderer ignores shadowed the real one. The check now renders the documents with cmark-gfm, GitHub's renderer, and also fails closed on any image file named anywhere in the raw text (DECISIONS.md D-057), and docs/ARTIFACTS.md describes that.
+- **Why:** the fourth independent review (REVIEW: BLOCK at 526ae0d, B1) embedded a hand-edited copy of the pilot figure in both documents and passed G10.
+- **Support:** no reported number changed; the review is in `artifacts/review/latest.json`, and the mutation tests in `tests/test_report.py` cover each form.

@@ -306,7 +306,7 @@ def test_check_flags_images_the_build_does_not_generate(tmp_path: Path) -> None:
     ("snippet", "expected"),
     [
         ('![a](img/x.svg "Pilot")', ["img/x.svg"]),
-        ("![a](<img/x y.svg> 'T')", ["img/x y.svg"]),
+        ("![a](<img/x y.svg> 'T')", ["img/x%20y.svg"]),
         ("![a]( img/x.svg (T) )", ["img/x.svg"]),
         ("![Pilot [copy]](img/x.svg)", ["img/x.svg"]),
         ('![a][pc]\n\n[pc]: img/x.svg "t"', ["img/x.svg"]),
@@ -322,22 +322,69 @@ def test_check_flags_images_the_build_does_not_generate(tmp_path: Path) -> None:
         ),
         ('<object data="img/x.svg"></object>', ["img/x.svg"]),
         ('<embed src="img/x.svg">', ["img/x.svg"]),
-        ('<iframe src="img/x.svg"></iframe>', ["img/x.svg"]),
+        # GFM's tagfilter escapes iframe and style, so neither renders; the raw scan
+        # (test_stray_image_references_fail_closed) still names the file.
+        ('<iframe src="img/x.svg"></iframe>', []),
         ('<video poster="img/x.svg"></video>', ["img/x.svg"]),
         ('<svg><image href="img/x.svg"/></svg>', ["<svg>", "img/x.svg"]),
         ("<div style=\"background: url('img/x.svg')\"></div>", ["img/x.svg"]),
-        ("<style>p { background: url(img/x.svg) }</style>", ["img/x.svg"]),
+        ("<style>p { background: url(img/x.svg) }</style>", []),
+        ("![x](https://example.org/fig)", ["https://example.org/fig"]),
+        # Review 4 (B1): forms the hand-written parser missed.
+        ("<!-- ![[ -->\n\n![x](img/x.svg)", ["img/x.svg"]),
+        ("A stray ![[ in prose.\n\n![x](img/x.svg)", ["img/x.svg"]),
+        ("`![[`\n\n![x](img/x.svg)", ["img/x.svg"]),
+        ("> [pc]: img/x.svg\n\n![a][pc]", ["img/x.svg"]),
+        ("- [pc]: img/x.svg\n\n  ![a][pc]", ["img/x.svg"]),
+        ("[pc]:\n  img/x.svg\n\n![a][pc]", ["img/x.svg"]),
+        ("<!--\n[pc]: figures/pilot.svg\n-->\n\n[pc]: img/x.svg\n\n![a][pc]", ["img/x.svg"]),
+        ("```\n[pc]: figures/pilot.svg\n```\n\n[pc]: img/x.svg\n\n![a][pc]", ["img/x.svg"]),
+        ("Text\n[pc]: figures/pilot.svg\n\n[pc]: img/x.svg\n\n![a][pc]", ["img/x.svg"]),
+        # Not embeds: a link to an image, an unresolved reference, an image in code.
         ("[a link to a figure](img/x.svg) and ![unresolved][nowhere]", []),
+        ("`![x](img/x.svg)`", []),
     ],
 )
-def test_embedded_images_finds_every_embedding_form(snippet: str, expected: list[str]) -> None:
-    """B1 of the third review: G10 checks an embedded image in any Markdown or HTML form."""
-    assert sorted(report.embedded_images(snippet)) == sorted(expected)
+def test_rendered_images_finds_every_embedding_form(snippet: str, expected: list[str]) -> None:
+    """Reviews 3 and 4 (B1): the images GitHub's renderer shows, in any Markdown or HTML
+    form, are what G10 checks (DECISIONS.md D-057)."""
+    assert sorted(report.rendered_images(snippet)) == sorted(expected)
+
+
+FIGURES = ["docs/figures/pilot.svg", "docs/figures/e0-validity.svg"]
+
+
+@pytest.mark.parametrize(
+    ("doc", "snippet", "expected"),
+    [
+        ("docs/REPORT.md", "![a](figures/pilot.svg) and [b](./figures/e0-validity.svg)", []),
+        ("docs/REPORT.md", "<img src='/docs/figures/pilot.svg'>", []),
+        ("README.md", "![a](docs/figures/pilot.svg)", []),
+        ("README.md", "see [a figure](img/x.svg)", ["img/x.svg"]),
+        ("README.md", "`img/x.svg` in code", ["img/x.svg"]),
+        ("README.md", "<!-- ![x](img/x.SVG) -->", ["img/x.SVG"]),
+        ("README.md", "![x](img/copy&#46;svg)", ["img/copy.svg"]),
+        ("README.md", "![x](img/copy\\.svg)", ["img/copy.svg"]),
+        ("README.md", "![x](img/copy%2Esvg)", ["img/copy.svg"]),
+        ("README.md", "![x](img/docs/figures/pilot.svg)", ["img/docs/figures/pilot.svg"]),
+        (
+            "README.md",
+            "https://example.org/docs/figures/pilot.svg",
+            ["https://example.org/docs/figures/pilot.svg"],
+        ),
+        ("README.md", "![x](data:image/svg+xml;base64,PHN2Zz4=)", ["data:image"]),
+        ("README.md", "a photo.png? and logo.jpeg.", ["photo.png", "logo.jpeg"]),
+    ],
+)
+def test_stray_image_references_fail_closed(doc: str, snippet: str, expected: list[str]) -> None:
+    """D-057: an image file named anywhere in the raw text must be a generated figure."""
+    assert report.stray_image_references(snippet, doc, FIGURES) == expected
 
 
 def test_check_flags_copied_figures_in_every_form(tmp_path: Path) -> None:
-    """The third review's reproduction: a hand-edited copy embedded as HTML, with a title,
-    with brackets in the alt text, or by reference is stale; generated figures are not."""
+    """The reproductions of reviews 3 and 4: a hand-edited copy embedded as HTML, with a
+    title, with brackets in the alt text, by reference (also through a definition in a
+    block quote), or after an unclosed ``![[`` is stale; generated figures are not."""
     root = tmp_path / "repo"
     root.mkdir()
     base_repo(root)
@@ -364,7 +411,9 @@ def test_check_flags_copied_figures_in_every_form(tmp_path: Path) -> None:
     )
     assert report.stale_parts(root) == []  # generated figures in any form pass
     readme.write_text(
-        readme.read_text(encoding="utf-8") + '\n<img src="docs/img/copy.svg" width="600">\n',
+        readme.read_text(encoding="utf-8")
+        + '\n<img src="docs/img/copy.svg" width="600">\n'
+        + "\n> [forged]: docs/img/copy.svg\n\n![Pilot][forged]\n",
         encoding="utf-8",
     )
     report_embeds = (
@@ -374,22 +423,21 @@ def test_check_flags_copied_figures_in_every_form(tmp_path: Path) -> None:
         "![x](figures/../img/copy.svg)",  # a path that leaves docs/figures
         "![x](img/copy%2Esvg)",  # percent-encoded
         "![x](https://example.org/copy.svg)",  # not a file in the repository
+        "<!-- ![[ -->\n\n![after an unclosed bracket](img/copy.svg)",  # review 4
     )
     report_path.write_text(
         report_path.read_text(encoding="utf-8") + "".join(f"\n{e}\n" for e in report_embeds),
         encoding="utf-8",
     )
     stale = report.stale_parts(root)
-    prefix = "embeds an image that make report does not generate: "
-    assert f"README.md {prefix}docs/img/copy.svg" in stale
-    for target in (
-        "img/copy.svg",
-        "figures/../img/copy.svg",
-        "img/copy%2Esvg",
-        "https://example.org/copy.svg",
-    ):
-        assert f"docs/REPORT.md {prefix}{target}" in stale, target
-    assert len([s for s in stale if s.startswith("docs/REPORT.md")]) == 6
+    embeds = "embeds an image that make report does not generate: "
+    assert stale.count(f"README.md {embeds}docs/img/copy.svg") == 2
+    for target in ("img/copy.svg", "figures/../img/copy.svg", "img/copy%2Esvg"):
+        assert f"docs/REPORT.md {embeds}{target}" in stale, target
+    assert f"docs/REPORT.md {embeds}https://example.org/copy.svg" in stale
+    assert len([s for s in stale if s.startswith(f"docs/REPORT.md {embeds}")]) == 7
+    names = [s for s in stale if " names an image " in s]
+    assert names and all(s.endswith(("copy.svg", "img/copy.svg")) for s in names)
 
 
 def test_missing_experiments_render_one_plain_sentence_each(tmp_path: Path) -> None:

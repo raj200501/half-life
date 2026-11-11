@@ -20,7 +20,7 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 | G9 Mitigations shipped | FAIL | kit packaged with install docs and banked overhead; E4 not run |
 | G10 Claim integrity | PASS | claimcheck, freshness, and report-check pass on README.md and docs/REPORT.md |
 | G11 Preregistration integrity | PASS (trivially) | no preregistration committed yet |
-| G12 Independent review | FAIL | the latest review (of af5ddc6) returned BLOCK; its three blocking findings are fixed (image forms in report-check, the bench canary D-055, README wording); a new review is pending |
+| G12 Independent review | FAIL | review 4 (of 526ae0d) returned BLOCK on one finding, embedded-image forms the hand parser missed; fixed by rendering with cmark-gfm plus a fail-closed raw scan (D-057); a new review waits for the daily allowance |
 | G13 Documentation | PASS | README follows section 11, REPORT complete, citecheck verified |
 | G14 Hygiene | PASS | secrets clean, cash_usd = 0, caps respected, tree clean |
 
@@ -40,6 +40,7 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Now
 
+- Review 4 (BLOCK at 526ae0d, B1 only; B2 and B3 held): `report --check` now renders README.md and docs/REPORT.md with cmark-gfm (new dev dependency `cmarkgfm`) and fails closed on any image file named in the raw text (D-057, CORRECTIONS.md).
 - Crunch time (Raj, 2026-11-11): main holds the release commit (merge of pull request #1) and the repository is public. Order: finish D-050 and freeze the E1 preregistration; run E1 (G7); run E3 (G8; E2 stays for Raj's machine); run E4 (G9); a fresh review (G12). Main is updated at RELEASE-READY points under D-056. The heartbeat runs every 30 minutes in this session.
 - Review 3 (BLOCK at af5ddc6) fixed: `report --check` now finds embedded images in every Markdown and HTML form (B1); every bench template carries the half-life-bench canary and the bench routes, reference runs, manifest, and probe-scoring hashes are re-banked with their scripts (B2, D-055); README.md no longer calls the analysis preregistered, plus four smaller wording fixes (B3, CORRECTIONS.md).
 - D-050 gate pass, first part: G7 now requires every confirmatory session's `run_provenance` to show a clean checkout at or after the preregistration's commit (six mutation tests). `make ci` passes on Python 3.11 as well as 3.12 at 526ae0d.

@@ -27,6 +27,7 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.10",
     "types-pyyaml>=6.0",
+    "cmarkgfm>=2024.1",
 ]
 
 [[tool.uv.index]]

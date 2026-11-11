@@ -36,12 +36,15 @@ commands without running them.
 from __future__ import annotations
 
 import argparse
+import html
 import json
+import posixpath
 import re
 import subprocess
 import sys
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote
@@ -128,14 +131,6 @@ OVERHEAD = "artifacts/e4/overhead.json"
 FIG_E0 = f"{FIGURES_DIR}/e0-validity.svg"
 FIG_PILOT = f"{FIGURES_DIR}/pilot.svg"
 # Every image README.md and docs/REPORT.md embed must be generated (see embedded_images).
-LINK_DEF_RE = re.compile(
-    r"^ {0,3}\[((?:[^\[\]\\]|\\.)+)\]:[ \t]*(?:<([^>\n]*)>|(\S+))", re.MULTILINE
-)
-HTML_TAG_RE = re.compile(r"<\s*([A-Za-z][A-Za-z0-9:-]*)((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>")
-HTML_ATTR_RE = re.compile(
-    r"([A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s\"'=<>`]+))"
-)
-STYLE_BLOCK_RE = re.compile(r"<\s*style\b[^>]*>(.*?)<\s*/\s*style\s*>", re.IGNORECASE | re.DOTALL)
 CSS_URL_RE = re.compile(r"url\(\s*['\"]?([^'\")]+?)['\"]?\s*\)", re.IGNORECASE)
 URL_SCHEME_RE = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)")
 EMBED_ATTRS: Mapping[str, tuple[str, ...]] = {
@@ -154,7 +149,15 @@ EMBED_ATTRS: Mapping[str, tuple[str, ...]] = {
 }
 """HTML elements that embed a resource, and the attributes that name it."""
 INLINE_SVG = "<svg>"
-"""The target :func:`embedded_images` reports for an inline ``<svg>`` element."""
+"""The target :func:`rendered_images` reports for an inline ``<svg>`` element."""
+IMAGE_EXT_RE = re.compile(
+    r"\.(?:svgz?|a?png|jpe?g|jfif|pjpeg|pjp|gif|webp|avif|bmp|ico|cur|tiff?)(?![A-Za-z0-9])",
+    re.IGNORECASE,
+)
+"""An image file extension, wherever it appears in a document's text."""
+BACKSLASH_ESCAPE_RE = re.compile(r"\\([!-/:-@\[-`{-~])")
+PATH_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.~%+@:/\\-")
+"""Characters that can continue a path or URL to the left of a figure's path."""
 FIG_HAZARD = f"{FIGURES_DIR}/e1-hazard.svg"
 FIG_KM = f"{FIGURES_DIR}/e1-km.svg"
 FIG_E3 = f"{FIGURES_DIR}/e3-contrasts.svg"
@@ -2595,121 +2598,123 @@ def stale_parts(root: Path, module: str = derive.DERIVE_MODULE) -> list[str]:
             if p.is_file() and p.relative_to(root).as_posix() not in out.figures
         ]
     for doc, text in ((README_DOC, readme), (REPORT_DOC, report)):
-        for target in embedded_images(text):
+        for target in rendered_images(text):
             if embedded_path(target, doc, root) not in out.figures:
                 stale.append(f"{doc} embeds an image that make report does not generate: {target}")
+        for name in stray_image_references(text, doc, out.figures):
+            stale.append(f"{doc} names an image that make report does not generate: {name}")
     manifest = root / MANIFEST
     if not manifest.is_file() or manifest.read_text(encoding="utf-8") != _dump(out.manifest):
         stale.append(MANIFEST)
     return stale
 
 
-def _label(text: str) -> str:
-    """A link reference label as Markdown matches it: case-folded, whitespace collapsed."""
-    return " ".join(text.split()).casefold()
+class _EmbedCollector(HTMLParser):
+    """Collects the resources that rendered HTML embeds (:data:`EMBED_ATTRS`, inline
+    ``<svg>``, and CSS ``url(...)`` in ``style`` attributes and elements)."""
 
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.targets: list[str] = []
+        self._in_style = False
 
-def _closing_bracket(text: str, start: int) -> int | None:
-    """Index of the ``]`` that closes the ``[`` at ``start`` (nesting and escapes)."""
-    depth = 0
-    i = start
-    while i < len(text):
-        char = text[i]
-        if char == "\\":
-            i += 2
-            continue
-        if char == "[":
-            depth += 1
-        elif char == "]":
-            depth -= 1
-            if depth == 0:
-                return i
-        i += 1
-    return None
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._collect(tag, attrs)
+        if tag == "style":
+            self._in_style = True
 
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._collect(tag, attrs)
 
-def _inline_target(text: str, start: int) -> str | None:
-    """The destination of an inline link or image whose ``(`` is at ``start``."""
-    i = start + 1
-    while i < len(text) and text[i] in " \t\n":
-        i += 1
-    if i < len(text) and text[i] == "<":
-        end = text.find(">", i + 1)
-        return None if end < 0 else text[i + 1 : end]
-    j, depth = i, 0
-    while j < len(text):
-        char = text[j]
-        if char == "\\":
-            j += 2
-            continue
-        if char.isspace():
-            break
-        if char == "(":
-            depth += 1
-        elif char == ")":
-            if depth == 0:
-                break
-            depth -= 1
-        j += 1
-    return text[i:j]
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "style":
+            self._in_style = False
 
+    def handle_data(self, data: str) -> None:
+        if self._in_style:
+            self.targets += CSS_URL_RE.findall(data)
 
-def embedded_images(text: str) -> list[str]:
-    """Every image target a Markdown document embeds, as written.
-
-    It covers inline Markdown images (with a title, an angle-bracket destination, or
-    brackets in the alt text), reference-style images (full, collapsed, and shortcut,
-    resolved through the document's link definitions), the HTML elements in
-    :data:`EMBED_ATTRS` (``src``, ``srcset``, ``data``, ``href``, ``poster``), CSS
-    ``url(...)`` in a ``style`` attribute or element, and :data:`INLINE_SVG` for an
-    inline ``<svg>`` element. Code spans are not skipped, so the check fails closed.
-    Links to images (``[text](figure.svg)``) are not embeds and are not reported.
-    """
-    definitions: dict[str, str] = {}
-    for match in LINK_DEF_RE.finditer(text):
-        target = match.group(2) if match.group(2) is not None else match.group(3)
-        definitions.setdefault(_label(match.group(1)), target)
-    targets: list[str] = []
-    start = text.find("![")
-    while start >= 0:
-        close = _closing_bracket(text, start + 1)
-        if close is None:
-            break
-        after = close + 1
-        following = text[after] if after < len(text) else ""
-        if following == "(":
-            inline = _inline_target(text, after)
-            if inline is not None:
-                targets.append(inline)
-        else:
-            label = text[start + 2 : close]
-            if following == "[":
-                end = _closing_bracket(text, after)
-                if end is not None and end > after + 1:
-                    label = text[after + 1 : end]
-            if _label(label) in definitions:
-                targets.append(definitions[_label(label)])
-        start = text.find("![", start + 2)
-    for tag in HTML_TAG_RE.finditer(text):
-        name = tag.group(1).lower()
-        attrs: dict[str, str] = {}
-        for attr in HTML_ATTR_RE.finditer(tag.group(2)):
-            values = (attr.group(2), attr.group(3), attr.group(4))
-            attrs.setdefault(attr.group(1).lower(), next(v for v in values if v is not None))
-        if name == "svg":
-            targets.append(INLINE_SVG)
-        for key in EMBED_ATTRS.get(name, ()):
-            if key not in attrs:
+    def _collect(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "svg":
+            self.targets.append(INLINE_SVG)
+        wanted = EMBED_ATTRS.get(tag, ())
+        for name, value in attrs:
+            if value is None:
                 continue
-            if key == "srcset":
-                targets += [part.split()[0] for part in attrs[key].split(",") if part.strip()]
-            else:
-                targets.append(attrs[key])
-        if "style" in attrs:
-            targets += CSS_URL_RE.findall(attrs["style"])
-    for block in STYLE_BLOCK_RE.findall(text):
-        targets += CSS_URL_RE.findall(block)
-    return targets
+            if name in wanted and name == "srcset":
+                self.targets += [part.split()[0] for part in value.split(",") if part.strip()]
+            elif name in wanted:
+                self.targets.append(value)
+            elif name == "style":
+                self.targets += CSS_URL_RE.findall(value)
+
+
+def rendered_images(text: str) -> list[str]:
+    """Every resource a Markdown document embeds when GitHub renders it (DECISIONS.md D-057).
+
+    The text is rendered with cmark-gfm, GitHub's Markdown renderer, with raw HTML kept,
+    and the embedding elements of the HTML are collected, so link definitions in any
+    container, multi-line definitions, and every inline and reference form count exactly
+    as the renderer resolves them. GitHub's sanitizer would drop some of these elements;
+    collecting them anyway only makes the check stricter.
+    """
+    import cmarkgfm  # type: ignore[import-untyped]  # the package ships no type hints
+    from cmarkgfm.cmark import Options  # type: ignore[import-untyped]  # no type hints
+
+    rendered = str(
+        cmarkgfm.github_flavored_markdown_to_html(text, options=Options.CMARK_OPT_UNSAFE)
+    )
+    collector = _EmbedCollector()
+    collector.feed(rendered)
+    collector.close()
+    return collector.targets
+
+
+def normalized_text(text: str) -> str:
+    """The text with HTML character references, Markdown backslash escapes, and
+    percent-encoding decoded, as a renderer decodes a reference before resolving it."""
+    return unquote(BACKSLASH_ESCAPE_RE.sub(r"\1", html.unescape(text)))
+
+
+def figure_spellings(doc: str, figures: Iterable[str]) -> list[str]:
+    """The spellings a document may use for a generated figure: relative to the
+    document (with or without ``./``) or to the repository root (``/docs/...``)."""
+    base = posixpath.dirname(doc)
+    out: list[str] = []
+    for rel in figures:
+        relative = posixpath.relpath(rel, base) if base else rel
+        out += [relative, f"./{relative}", f"/{rel}"]
+    return out
+
+
+def stray_image_references(text: str, doc: str, figures: Iterable[str]) -> list[str]:
+    """Image file names and ``data:image`` URIs in the text that are not a generated
+    figure (DECISIONS.md D-057): the fail-closed half of the embedded-image check.
+
+    Every image file extension anywhere in the normalized text (prose, code, comments,
+    link definitions) must end one of :func:`figure_spellings`, starting at a path
+    boundary, so ``img/docs/figures/x.svg`` does not pass as ``docs/figures/x.svg``.
+    """
+    plain = normalized_text(text)
+    spellings = figure_spellings(doc, figures)
+    found: list[str] = []
+    for match in IMAGE_EXT_RE.finditer(plain):
+        head = plain[: match.end()]
+        ok = any(
+            head.endswith(spelling)
+            and (len(head) == len(spelling) or head[-len(spelling) - 1] not in PATH_CHARS)
+            for spelling in spellings
+        )
+        if not ok:
+            start = match.start()
+            while start > 0 and not (
+                plain[start - 1].isspace() or plain[start - 1] in "\"'<>()[]`|"
+            ):
+                start -= 1
+            found.append(plain[start : match.end()])
+    if "data:image" in plain.lower():
+        found.append("data:image")
+    return found
 
 
 def embedded_path(target: str, doc: str, root: Path) -> str | None:
