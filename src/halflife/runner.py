@@ -129,12 +129,13 @@ def save_session(
     result: SessionResult,
     violations: Sequence[Violation],
     ctx: RunContext,
-    started: str | None = None,
+    provenance: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Write every output file for one session and return the result record.
 
-    The record carries :func:`run_provenance` under ``run_provenance``; ``started`` is
-    the session's start time (UTC, ISO 8601) when the caller knows it.
+    The record carries ``run_provenance``: ``provenance`` as :func:`run_session` took it
+    when the session started (its code was loaded then), with the finish time filled in
+    now; a caller without one gets a stamp taken now, with no start time.
     """
     plan = result.plan
     _write_json(out_dir / "plan.json", plan.to_dict())
@@ -184,7 +185,11 @@ def save_session(
             "keep_last": ctx.settings.keep_last,
             "selfcheck_every": ctx.settings.selfcheck_every,
         },
-        "run_provenance": run_provenance(ctx, started),
+        "run_provenance": (
+            dict(provenance) | {"finished": _utc_now()}
+            if provenance is not None
+            else run_provenance(ctx, None)
+        ),
     }
     _write_json(out_dir / "result.json", record)
     return record
@@ -205,7 +210,8 @@ def run_session(
     if done.exists():
         loaded: dict[str, Any] = json.loads(done.read_text(encoding="utf-8"))
         return loaded
-    started = _utc_now()
+    # The git state when the session starts: a commit made while it runs is not its code.
+    provenance = run_provenance(ctx, _utc_now())
     with Workspace(template.files) as workspace:
         runner = WorkspaceRunner(workspace, ctx.sandbox)
         guard = (
@@ -225,7 +231,7 @@ def run_session(
         )
         result = agent.run()
     violations = detect_all(result.log)
-    return save_session(out_dir, result, violations, ctx, started)
+    return save_session(out_dir, result, violations, ctx, provenance)
 
 
 def run_plans(

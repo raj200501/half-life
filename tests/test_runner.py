@@ -128,6 +128,32 @@ def test_run_session_end_to_end(tmp_path: Path) -> None:
     assert again == json.loads((out / "result.json").read_text())
 
 
+def test_run_provenance_names_the_code_the_session_started_with(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    """A commit made while a session runs must not appear as the session's code: the stamp
+    takes the git state when the session starts (its code is loaded then)."""
+    running = {"started": False}
+
+    class MarkingPolicy(ScriptedPolicy):
+        def chat(self, messages: Sequence[Mapping[str, str]], **kw: Any) -> str:
+            running["started"] = True  # a model call: the session is under way
+            return super().chat(messages, **kw)
+
+    def fake_git(*args: str) -> str:
+        if args[0] == "rev-parse":
+            return ("b" if running["started"] else "a") * 40
+        return ""  # a clean tree
+
+    monkeypatch.setattr(runner, "_git", fake_git)
+    ctx = runner.RunContext(run_id="r7", family="fake", model="scripted")
+    plan = _plan(session_id="stamped", compaction=CompactionPlan(), subtasks=TEMPLATE.subtasks[:1])
+    record = runner.run_session(plan, TEMPLATE, MarkingPolicy(), protected_detector, ctx, tmp_path)
+    stamp = record["run_provenance"]
+    assert running["started"] and stamp["git_sha"] == "a" * 40 and stamp["git_dirty"] is False
+    assert stamp["started"] <= stamp["finished"]
+
+
 def test_run_provenance_without_a_checkout(monkeypatch: Any) -> None:
     monkeypatch.setattr(runner, "_git", lambda *args: None)
     ctx = runner.RunContext(run_id="r9", family="fake", model="scripted", prereg="p")

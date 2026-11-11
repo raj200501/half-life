@@ -353,3 +353,12 @@ An adversarial audit of 206234d (no data involved; synthetic simulation of the 4
 5. **Stale report sentences (audit N4)** about unstable H3 pairs and a fixed compaction count are corrected.
 
 Not changed, and stated in the report instead: H2a is conservative under unmodeled rate differences (N3, a power cost); the calibration's nulls carry no persistent session or plan effect, by design (N7, D-058 item 2).
+
+## D-060 2026-11-11: H1 and H2b adjust flexibly for each other's time scale; pooled hazard tests are exploratory (recorded before acting, no data)
+
+D-059's first implementation (H1's compaction adjustment as the compaction arm crossed with level 0, 1, or 2 or more) fixed the step nulls but failed the D-050 band under a compaction effect that keeps growing past two compactions (H1 rejected up to 14% of true nulls), and the recalibration found no `min_events` that meets the rule. A scratch probe of alternatives (synthetic) and a second finding settle the models before the preregistration:
+
+1. **H1** adjusts for compaction with the cell (arm crossed with level 0, 1, or 2 or more) plus a linear compaction count, so a step goes into the cell and growth beyond two into the slope. In the probe it held 5.4% to 6.6% per family across the linear, step, arm-only step, and large shared-effect nulls.
+2. **H2b** adjusts for position with `log1p(position)` plus a position-step factor at fixed cut points (20, 40, and 70 tool calls), mirroring H1: a step in the hazard by position leaked into H2b's score (up to 8.2% per family and 9.5% pooled for a step at 35 tool calls). The calibration adds position-step nulls at the cut points and between them.
+3. **Pooled H1 and H2b are exploratory.** Their exchangeable variance spreads one within-plan correlation over all pairs, while a decision-point effect shared across families correlates only the two families' rows of the same decision point; under large shared effects pooled H1 ran above the band (7.2% to 7.7%). Rather than narrow the calibration's scenarios after seeing that, the pooled hazard tests are reported with their p-values and labeled exploratory, and the confirmatory hazard tests are per family. Pooled H2a and pooled H3, contrast tests that held their level in the audit, stay confirmatory.
+4. **The calibration rule is unchanged** (3% to 7% in every event-count bin with at least 2,000 computed tests); it judges the confirmatory per-family fits, and reports the pooled ones beside them. If no `min_events` meets it, the preregistration does not proceed until the models are fixed again.
