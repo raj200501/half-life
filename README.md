@@ -17,7 +17,16 @@
 Recall probes leaked into the main run in <!-- claim:e0.leak.leaks -->0<!-- /claim --> of <!-- claim:e0.leak.runs -->10<!-- /claim --> validation runs. In an exploratory pilot of small open-weight models, agents broke a stated rule at <!-- claim:pilot.violated_total -->6<!-- /claim --> of <!-- claim:pilot.dps_total -->40<!-- /claim --> decision points they reached.
 <!-- report:end headline -->
 
-**Status.** The instrument is validated (E0) and the family pilot is done. The main study (E1) is designed, its analysis code is written and has been through an adversarial audit, and its preregistration comes next; E1 to E4 have not run, so there is no half-life estimate yet. Every number above is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`.
+## Status
+
+This is a release before the main study: the instrument is validated (E0) and the family pilot is done, but E1 to E4 have not run, so there is no half-life estimate and no compaction effect yet. Every number on this page is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`.
+
+`make ship-check` checks the fourteen gates in section 6 of [docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md) on a fresh clone. In the latest run recorded in [STATUS.md](STATUS.md):
+
+- **Passing:** G1 build and tests, G2 static quality, G3 CI parity, G4 offline demo, G5 instrument validity (E0), G6 benchmark complete, G10 claim integrity, G11 preregistration integrity (trivially: no preregistration is committed yet), G13 documentation, and G14 hygiene.
+- **Not passing yet:** G7 main study (E1 is designed and its analysis code has been through an adversarial audit; a second round of statistics fixes, D-050, and the preregistration come before any E1 run), G8 ecological and placement arms (E2 needs a machine where the Claude billing guard passes; E3 has not run), G9 mitigations (the kit is packaged with install docs and its overhead is banked; the E4 study has not run), and G12 independent review (the latest review returned BLOCK; its findings are fixed and a new review is pending).
+
+The bench templates do not carry a canary string yet, so half-life-bench is not yet packaged as a dataset release.
 
 ## Quickstart (about a minute; the demo runs offline)
 

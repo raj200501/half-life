@@ -6,6 +6,8 @@ History moved out of STATUS.md, newest first.
 
 - Replaced the build brief in README.md with the project README (section 11), its first screen generated from artifacts by `make report`; added the pilot figure and violation counts to the report; logged the first correction (CORRECTIONS.md).
 - A read-only audit before going public found 37 issues in documentation and provenance; the high and medium ones are fixed (D-052). G12 now accepts the reviewer's own log after the reviewed commit (D-051).
+- Two independent reviews returned BLOCK; their findings are fixed (D-053, D-054).
+- Release sprint: publish-safety pass (secrets, private/, personal data, third-party content in the templates) and a README Status section with the gate state; experiments on hold for the sprint.
 
 ## 2026-11-04: pilot, audits, and instruments
 
