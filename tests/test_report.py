@@ -302,6 +302,96 @@ def test_check_flags_images_the_build_does_not_generate(tmp_path: Path) -> None:
     assert "docs/figures/extra.png" in stale
 
 
+@pytest.mark.parametrize(
+    ("snippet", "expected"),
+    [
+        ('![a](img/x.svg "Pilot")', ["img/x.svg"]),
+        ("![a](<img/x y.svg> 'T')", ["img/x y.svg"]),
+        ("![a]( img/x.svg (T) )", ["img/x.svg"]),
+        ("![Pilot [copy]](img/x.svg)", ["img/x.svg"]),
+        ('![a][pc]\n\n[pc]: img/x.svg "t"', ["img/x.svg"]),
+        ("![PC][]\n\n[pc]: <img/x.svg>", ["img/x.svg"]),
+        ("![pc]\n\n  [PC]:   img/x.svg", ["img/x.svg"]),
+        ('<img width="600" src="img/x.svg">', ["img/x.svg"]),
+        ("<IMG SRC='img/x.svg'/>", ["img/x.svg"]),
+        ("<img\n  alt=x\n  src=img/x.svg>", ["img/x.svg"]),
+        ('<img srcset="img/x.svg 1x, img/y.svg 2x">', ["img/x.svg", "img/y.svg"]),
+        (
+            '<picture><source srcset="img/x.svg"><img src="img/y.svg"></picture>',
+            ["img/x.svg", "img/y.svg"],
+        ),
+        ('<object data="img/x.svg"></object>', ["img/x.svg"]),
+        ('<embed src="img/x.svg">', ["img/x.svg"]),
+        ('<iframe src="img/x.svg"></iframe>', ["img/x.svg"]),
+        ('<video poster="img/x.svg"></video>', ["img/x.svg"]),
+        ('<svg><image href="img/x.svg"/></svg>', ["<svg>", "img/x.svg"]),
+        ("<div style=\"background: url('img/x.svg')\"></div>", ["img/x.svg"]),
+        ("<style>p { background: url(img/x.svg) }</style>", ["img/x.svg"]),
+        ("[a link to a figure](img/x.svg) and ![unresolved][nowhere]", []),
+    ],
+)
+def test_embedded_images_finds_every_embedding_form(snippet: str, expected: list[str]) -> None:
+    """B1 of the third review: G10 checks an embedded image in any Markdown or HTML form."""
+    assert sorted(report.embedded_images(snippet)) == sorted(expected)
+
+
+def test_check_flags_copied_figures_in_every_form(tmp_path: Path) -> None:
+    """The third review's reproduction: a hand-edited copy embedded as HTML, with a title,
+    with brackets in the alt text, or by reference is stale; generated figures are not."""
+    root = tmp_path / "repo"
+    root.mkdir()
+    base_repo(root)
+    copy_real_e0_and_bench(root)
+    report.generate(root)
+    figure = next(iter(sorted((root / "docs" / "figures").glob("*.svg"))))
+    name = figure.name
+    copy = root / "docs" / "img" / "copy.svg"
+    copy.parent.mkdir(parents=True)
+    copy.write_text(figure.read_text(encoding="utf-8"), encoding="utf-8")
+    readme = root / "README.md"
+    readme.write_text(
+        readme.read_text(encoding="utf-8")
+        + f'\n<img src="docs/figures/{name}" width="600">\n'
+        + f"\n![generated, root-relative](/docs/figures/{name})\n",
+        encoding="utf-8",
+    )
+    report_path = root / "docs" / "REPORT.md"
+    report_path.write_text(
+        report_path.read_text(encoding="utf-8")
+        + f'\n![generated](figures/{name} "kept")\n'
+        + f"\n![ok][gen]\n\n[gen]: figures/{name}\n",
+        encoding="utf-8",
+    )
+    assert report.stale_parts(root) == []  # generated figures in any form pass
+    readme.write_text(
+        readme.read_text(encoding="utf-8") + '\n<img src="docs/img/copy.svg" width="600">\n',
+        encoding="utf-8",
+    )
+    report_embeds = (
+        '![Pilot](img/copy.svg "Pilot")',  # with a title
+        "![Pilot [copy]](img/copy.svg)",  # brackets in the alt text
+        "![copy][pc]\n\n[pc]: img/copy.svg",  # reference style
+        "![x](figures/../img/copy.svg)",  # a path that leaves docs/figures
+        "![x](img/copy%2Esvg)",  # percent-encoded
+        "![x](https://example.org/copy.svg)",  # not a file in the repository
+    )
+    report_path.write_text(
+        report_path.read_text(encoding="utf-8") + "".join(f"\n{e}\n" for e in report_embeds),
+        encoding="utf-8",
+    )
+    stale = report.stale_parts(root)
+    prefix = "embeds an image that make report does not generate: "
+    assert f"README.md {prefix}docs/img/copy.svg" in stale
+    for target in (
+        "img/copy.svg",
+        "figures/../img/copy.svg",
+        "img/copy%2Esvg",
+        "https://example.org/copy.svg",
+    ):
+        assert f"docs/REPORT.md {prefix}{target}" in stale, target
+    assert len([s for s in stale if s.startswith("docs/REPORT.md")]) == 6
+
+
 def test_missing_experiments_render_one_plain_sentence_each(tmp_path: Path) -> None:
     base_repo(tmp_path, readme="# half-life\n")
     log = report.generate(tmp_path)

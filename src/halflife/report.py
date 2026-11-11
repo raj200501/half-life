@@ -44,6 +44,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 from halflife import bench, derive, e1_analysis, stats, svgplot
 from halflife import pilot as pilot_rule
@@ -126,8 +127,34 @@ OVERHEAD = "artifacts/e4/overhead.json"
 
 FIG_E0 = f"{FIGURES_DIR}/e0-validity.svg"
 FIG_PILOT = f"{FIGURES_DIR}/pilot.svg"
-# Markdown image targets; every image README.md and docs/REPORT.md embed must be generated.
-IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)\)")
+# Every image README.md and docs/REPORT.md embed must be generated (see embedded_images).
+LINK_DEF_RE = re.compile(
+    r"^ {0,3}\[((?:[^\[\]\\]|\\.)+)\]:[ \t]*(?:<([^>\n]*)>|(\S+))", re.MULTILINE
+)
+HTML_TAG_RE = re.compile(r"<\s*([A-Za-z][A-Za-z0-9:-]*)((?:[^>\"']|\"[^\"]*\"|'[^']*')*)>")
+HTML_ATTR_RE = re.compile(
+    r"([A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s\"'=<>`]+))"
+)
+STYLE_BLOCK_RE = re.compile(r"<\s*style\b[^>]*>(.*?)<\s*/\s*style\s*>", re.IGNORECASE | re.DOTALL)
+CSS_URL_RE = re.compile(r"url\(\s*['\"]?([^'\")]+?)['\"]?\s*\)", re.IGNORECASE)
+URL_SCHEME_RE = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*:|//)")
+EMBED_ATTRS: Mapping[str, tuple[str, ...]] = {
+    "img": ("src", "srcset"),
+    "source": ("src", "srcset"),
+    "object": ("data",),
+    "embed": ("src",),
+    "iframe": ("src",),
+    "frame": ("src",),
+    "image": ("href", "xlink:href"),
+    "use": ("href", "xlink:href"),
+    "input": ("src",),
+    "video": ("src", "poster"),
+    "audio": ("src",),
+    "track": ("src",),
+}
+"""HTML elements that embed a resource, and the attributes that name it."""
+INLINE_SVG = "<svg>"
+"""The target :func:`embedded_images` reports for an inline ``<svg>`` element."""
 FIG_HAZARD = f"{FIGURES_DIR}/e1-hazard.svg"
 FIG_KM = f"{FIGURES_DIR}/e1-km.svg"
 FIG_E3 = f"{FIGURES_DIR}/e3-contrasts.svg"
@@ -2568,22 +2595,136 @@ def stale_parts(root: Path, module: str = derive.DERIVE_MODULE) -> list[str]:
             if p.is_file() and p.relative_to(root).as_posix() not in out.figures
         ]
     for doc, text in ((README_DOC, readme), (REPORT_DOC, report)):
-        base = (root / doc).parent
-        for target in IMAGE_RE.findall(text):
-            if "://" in target:
-                stale.append(f"{doc} embeds an image that make report does not generate: {target}")
-                continue
-            resolved = (base / target.split("#")[0]).resolve()
-            try:
-                rel = resolved.relative_to(root.resolve()).as_posix()
-            except ValueError:
-                rel = target
-            if rel not in out.figures:
+        for target in embedded_images(text):
+            if embedded_path(target, doc, root) not in out.figures:
                 stale.append(f"{doc} embeds an image that make report does not generate: {target}")
     manifest = root / MANIFEST
     if not manifest.is_file() or manifest.read_text(encoding="utf-8") != _dump(out.manifest):
         stale.append(MANIFEST)
     return stale
+
+
+def _label(text: str) -> str:
+    """A link reference label as Markdown matches it: case-folded, whitespace collapsed."""
+    return " ".join(text.split()).casefold()
+
+
+def _closing_bracket(text: str, start: int) -> int | None:
+    """Index of the ``]`` that closes the ``[`` at ``start`` (nesting and escapes)."""
+    depth = 0
+    i = start
+    while i < len(text):
+        char = text[i]
+        if char == "\\":
+            i += 2
+            continue
+        if char == "[":
+            depth += 1
+        elif char == "]":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return None
+
+
+def _inline_target(text: str, start: int) -> str | None:
+    """The destination of an inline link or image whose ``(`` is at ``start``."""
+    i = start + 1
+    while i < len(text) and text[i] in " \t\n":
+        i += 1
+    if i < len(text) and text[i] == "<":
+        end = text.find(">", i + 1)
+        return None if end < 0 else text[i + 1 : end]
+    j, depth = i, 0
+    while j < len(text):
+        char = text[j]
+        if char == "\\":
+            j += 2
+            continue
+        if char.isspace():
+            break
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            if depth == 0:
+                break
+            depth -= 1
+        j += 1
+    return text[i:j]
+
+
+def embedded_images(text: str) -> list[str]:
+    """Every image target a Markdown document embeds, as written.
+
+    It covers inline Markdown images (with a title, an angle-bracket destination, or
+    brackets in the alt text), reference-style images (full, collapsed, and shortcut,
+    resolved through the document's link definitions), the HTML elements in
+    :data:`EMBED_ATTRS` (``src``, ``srcset``, ``data``, ``href``, ``poster``), CSS
+    ``url(...)`` in a ``style`` attribute or element, and :data:`INLINE_SVG` for an
+    inline ``<svg>`` element. Code spans are not skipped, so the check fails closed.
+    Links to images (``[text](figure.svg)``) are not embeds and are not reported.
+    """
+    definitions: dict[str, str] = {}
+    for match in LINK_DEF_RE.finditer(text):
+        target = match.group(2) if match.group(2) is not None else match.group(3)
+        definitions.setdefault(_label(match.group(1)), target)
+    targets: list[str] = []
+    start = text.find("![")
+    while start >= 0:
+        close = _closing_bracket(text, start + 1)
+        if close is None:
+            break
+        after = close + 1
+        following = text[after] if after < len(text) else ""
+        if following == "(":
+            inline = _inline_target(text, after)
+            if inline is not None:
+                targets.append(inline)
+        else:
+            label = text[start + 2 : close]
+            if following == "[":
+                end = _closing_bracket(text, after)
+                if end is not None and end > after + 1:
+                    label = text[after + 1 : end]
+            if _label(label) in definitions:
+                targets.append(definitions[_label(label)])
+        start = text.find("![", start + 2)
+    for tag in HTML_TAG_RE.finditer(text):
+        name = tag.group(1).lower()
+        attrs: dict[str, str] = {}
+        for attr in HTML_ATTR_RE.finditer(tag.group(2)):
+            values = (attr.group(2), attr.group(3), attr.group(4))
+            attrs.setdefault(attr.group(1).lower(), next(v for v in values if v is not None))
+        if name == "svg":
+            targets.append(INLINE_SVG)
+        for key in EMBED_ATTRS.get(name, ()):
+            if key not in attrs:
+                continue
+            if key == "srcset":
+                targets += [part.split()[0] for part in attrs[key].split(",") if part.strip()]
+            else:
+                targets.append(attrs[key])
+        if "style" in attrs:
+            targets += CSS_URL_RE.findall(attrs["style"])
+    for block in STYLE_BLOCK_RE.findall(text):
+        targets += CSS_URL_RE.findall(block)
+    return targets
+
+
+def embedded_path(target: str, doc: str, root: Path) -> str | None:
+    """The repository path an embedded image target names, or None when it names no file
+    in the repository (a URL, a ``data:`` URI, an inline SVG, or a path outside it)."""
+    raw = target.strip()
+    if raw == INLINE_SVG or URL_SCHEME_RE.match(raw):
+        return None
+    path = unquote(raw.split("#", 1)[0].split("?", 1)[0])
+    base = root if path.startswith("/") else (root / doc).parent
+    resolved = (base / path.lstrip("/")).resolve()
+    try:
+        return resolved.relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return None
 
 
 def block_problems(

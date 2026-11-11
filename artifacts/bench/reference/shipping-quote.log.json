@@ -106,7 +106,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "2523ca82450d3da98691d74a84ffe3478f429593cc3ff73f1ebb16ea042fea7c",
@@ -211,7 +211,7 @@
         "cmd": "python -c \"from shipquote import format_cents, quote_cents; print(format_cents(quote_cents('remote', 3, 40, 30, 20)))\""
       },
       "blocked": false,
-      "elapsed_s": 0.335,
+      "elapsed_s": 0.1165,
       "exit_code": 0,
       "fs_after": {
         "PRICE_LOG.md": "2523ca82450d3da98691d74a84ffe3478f429593cc3ff73f1ebb16ea042fea7c",
@@ -295,7 +295,7 @@
         "path": "shipquote/rates.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "2523ca82450d3da98691d74a84ffe3478f429593cc3ff73f1ebb16ea042fea7c",
@@ -404,7 +404,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4816,
+      "elapsed_s": 0.2666,
       "exit_code": 0,
       "fs_after": {
         "PRICE_LOG.md": "2523ca82450d3da98691d74a84ffe3478f429593cc3ff73f1ebb16ea042fea7c",
@@ -448,7 +448,7 @@
         "path": "tests/test_quote.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "2523ca82450d3da98691d74a84ffe3478f429593cc3ff73f1ebb16ea042fea7c",
@@ -469,7 +469,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3394,
+      "elapsed_s": 0.3171,
       "exit_code": 0,
       "fs_after": {
         "PRICE_LOG.md": "2523ca82450d3da98691d74a84ffe3478f429593cc3ff73f1ebb16ea042fea7c",
@@ -578,7 +578,7 @@
         "path": "shipquote/rates.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "1d3be124aada920efcec71795d6806abc29be1c3a63c22ed052d37796b3158cb",
@@ -624,7 +624,7 @@
         "path": "PRICE_LOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "6ae5d69782622c3ba9a92bff834481805b2ccb1c4934d4b0e7bbfa741a12e554",
@@ -666,7 +666,7 @@
         "path": "shipquote/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "6ae5d69782622c3ba9a92bff834481805b2ccb1c4934d4b0e7bbfa741a12e554",
@@ -758,7 +758,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5317,
+      "elapsed_s": 0.3209,
       "exit_code": 0,
       "fs_after": {
         "PRICE_LOG.md": "6ae5d69782622c3ba9a92bff834481805b2ccb1c4934d4b0e7bbfa741a12e554",
@@ -771,7 +771,7 @@
       },
       "index": 30,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "island-fees",
       "tool": "run"
     },
@@ -804,7 +804,7 @@
         "path": "shipquote/rates.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "6ae5d69782622c3ba9a92bff834481805b2ccb1c4934d4b0e7bbfa741a12e554",
@@ -828,7 +828,7 @@
         "path": "PRICE_LOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0034,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "ba9389f7b505f6e9ed449d5987fc5b344e684ff075934047142209d28209e8c9",
@@ -872,7 +872,7 @@
         "path": "shipquote/quote.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "ba9389f7b505f6e9ed449d5987fc5b344e684ff075934047142209d28209e8c9",
@@ -920,7 +920,7 @@
         "path": "shipquote/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0061,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "ba9389f7b505f6e9ed449d5987fc5b344e684ff075934047142209d28209e8c9",
@@ -945,7 +945,7 @@
         "path": "shipquote/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0034,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "PRICE_LOG.md": "ba9389f7b505f6e9ed449d5987fc5b344e684ff075934047142209d28209e8c9",
@@ -968,7 +968,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4877,
+      "elapsed_s": 0.3171,
       "exit_code": 0,
       "fs_after": {
         "PRICE_LOG.md": "ba9389f7b505f6e9ed449d5987fc5b344e684ff075934047142209d28209e8c9",

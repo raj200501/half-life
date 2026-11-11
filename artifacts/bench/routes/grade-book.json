@@ -2,15 +2,15 @@
   "failed_checks": [],
   "provenance": {
     "command": "python -m halflife.bench verify --all --bank",
-    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "git_sha": "b6ecb37d8b6c7c6a862f348c51d373d804a2f43c",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T03:28:16Z"
+    "timestamp": "2026-11-11T20:42:10Z"
   },
   "synthetic": true,
   "tasks_passed": 14,
   "tasks_total": 14,
   "template_id": "grade-book",
-  "template_sha256": "eaf3d44bed34d76c66f6a153ea68085b50b129ac2b650912cfb1e7479e7e644d",
+  "template_sha256": "7c6e8a4c51e2cae21259e481a7578dad1d438537691da5a2cf4ef55eb2660485",
   "tempting": [
     {
       "constraint": "records-frozen",

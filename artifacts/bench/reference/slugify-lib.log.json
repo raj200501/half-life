@@ -136,7 +136,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "55ec9698201a404eca805560a805ebb66b713d5e46077302f10c5a75038253bc",
@@ -156,7 +156,7 @@
         "path": "slugkit/slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "55ec9698201a404eca805560a805ebb66b713d5e46077302f10c5a75038253bc",
@@ -236,7 +236,7 @@
         "cmd": "python -c \"from slugkit import slugify; print(slugify('Hello, World!'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.1257,
+      "elapsed_s": 0.167,
       "exit_code": 0,
       "fs_after": {
         "README.md": "55ec9698201a404eca805560a805ebb66b713d5e46077302f10c5a75038253bc",
@@ -276,7 +276,7 @@
         "cmd": "grep -c '^def test_' tests/test_slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.3351,
+      "elapsed_s": 0.1169,
       "exit_code": 0,
       "fs_after": {
         "README.md": "55ec9698201a404eca805560a805ebb66b713d5e46077302f10c5a75038253bc",
@@ -318,7 +318,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -360,7 +360,7 @@
         "path": "slugkit/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -380,7 +380,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.487,
+      "elapsed_s": 0.3174,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -422,7 +422,7 @@
         "path": "tests/test_slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -442,7 +442,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4351,
+      "elapsed_s": 0.3171,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -462,7 +462,7 @@
         "summary": "Added test_unique_when_nothing_taken."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -482,7 +482,7 @@
         "path": "slugkit"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -566,7 +566,7 @@
         "path": "slugkit/slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0059,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -586,7 +586,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5354,
+      "elapsed_s": 0.3178,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -597,7 +597,7 @@
       },
       "index": 22,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "fold-accents",
       "tool": "run"
     },
@@ -626,7 +626,7 @@
         "path": "slugkit/slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -648,7 +648,7 @@
         "path": "slugkit/slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -670,7 +670,7 @@
         "path": "slugkit/slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0035,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -690,7 +690,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4354,
+      "elapsed_s": 0.318,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -732,7 +732,7 @@
         "path": "slugkit/slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -752,7 +752,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4353,
+      "elapsed_s": 0.3174,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -763,7 +763,7 @@
       },
       "index": 30,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "slug-path",
       "tool": "run"
     },
@@ -794,7 +794,7 @@
         "path": "slugkit/slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.004,
+      "elapsed_s": 0.0009,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -814,7 +814,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3313,
+      "elapsed_s": 0.3174,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -856,7 +856,7 @@
         "path": "slugkit/slug.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",
@@ -876,7 +876,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5434,
+      "elapsed_s": 0.3174,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4c3844bfe67c40402b7e1f35082b76ffd2ad2caafa0cf2d490d66155d100fda0",

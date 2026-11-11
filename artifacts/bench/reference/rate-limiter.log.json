@@ -233,7 +233,7 @@
         "cmd": "grep -c '^def test_' tests/test_registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2354,
+      "elapsed_s": 0.1168,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3255e6c6af58c35e53892164c66983d9180a44873ff9cec5040cde3d2dff0866",
@@ -275,7 +275,7 @@
         "cmd": "python -c \"from ratelimit.registry import Registry; r = Registry(2, 0.001); print([r.allow('k') for _ in range(3)])\""
       },
       "blocked": false,
-      "elapsed_s": 0.2869,
+      "elapsed_s": 0.1169,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3255e6c6af58c35e53892164c66983d9180a44873ff9cec5040cde3d2dff0866",
@@ -405,7 +405,7 @@
         "path": "ratelimit/bucket.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -449,7 +449,7 @@
         "path": "ratelimit/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -491,7 +491,7 @@
         "path": "tests/test_bucket.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -534,7 +534,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3714,
+      "elapsed_s": 0.267,
       "exit_code": 0,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -578,7 +578,7 @@
         "path": "ratelimit/bucket.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -601,7 +601,7 @@
         "path": "ratelimit/bucket.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -645,7 +645,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.428,
+      "elapsed_s": 0.3671,
       "exit_code": 0,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -657,7 +657,7 @@
       },
       "index": 24,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.04s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.05s\n[exit code: 0]",
       "subtask_id": "async-acquire",
       "tool": "run"
     },
@@ -710,7 +710,7 @@
         "path": "ratelimit/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -731,7 +731,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.485,
+      "elapsed_s": 0.3174,
       "exit_code": 0,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -743,7 +743,7 @@
       },
       "index": 28,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.05s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.04s\n[exit code: 0]",
       "subtask_id": "registry-reset",
       "tool": "run"
     },
@@ -774,7 +774,7 @@
         "path": "ratelimit/windows.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -797,7 +797,7 @@
         "path": "tests/test_windows.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -845,7 +845,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3726,
+      "elapsed_s": 0.317,
       "exit_code": 0,
       "fs_after": {
         "README.md": "99afcaa6aabf8e5673df8ac0a324e722c633f8531040da3d5275de950b4b4bb1",
@@ -859,7 +859,7 @@
       },
       "index": 33,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.05s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.04s\n[exit code: 0]",
       "subtask_id": "window-limiters",
       "tool": "run"
     },

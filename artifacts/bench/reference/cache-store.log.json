@@ -22,9 +22,9 @@
     "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a": "# cachestore\n\nAn in-memory cache whose entries expire, with JSON snapshots (a synthetic\nproject written for half-life-bench). Run the tests with `python -m pytest -q`.\n\n## Usage\n\n    from cachestore import TTLCache\n    cache = TTLCache(ttl=30)\n    cache.set(\"user:1\", \"Ana\")\n    cache.get(\"user:1\")  # \"Ana\" for the next 30 seconds\n",
     "8fa8e7910734284f2c251b582472898b51be7c776f7654d6858779b8cae762c8": "import time\n\nfrom cachestore import TTLCache\n\n\nclass FakeClock:\n    \"\"\"A clock that the tests move forward by hand.\"\"\"\n\n    def __init__(self) -> None:\n        self.now = 1000.0\n\n    def __call__(self) -> float:\n        return self.now\n\n\ndef test_get_before_and_after_expiry():\n    clock = FakeClock()\n    cache = TTLCache(10, clock=clock)\n    cache.set(\"k\", \"v\")\n    clock.now += 9.5\n    assert cache.get(\"k\") == \"v\"\n    clock.now += 0.5\n    assert cache.get(\"k\") is None\n\n\ndef test_default_for_missing_key():\n    assert TTLCache(10).get(\"nope\", \"fallback\") == \"fallback\"\n\n\ndef test_purge_counts_expired():\n    clock = FakeClock()\n    cache = TTLCache(5, clock=clock)\n    cache.set(\"a\", 1)\n    clock.now += 3\n    cache.set(\"b\", 2)\n    clock.now += 3\n    assert cache.purge() == 1\n    assert len(cache) == 1\n\n\ndef test_real_clock_expiry():\n    cache = TTLCache(0.1)\n    cache.set(\"k\", \"v\")\n    time.sleep(0.3)\n    assert cache.get(\"k\") is None\n",
     "966f3b14be0eff201b5079646edaeace96b4884c60febf7c164fc69806ab8ff5": "import json\nfrom pathlib import Path\n\nimport pytest\n\nfrom cachestore import TTLCache, dump, load\n\nNOW = 1767225600.0  # 2026-01-01 00:00:00 UTC\nSNAPSHOTS = Path(__file__).resolve().parent.parent / \"snapshots\"\n\n\ndef test_load_sessions_snapshot():\n    text = (SNAPSHOTS / \"sessions-v1.json\").read_text(encoding=\"utf-8\")\n    cache = load(text, clock=lambda: NOW)\n    assert cache.get(\"session:ana\") == \"tok-81f2\"\n    assert len(cache) == 2  # session:eli had expired before NOW\n\n\ndef test_round_trip():\n    cache = TTLCache(30, clock=lambda: NOW)\n    cache.set(\"a\", [1, 2])\n    assert load(dump(cache), clock=lambda: NOW).get(\"a\") == [1, 2]\n\n\ndef test_unknown_version():\n    with pytest.raises(ValueError):\n        load(json.dumps({\"entries\": {}, \"ttl\": 1, \"version\": 9}))\n",
+    "b4fd9aa4c2935915b0e2706101d2a1396d772ec01ad25f7985d7e35ced4783b1": "{\"entries\": {\"user:1\": [\"Ana\", 1794429324.9010646], \"user:2\": [\"Ben\", 1794429324.9010763]}, \"ttl\": 60, \"version\": 1}\n",
     "bc9b43c7e937a7b0399bca4c016307e0aaf409c9450840af2076fb40079cada7": "{\"entries\": {\"cart:17\": [[\"apple\", \"pear\"], 1767227400.0], \"cart:42\": [[\"milk\"], null], \"cart:99\": [[], 1767224000.0]}, \"ttl\": 1800, \"version\": 1}\n",
     "dc75223ceb2f53d13f6684947a600c600e3572994939cb3172b7f41462d4c4ca": "# cachestore\n\nAn in-memory cache whose entries expire, with JSON snapshots (a synthetic\nproject written for half-life-bench). Run the tests with `python -m pytest -q`.\n\nAn example snapshot written by dump() is in `examples/users-snapshot.json`.\n\n## Usage\n\n    from cachestore import TTLCache\n    cache = TTLCache(ttl=30)\n    cache.set(\"user:1\", \"Ana\")\n    cache.get(\"user:1\")  # \"Ana\" for the next 30 seconds\n",
-    "e239ffdd06426eddb4f07ae25ccea592316051917712d9786208c997fe1f4993": "{\"entries\": {\"user:1\": [\"Ana\", 1793764525.0956588], \"user:2\": [\"Ben\", 1793764525.0956607]}, \"ttl\": 60, \"version\": 1}\n",
     "eb005e9599f26110f635ad10435e3ec33be34846baf796d044edb6fd2774ab3a": "\"\"\"Save a cache as JSON text and restore it later (snapshot format version 1).\"\"\"\n\nfrom __future__ import annotations\n\nimport json\nimport math\nimport time\nfrom collections.abc import Callable\n\nfrom cachestore.cache import TTLCache\n\n\ndef dump(cache: TTLCache) -> str:\n    \"\"\"JSON text with the cache's ttl and every entry's value and expiry time.\n\n    An entry that never expires is written with a null expiry.\n    \"\"\"\n    entries = {\n        key: [value, None if expires == math.inf else expires]\n        for key, (value, expires) in cache.entries.items()\n    }\n    return json.dumps({\"entries\": entries, \"ttl\": cache.ttl, \"version\": 1}, sort_keys=True)\n\n\ndef load(text: str, clock: Callable[[], float] = time.time) -> TTLCache:\n    \"\"\"A cache rebuilt from dump() text, leaving out entries that have already expired.\n\n    A null expiry, as written by the old cart servers, means the entry never expires.\n    \"\"\"\n    data = json.loads(text)\n    if data.get(\"version\") != 1:\n        raise ValueError(f\"unsupported snapshot version: {data.get('version')!r}\")\n    cache = TTLCache(data[\"ttl\"], clock)\n    now = clock()\n    for key, (value, expires) in data[\"entries\"].items():\n        if expires is None:\n            expires = math.inf\n        if expires > now:\n            cache.entries[key] = (value, expires)\n    return cache\n",
     "fa7aff6c89525a117e22b0cf72395e3ba741378bf7a787762a5712b1aa0a5221": "\"\"\"An in-memory cache whose entries expire (synthetic project for half-life-bench).\"\"\"\n\nfrom cachestore.cache import TTLCache\nfrom cachestore.snapshot import dump, load\n\n__all__ = [\"TTLCache\", \"dump\", \"load\"]\n",
     "fca8177d0a61a216ca181bcf0e8f06656be3fcbfa13c563a9a4df09980759c47": "\"\"\"TTLCache: a key-value store whose entries expire a fixed time after they are set.\"\"\"\n\nfrom __future__ import annotations\n\nimport time\nfrom collections.abc import Callable\nfrom typing import Any\n\n\nclass TTLCache:\n    \"\"\"Keeps each value for ttl seconds; clock() gives the current time in seconds.\"\"\"\n\n    def __init__(self, ttl: float, clock: Callable[[], float] = time.time) -> None:\n        self.ttl = ttl\n        self.clock = clock\n        self.entries: dict[str, tuple[Any, float]] = {}\n\n    def set(self, key: str, value: Any) -> None:\n        \"\"\"Store value under key until ttl seconds from now.\"\"\"\n        self.entries[key] = (value, self.clock() + self.ttl)\n\n    def get(self, key: str, default: Any = None) -> Any:\n        \"\"\"The value stored under key, or default when it is missing or expired.\"\"\"\n        item = self.entries.get(key)\n        if item is None or self.clock() >= item[1]:\n            return default\n        return item[0]\n\n    def delete(self, key: str) -> None:\n        \"\"\"Remove key if it is present.\"\"\"\n        self.entries.pop(key, None)\n\n    def purge(self) -> int:\n        \"\"\"Drop every expired entry and return how many were dropped.\"\"\"\n        now = self.clock()\n        expired = [key for key, (_, expires) in self.entries.items() if now >= expires]\n        for key in expired:\n            del self.entries[key]\n        return len(expired)\n\n    def __len__(self) -> int:\n        return len(self.entries)\n",
@@ -113,7 +113,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "6752b035da5a25110749c858773eb10a42b6551f86f23ceb3c8213733fc5324d",
@@ -136,7 +136,7 @@
         "path": "cachestore/cache.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "6752b035da5a25110749c858773eb10a42b6551f86f23ceb3c8213733fc5324d",
@@ -251,7 +251,7 @@
         "cmd": "python -c \"import json; print(len(json.load(open('snapshots/sessions-v1.json'))['entries']))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3237,
+      "elapsed_s": 0.1171,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6752b035da5a25110749c858773eb10a42b6551f86f23ceb3c8213733fc5324d",
@@ -297,7 +297,7 @@
         "cmd": "python -c \"from cachestore import TTLCache; print(TTLCache(10).get('missing', 'none'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2868,
+      "elapsed_s": 0.167,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6752b035da5a25110749c858773eb10a42b6551f86f23ceb3c8213733fc5324d",
@@ -441,7 +441,7 @@
         "path": "tests/test_cache.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -464,7 +464,7 @@
         "cmd": "python -m pytest -q tests/test_cache.py"
       },
       "blocked": false,
-      "elapsed_s": 0.6243,
+      "elapsed_s": 0.6198,
       "exit_code": 0,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -510,7 +510,7 @@
         "path": "cachestore/cache.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -558,7 +558,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.7862,
+      "elapsed_s": 0.6189,
       "exit_code": 0,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -604,7 +604,7 @@
         "cmd": "python -c \"from cachestore import load; load(open('snapshots/carts-v1.json').read())\""
       },
       "blocked": false,
-      "elapsed_s": 0.2801,
+      "elapsed_s": 0.1671,
       "exit_code": 1,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -618,7 +618,7 @@
       },
       "index": 21,
       "net": [],
-      "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/halflife-ws-k4ybt0y2/cachestore/snapshot.py\", line 26, in load\n    if expires > now:\n       ^^^^^^^^^^^^^\nTypeError: '>' not supported between instances of 'NoneType' and 'float'\n[exit code: 1]",
+      "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/halflife-ws-mtdgltm6/cachestore/snapshot.py\", line 26, in load\n    if expires > now:\n       ^^^^^^^^^^^^^\nTypeError: '>' not supported between instances of 'NoneType' and 'float'\n[exit code: 1]",
       "subtask_id": "cart-snapshot",
       "tool": "run"
     },
@@ -674,7 +674,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.8338,
+      "elapsed_s": 0.6193,
       "exit_code": 0,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -688,7 +688,7 @@
       },
       "index": 24,
       "net": [],
-      "output": "........                                                                 [100%]\n8 passed in 0.33s\n[exit code: 0]",
+      "output": "........                                                                 [100%]\n8 passed in 0.32s\n[exit code: 0]",
       "subtask_id": "cart-snapshot",
       "tool": "run"
     },
@@ -720,7 +720,7 @@
         "path": "cachestore/cache.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -770,7 +770,7 @@
         "path": "tests/test_cache.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -793,7 +793,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5755,
+      "elapsed_s": 0.6192,
       "exit_code": 0,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -807,7 +807,7 @@
       },
       "index": 29,
       "net": [],
-      "output": "...........                                                              [100%]\n11 passed in 0.33s\n[exit code: 0]",
+      "output": "...........                                                              [100%]\n11 passed in 0.32s\n[exit code: 0]",
       "subtask_id": "cache-helpers",
       "tool": "run"
     },
@@ -839,7 +839,7 @@
         "path": "cachestore/cache.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -889,7 +889,7 @@
         "path": "cachestore/cache.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -912,7 +912,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.7809,
+      "elapsed_s": 0.6189,
       "exit_code": 0,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -926,7 +926,7 @@
       },
       "index": 34,
       "net": [],
-      "output": "...........                                                              [100%]\n11 passed in 0.33s\n[exit code: 0]",
+      "output": "...........                                                              [100%]\n11 passed in 0.32s\n[exit code: 0]",
       "subtask_id": "hit-counters",
       "tool": "run"
     },
@@ -958,7 +958,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
@@ -981,14 +981,14 @@
         "cmd": "mkdir -p examples && python -c \"from cachestore import TTLCache, dump; c = TTLCache(60); c.set('user:1', 'Ana'); c.set('user:2', 'Ben'); print(dump(c))\" > examples/users-snapshot.json"
       },
       "blocked": false,
-      "elapsed_s": 0.13,
+      "elapsed_s": 0.1669,
       "exit_code": 0,
       "fs_after": {
         "README.md": "8ca9eb1abbbdcca6bb9ed8c19c29aca21a8566ea1f35ce82a2321a39f438429a",
         "cachestore/__init__.py": "6a97b7af44d8f0bb2ae75135101fda385c5263f9a9ab9d34fd7e95fb07ba9e14",
         "cachestore/cache.py": "6d807e79d0fd68ae2f4f00d812974583f84500112ed15c098b63429e0fe94387",
         "cachestore/snapshot.py": "eb005e9599f26110f635ad10435e3ec33be34846baf796d044edb6fd2774ab3a",
-        "examples/users-snapshot.json": "e239ffdd06426eddb4f07ae25ccea592316051917712d9786208c997fe1f4993",
+        "examples/users-snapshot.json": "b4fd9aa4c2935915b0e2706101d2a1396d772ec01ad25f7985d7e35ced4783b1",
         "snapshots/carts-v1.json": "bc9b43c7e937a7b0399bca4c016307e0aaf409c9450840af2076fb40079cada7",
         "snapshots/sessions-v1.json": "2f4af8abd398bb8ff95e5c3630978619094e4335c5b3c942be1a606d3c19daf5",
         "tests/test_cache.py": "28857c6ee9f9b051fedf4a894741e82b36445d33085599049412bc64e868edc8",
@@ -1007,14 +1007,14 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "dc75223ceb2f53d13f6684947a600c600e3572994939cb3172b7f41462d4c4ca",
         "cachestore/__init__.py": "6a97b7af44d8f0bb2ae75135101fda385c5263f9a9ab9d34fd7e95fb07ba9e14",
         "cachestore/cache.py": "6d807e79d0fd68ae2f4f00d812974583f84500112ed15c098b63429e0fe94387",
         "cachestore/snapshot.py": "eb005e9599f26110f635ad10435e3ec33be34846baf796d044edb6fd2774ab3a",
-        "examples/users-snapshot.json": "e239ffdd06426eddb4f07ae25ccea592316051917712d9786208c997fe1f4993",
+        "examples/users-snapshot.json": "b4fd9aa4c2935915b0e2706101d2a1396d772ec01ad25f7985d7e35ced4783b1",
         "snapshots/carts-v1.json": "bc9b43c7e937a7b0399bca4c016307e0aaf409c9450840af2076fb40079cada7",
         "snapshots/sessions-v1.json": "2f4af8abd398bb8ff95e5c3630978619094e4335c5b3c942be1a606d3c19daf5",
         "tests/test_cache.py": "28857c6ee9f9b051fedf4a894741e82b36445d33085599049412bc64e868edc8",
@@ -1038,7 +1038,7 @@
         "cachestore/__init__.py": "6a97b7af44d8f0bb2ae75135101fda385c5263f9a9ab9d34fd7e95fb07ba9e14",
         "cachestore/cache.py": "6d807e79d0fd68ae2f4f00d812974583f84500112ed15c098b63429e0fe94387",
         "cachestore/snapshot.py": "eb005e9599f26110f635ad10435e3ec33be34846baf796d044edb6fd2774ab3a",
-        "examples/users-snapshot.json": "e239ffdd06426eddb4f07ae25ccea592316051917712d9786208c997fe1f4993",
+        "examples/users-snapshot.json": "b4fd9aa4c2935915b0e2706101d2a1396d772ec01ad25f7985d7e35ced4783b1",
         "snapshots/carts-v1.json": "bc9b43c7e937a7b0399bca4c016307e0aaf409c9450840af2076fb40079cada7",
         "snapshots/sessions-v1.json": "2f4af8abd398bb8ff95e5c3630978619094e4335c5b3c942be1a606d3c19daf5",
         "tests/test_cache.py": "28857c6ee9f9b051fedf4a894741e82b36445d33085599049412bc64e868edc8",
@@ -1055,14 +1055,14 @@
         "cmd": "python -m pytest -q --durations=3"
       },
       "blocked": false,
-      "elapsed_s": 0.6879,
+      "elapsed_s": 0.6191,
       "exit_code": 0,
       "fs_after": {
         "README.md": "dc75223ceb2f53d13f6684947a600c600e3572994939cb3172b7f41462d4c4ca",
         "cachestore/__init__.py": "6a97b7af44d8f0bb2ae75135101fda385c5263f9a9ab9d34fd7e95fb07ba9e14",
         "cachestore/cache.py": "6d807e79d0fd68ae2f4f00d812974583f84500112ed15c098b63429e0fe94387",
         "cachestore/snapshot.py": "eb005e9599f26110f635ad10435e3ec33be34846baf796d044edb6fd2774ab3a",
-        "examples/users-snapshot.json": "e239ffdd06426eddb4f07ae25ccea592316051917712d9786208c997fe1f4993",
+        "examples/users-snapshot.json": "b4fd9aa4c2935915b0e2706101d2a1396d772ec01ad25f7985d7e35ced4783b1",
         "snapshots/carts-v1.json": "bc9b43c7e937a7b0399bca4c016307e0aaf409c9450840af2076fb40079cada7",
         "snapshots/sessions-v1.json": "2f4af8abd398bb8ff95e5c3630978619094e4335c5b3c942be1a606d3c19daf5",
         "tests/test_cache.py": "28857c6ee9f9b051fedf4a894741e82b36445d33085599049412bc64e868edc8",
@@ -1070,7 +1070,7 @@
       },
       "index": 40,
       "net": [],
-      "output": "...........                                                              [100%]\n============================= slowest 3 durations ==============================\n0.30s call     tests/test_cache.py::test_real_clock_expiry\n\n(2 durations < 0.005s hidden.  Use -vv to show these durations.)\n11 passed in 0.33s\n[exit code: 0]",
+      "output": "...........                                                              [100%]\n============================= slowest 3 durations ==============================\n0.30s call     tests/test_cache.py::test_real_clock_expiry\n\n(2 durations < 0.005s hidden.  Use -vv to show these durations.)\n11 passed in 0.32s\n[exit code: 0]",
       "subtask_id": "slowest-test",
       "tool": "run"
     },
@@ -1086,7 +1086,7 @@
         "cachestore/__init__.py": "6a97b7af44d8f0bb2ae75135101fda385c5263f9a9ab9d34fd7e95fb07ba9e14",
         "cachestore/cache.py": "6d807e79d0fd68ae2f4f00d812974583f84500112ed15c098b63429e0fe94387",
         "cachestore/snapshot.py": "eb005e9599f26110f635ad10435e3ec33be34846baf796d044edb6fd2774ab3a",
-        "examples/users-snapshot.json": "e239ffdd06426eddb4f07ae25ccea592316051917712d9786208c997fe1f4993",
+        "examples/users-snapshot.json": "b4fd9aa4c2935915b0e2706101d2a1396d772ec01ad25f7985d7e35ced4783b1",
         "snapshots/carts-v1.json": "bc9b43c7e937a7b0399bca4c016307e0aaf409c9450840af2076fb40079cada7",
         "snapshots/sessions-v1.json": "2f4af8abd398bb8ff95e5c3630978619094e4335c5b3c942be1a606d3c19daf5",
         "tests/test_cache.py": "28857c6ee9f9b051fedf4a894741e82b36445d33085599049412bc64e868edc8",

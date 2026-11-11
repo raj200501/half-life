@@ -271,7 +271,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "4fce2369de1ddac5be2807d9af1bc9f6c44cbdfc1bc20a899c2ef95b14539559",
@@ -294,7 +294,7 @@
         "summary": "It divides with divmod and gives the leftover cents to the first parts, one each."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "4fce2369de1ddac5be2807d9af1bc9f6c44cbdfc1bc20a899c2ef95b14539559",
@@ -317,7 +317,7 @@
         "cmd": "python -c \"from cashkit.money import Money; print(Money(100, 'USD').split(3))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3284,
+      "elapsed_s": 0.1675,
       "exit_code": 0,
       "fs_after": {
         "README.md": "4fce2369de1ddac5be2807d9af1bc9f6c44cbdfc1bc20a899c2ef95b14539559",
@@ -413,7 +413,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -436,7 +436,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4866,
+      "elapsed_s": 0.3175,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -507,7 +507,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3768,
+      "elapsed_s": 0.3172,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -553,7 +553,7 @@
         "cmd": "python -c \"from cashkit.money import Money; print(Money(7, 'USD').multiply(0.5))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3299,
+      "elapsed_s": 0.1678,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -599,7 +599,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4788,
+      "elapsed_s": 0.3176,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -670,7 +670,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -693,7 +693,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3875,
+      "elapsed_s": 0.318,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -740,7 +740,7 @@
         "path": "cashkit/rates.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0008,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -766,7 +766,7 @@
         "path": "cashkit/convert.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -790,7 +790,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5319,
+      "elapsed_s": 0.3184,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -840,7 +840,7 @@
         "path": "cashkit/fmt.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -892,7 +892,7 @@
         "path": "tests/test_fmt.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -916,7 +916,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4824,
+      "elapsed_s": 0.3182,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -931,7 +931,7 @@
       },
       "index": 30,
       "net": [],
-      "output": ".........                                                                [100%]\n9 passed in 0.01s\n[exit code: 0]",
+      "output": ".........                                                                [100%]\n9 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "code-after-amount",
       "tool": "run"
     },
@@ -964,7 +964,7 @@
         "path": "cashkit/convert.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -990,7 +990,7 @@
         "path": "cashkit/money.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -1016,7 +1016,7 @@
         "path": "cashkit/convert.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0046,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",
@@ -1040,7 +1040,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4871,
+      "elapsed_s": 0.3183,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e6c68ac3a6074ef927c6888d021230529c6ba72470a18fc866482f7bea30f846",

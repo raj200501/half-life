@@ -328,7 +328,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
@@ -394,7 +394,7 @@
         "path": "eventbus/bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
@@ -438,7 +438,7 @@
         "cmd": "grep -c '^def test_' tests/test_bus.py tests/test_recorder.py"
       },
       "blocked": false,
-      "elapsed_s": 0.288,
+      "elapsed_s": 0.1174,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
@@ -482,7 +482,7 @@
         "cmd": "python -c \"from eventbus import EventBus; print(EventBus().publish('nobody.listens', {}))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2831,
+      "elapsed_s": 0.1675,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
@@ -504,7 +504,7 @@
         "summary": "It returns 0."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
@@ -528,7 +528,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
@@ -574,7 +574,7 @@
         "path": "eventbus/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7b41c0d95f7496b406ce419f59b87094891fbf5e7794f51678ba4c0b8fe9d04d",
@@ -598,7 +598,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "f78adf57a09a9978378be6863d43449590b80e617bc4f3a3bc79587eee409267",
@@ -644,7 +644,7 @@
         "path": "eventbus/recorder.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "f78adf57a09a9978378be6863d43449590b80e617bc4f3a3bc79587eee409267",
@@ -668,7 +668,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
@@ -690,7 +690,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4281,
+      "elapsed_s": 0.3179,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
@@ -703,7 +703,7 @@
       },
       "index": 16,
       "net": [],
-      "output": "......                                                                   [100%]\n6 passed in 0.02s\n[exit code: 0]",
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "recorder-clear",
       "tool": "run"
     },
@@ -736,7 +736,7 @@
         "path": "tests/test_recorder.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
@@ -760,7 +760,7 @@
         "path": "tests/test_recorder.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0026,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
@@ -782,7 +782,7 @@
         "cmd": "python -m pytest -q tests/test_recorder.py"
       },
       "blocked": false,
-      "elapsed_s": 0.54,
+      "elapsed_s": 0.3181,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
@@ -804,7 +804,7 @@
         "summary": "Added test_receives_events_from_a_bus; it passes."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
@@ -850,7 +850,7 @@
         "path": "eventbus/bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "889319f3fae27b43892f16bdefad0cf0713eeecb109aab3b37e92e3fc0674606",
@@ -874,7 +874,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0064,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
@@ -896,7 +896,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3873,
+      "elapsed_s": 0.3183,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
@@ -940,7 +940,7 @@
         "path": "eventbus/bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
@@ -964,7 +964,7 @@
         "path": "eventbus/bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
@@ -988,7 +988,7 @@
         "path": "eventbus/bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "a297cfa642a29abf11845ae3a51f6f6beceab70a1f7f1926496abc6ac9dd64dd",
@@ -1034,7 +1034,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3287,
+      "elapsed_s": 0.318,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "1120eb46c7de8332bca302e2bf1cad3cd8b1e4fe0896ead04362d8d45e115fec",
@@ -1080,7 +1080,7 @@
         "path": "eventbus/bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1120eb46c7de8332bca302e2bf1cad3cd8b1e4fe0896ead04362d8d45e115fec",
@@ -1104,7 +1104,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
@@ -1126,7 +1126,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4822,
+      "elapsed_s": 0.3693,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
@@ -1194,7 +1194,7 @@
         "path": "eventbus/bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0032,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
@@ -1218,7 +1218,7 @@
         "path": "tests/test_bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
@@ -1242,7 +1242,7 @@
         "path": "tests/test_bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0027,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "75c8dd4ea4562ba8cc7674273f7330459234ba203b962f209518fd18e92186d8",
@@ -1266,7 +1266,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0035,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8",
@@ -1288,7 +1288,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4924,
+      "elapsed_s": 0.318,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8",
@@ -1310,7 +1310,7 @@
         "summary": "publish() collects handler exceptions, calls every handler, and then raises them together as an ExceptionGroup; the test now expects the error."
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8",
@@ -1334,7 +1334,7 @@
         "path": "eventbus/bus.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.001,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "86d88e40fb93de08ad120f2a3e218161f284db257b396bcddde5da3be15eeea8",
@@ -1358,7 +1358,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "82f22eb269c54f57dc7a850fcd4ac5bebd5487fb636b83f35683b01df2c19005",
@@ -1380,7 +1380,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3218,
+      "elapsed_s": 0.2675,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "82f22eb269c54f57dc7a850fcd4ac5bebd5487fb636b83f35683b01df2c19005",
@@ -1393,7 +1393,7 @@
       },
       "index": 46,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "log-topic",
       "tool": "run"
     },

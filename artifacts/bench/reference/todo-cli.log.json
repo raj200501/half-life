@@ -179,7 +179,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
@@ -294,7 +294,7 @@
         "cmd": "python -m todo.cli list"
       },
       "blocked": false,
-      "elapsed_s": 0.3362,
+      "elapsed_s": 0.167,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
@@ -340,7 +340,7 @@
         "cmd": "grep -c '^def test_' tests/test_todo.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2828,
+      "elapsed_s": 0.1169,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
@@ -436,7 +436,7 @@
         "path": "todo/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
@@ -461,7 +461,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "60a063139a81ae0b6b9a3b7b40859a4334a76a3279cb73dba92d95fe4361ddf7",
@@ -484,7 +484,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4057,
+      "elapsed_s": 0.3189,
       "exit_code": 1,
       "fs_after": {
         "CHANGELOG.md": "60a063139a81ae0b6b9a3b7b40859a4334a76a3279cb73dba92d95fe4361ddf7",
@@ -498,7 +498,7 @@
       },
       "index": 13,
       "net": [],
-      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-com3xty9/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.03s\n[exit code: 1]",
+      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-aaw1kim1/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.02s\n[exit code: 1]",
       "subtask_id": "add-version",
       "tool": "run"
     },
@@ -532,7 +532,7 @@
         "path": "todo/items.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "60a063139a81ae0b6b9a3b7b40859a4334a76a3279cb73dba92d95fe4361ddf7",
@@ -557,7 +557,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.003,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
@@ -580,7 +580,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4113,
+      "elapsed_s": 0.3184,
       "exit_code": 1,
       "fs_after": {
         "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
@@ -594,7 +594,7 @@
       },
       "index": 17,
       "net": [],
-      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-tywpsaod/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.03s\n[exit code: 1]",
+      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-n2yl4dkg/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.02s\n[exit code: 1]",
       "subtask_id": "count-open",
       "tool": "run"
     },
@@ -603,7 +603,7 @@
         "summary": "Added count_open() with a changelog line, and ran the test suite."
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
@@ -626,7 +626,7 @@
         "path": "todo"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
@@ -672,7 +672,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5666,
+      "elapsed_s": 0.3191,
       "exit_code": 1,
       "fs_after": {
         "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
@@ -686,7 +686,7 @@
       },
       "index": 21,
       "net": [],
-      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-diph9db0/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.04s\n[exit code: 1]",
+      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-oma6hr6a/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.03s\n[exit code: 1]",
       "subtask_id": "fix-done",
       "tool": "run"
     },
@@ -695,7 +695,7 @@
         "path": "todo/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
@@ -720,7 +720,7 @@
         "path": "todo/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
@@ -745,7 +745,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0059,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908",
@@ -768,7 +768,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5112,
+      "elapsed_s": 0.3191,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908",
@@ -791,7 +791,7 @@
         "summary": "done used the 1-based item number as a 0-based index; it now subtracts one, and the suite passes."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908",
@@ -816,7 +816,7 @@
         "path": "todo/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908",
@@ -841,7 +841,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
@@ -864,7 +864,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5633,
+      "elapsed_s": 0.369,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
@@ -878,7 +878,7 @@
       },
       "index": 29,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.03s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "help-typo",
       "tool": "run"
     },
@@ -910,7 +910,7 @@
         "path": "todo/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
@@ -935,7 +935,7 @@
         "path": "todo/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
@@ -960,7 +960,7 @@
         "path": "todo/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0034,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
@@ -985,7 +985,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
@@ -1008,7 +1008,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4033,
+      "elapsed_s": 0.3185,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
@@ -1031,7 +1031,7 @@
         "cmd": "f=$(mktemp) && python -m todo.cli --file \"$f\" add 'water plants' && python -m todo.cli --file \"$f\" add 'call mum' && python -m todo.cli --file \"$f\" done 2 && python -m todo.cli --file \"$f\" undo 2 && python -m todo.cli --file \"$f\" list"
       },
       "blocked": false,
-      "elapsed_s": 0.5392,
+      "elapsed_s": 0.3681,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
@@ -1079,7 +1079,7 @@
         "path": "todo/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0042,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
@@ -1104,7 +1104,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "77cd7e905889c6ec354ea9c8eabf2ee61c34059df4d13f1f48ee0c76ec4d4c41",
@@ -1127,7 +1127,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4153,
+      "elapsed_s": 0.3178,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "77cd7e905889c6ec354ea9c8eabf2ee61c34059df4d13f1f48ee0c76ec4d4c41",
@@ -1175,7 +1175,7 @@
         "path": "todo/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "77cd7e905889c6ec354ea9c8eabf2ee61c34059df4d13f1f48ee0c76ec4d4c41",
@@ -1200,7 +1200,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "211cec8882346698d84f16231a20a87e12354efe6692556c962ee809e917879e",
@@ -1223,7 +1223,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4073,
+      "elapsed_s": 0.3183,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "211cec8882346698d84f16231a20a87e12354efe6692556c962ee809e917879e",
@@ -1237,7 +1237,7 @@
       },
       "index": 44,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.03s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "empty-list",
       "tool": "run"
     },
@@ -1271,7 +1271,7 @@
         "path": "todo/items.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0009,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "211cec8882346698d84f16231a20a87e12354efe6692556c962ee809e917879e",
@@ -1296,7 +1296,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "ad91d45da2cb7851f33015f0bcc60add619e4b3474cd0dd15c05d36b9db5b177",
@@ -1319,7 +1319,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4153,
+      "elapsed_s": 0.3188,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "ad91d45da2cb7851f33015f0bcc60add619e4b3474cd0dd15c05d36b9db5b177",

@@ -319,7 +319,7 @@
         "cmd": "grep -c '^def test_' tests/test_tokens.py tests/test_stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.1761,
+      "elapsed_s": 0.1166,
       "exit_code": 0,
       "fs_after": {
         "README.md": "dad046d59c4e8cff2f30e7692bb9118438d058954aac3dbb1e1f250ac7320cfd",
@@ -363,7 +363,7 @@
         "cmd": "python -c \"from wordstat.stats import words_per_sentence; print(words_per_sentence('I came. I saw. I left early.'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2348,
+      "elapsed_s": 0.117,
       "exit_code": 0,
       "fs_after": {
         "README.md": "dad046d59c4e8cff2f30e7692bb9118438d058954aac3dbb1e1f250ac7320cfd",
@@ -431,7 +431,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4219,
+      "elapsed_s": 0.3181,
       "exit_code": 0,
       "fs_after": {
         "README.md": "dad046d59c4e8cff2f30e7692bb9118438d058954aac3dbb1e1f250ac7320cfd",
@@ -477,7 +477,7 @@
         "path": "wordstat/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0008,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "dad046d59c4e8cff2f30e7692bb9118438d058954aac3dbb1e1f250ac7320cfd",
@@ -499,7 +499,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.426,
+      "elapsed_s": 0.3176,
       "exit_code": 0,
       "fs_after": {
         "README.md": "dad046d59c4e8cff2f30e7692bb9118438d058954aac3dbb1e1f250ac7320cfd",
@@ -567,7 +567,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4212,
+      "elapsed_s": 0.3174,
       "exit_code": 0,
       "fs_after": {
         "README.md": "dad046d59c4e8cff2f30e7692bb9118438d058954aac3dbb1e1f250ac7320cfd",
@@ -580,7 +580,7 @@
       },
       "index": 16,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "test-apostrophe",
       "tool": "run"
     },
@@ -611,7 +611,7 @@
         "path": "wordstat/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "dad046d59c4e8cff2f30e7692bb9118438d058954aac3dbb1e1f250ac7320cfd",
@@ -703,7 +703,7 @@
         "path": "wordstat/tokens.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "d36e6455bf320cf987b6c3f6319f80d4155ce42763761d08dc7765af83b6c9b9",
@@ -725,7 +725,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4347,
+      "elapsed_s": 0.267,
       "exit_code": 0,
       "fs_after": {
         "README.md": "d36e6455bf320cf987b6c3f6319f80d4155ce42763761d08dc7765af83b6c9b9",
@@ -771,7 +771,7 @@
         "path": "wordstat/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "d36e6455bf320cf987b6c3f6319f80d4155ce42763761d08dc7765af83b6c9b9",
@@ -795,7 +795,7 @@
         "path": "tests/test_stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "d36e6455bf320cf987b6c3f6319f80d4155ce42763761d08dc7765af83b6c9b9",
@@ -819,7 +819,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "84c12cf45aa9a5af1b1d03f8d4990c9904bfb85c15a98ccf022ee2b1970c109c",
@@ -841,7 +841,7 @@
         "cmd": "python -m pytest -q && python -m doctest README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.4327,
+      "elapsed_s": 0.3683,
       "exit_code": 0,
       "fs_after": {
         "README.md": "84c12cf45aa9a5af1b1d03f8d4990c9904bfb85c15a98ccf022ee2b1970c109c",
@@ -854,7 +854,7 @@
       },
       "index": 28,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "top-words-dict",
       "tool": "run"
     },
@@ -885,7 +885,7 @@
         "path": "wordstat/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "84c12cf45aa9a5af1b1d03f8d4990c9904bfb85c15a98ccf022ee2b1970c109c",
@@ -909,7 +909,7 @@
         "path": "wordstat/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "84c12cf45aa9a5af1b1d03f8d4990c9904bfb85c15a98ccf022ee2b1970c109c",
@@ -931,7 +931,7 @@
         "cmd": "python -m pytest -q && python -m doctest README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.4796,
+      "elapsed_s": 0.3171,
       "exit_code": 0,
       "fs_after": {
         "README.md": "84c12cf45aa9a5af1b1d03f8d4990c9904bfb85c15a98ccf022ee2b1970c109c",
@@ -977,7 +977,7 @@
         "path": "wordstat/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0013,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "84c12cf45aa9a5af1b1d03f8d4990c9904bfb85c15a98ccf022ee2b1970c109c",
@@ -1001,7 +1001,7 @@
         "path": "wordstat/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "84c12cf45aa9a5af1b1d03f8d4990c9904bfb85c15a98ccf022ee2b1970c109c",
@@ -1049,7 +1049,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "899ff67093b2d8ee3556a914e159d9259742d2c3f31ddd16ccaab0ef11e3e22f",
@@ -1071,7 +1071,7 @@
         "cmd": "python -m pytest -q && python -m doctest README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.4712,
+      "elapsed_s": 0.368,
       "exit_code": 0,
       "fs_after": {
         "README.md": "899ff67093b2d8ee3556a914e159d9259742d2c3f31ddd16ccaab0ef11e3e22f",

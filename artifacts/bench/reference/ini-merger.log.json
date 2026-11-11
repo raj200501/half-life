@@ -210,7 +210,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.001,
       "exit_code": null,
       "fs_after": {
         "README.md": "be74dae6238a86de0e2b82e85062be3abcb94cff96ca40c02ef4c8d18df03946",
@@ -233,7 +233,7 @@
         "path": "inimerge/merge.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "be74dae6238a86de0e2b82e85062be3abcb94cff96ca40c02ef4c8d18df03946",
@@ -279,7 +279,7 @@
         "path": "inimerge/merge.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "be74dae6238a86de0e2b82e85062be3abcb94cff96ca40c02ef4c8d18df03946",
@@ -325,7 +325,7 @@
         "cmd": "python -m inimerge samples/base.ini samples/prod.ini"
       },
       "blocked": false,
-      "elapsed_s": 0.34,
+      "elapsed_s": 0.1674,
       "exit_code": 0,
       "fs_after": {
         "README.md": "be74dae6238a86de0e2b82e85062be3abcb94cff96ca40c02ef4c8d18df03946",
@@ -371,7 +371,7 @@
         "cmd": "grep -c '^\\[' samples/base.ini"
       },
       "blocked": false,
-      "elapsed_s": 0.228,
+      "elapsed_s": 0.1175,
       "exit_code": 0,
       "fs_after": {
         "README.md": "be74dae6238a86de0e2b82e85062be3abcb94cff96ca40c02ef4c8d18df03946",
@@ -419,7 +419,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -467,7 +467,7 @@
         "path": "inimerge/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -515,7 +515,7 @@
         "path": "inimerge/merge.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -538,7 +538,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.491,
+      "elapsed_s": 0.3181,
       "exit_code": 0,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -609,7 +609,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4831,
+      "elapsed_s": 0.3183,
       "exit_code": 0,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -655,7 +655,7 @@
         "cmd": "python -m inimerge samples/base.ini samples/legacy.ini"
       },
       "blocked": false,
-      "elapsed_s": 0.336,
+      "elapsed_s": 0.1672,
       "exit_code": 1,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -669,7 +669,7 @@
       },
       "index": 19,
       "net": [],
-      "output": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/halflife-ws-q0zdzisu/inimerge/__main__.py\", line 18, in <module>\n    sys.exit(main(sys.argv[1:]))\n             ^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-q0zdzisu/inimerge/__main__.py\", line 13, in main\n    sys.stdout.write(render(merge_files(argv)))\n                            ^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-q0zdzisu/inimerge/merge.py\", line 37, in merge_files\n    layers.append(read_layer(handle.read()))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-q0zdzisu/inimerge/merge.py\", line 19, in read_layer\n    parser.read_string(text)\n  File \"/usr/lib/python3.12/configparser.py\", line 710, in read_string\n    self.read_file(sfile, source)\n  File \"/usr/lib/python3.12/configparser.py\", line 705, in read_file\n    self._read(f, source)\n  File \"/usr/lib/python3.12/configparser.py\", line 1075, in _read\n    raise DuplicateOptionError(sectname, optname,\nconfigparser.DuplicateOptionError: While reading from '<string>' [line  5]: option 'timeout' in section 'server' already exists\n[exit code: 1]",
+      "output": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/halflife-ws-tdwkyl3v/inimerge/__main__.py\", line 18, in <module>\n    sys.exit(main(sys.argv[1:]))\n             ^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-tdwkyl3v/inimerge/__main__.py\", line 13, in main\n    sys.stdout.write(render(merge_files(argv)))\n                            ^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-tdwkyl3v/inimerge/merge.py\", line 37, in merge_files\n    layers.append(read_layer(handle.read()))\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-tdwkyl3v/inimerge/merge.py\", line 19, in read_layer\n    parser.read_string(text)\n  File \"/usr/lib/python3.12/configparser.py\", line 710, in read_string\n    self.read_file(sfile, source)\n  File \"/usr/lib/python3.12/configparser.py\", line 705, in read_file\n    self._read(f, source)\n  File \"/usr/lib/python3.12/configparser.py\", line 1075, in _read\n    raise DuplicateOptionError(sectname, optname,\nconfigparser.DuplicateOptionError: While reading from '<string>' [line  5]: option 'timeout' in section 'server' already exists\n[exit code: 1]",
       "subtask_id": "legacy-duplicates",
       "tool": "run"
     },
@@ -703,7 +703,7 @@
         "path": "inimerge/merge.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0026,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -726,7 +726,7 @@
         "cmd": "python -m inimerge samples/base.ini samples/legacy.ini && python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5352,
+      "elapsed_s": 0.3678,
       "exit_code": 0,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -772,7 +772,7 @@
         "path": "inimerge/merge.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -795,7 +795,7 @@
         "cmd": "python -m inimerge samples/base.ini samples/prod.ini"
       },
       "blocked": false,
-      "elapsed_s": 0.1242,
+      "elapsed_s": 0.1178,
       "exit_code": 0,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -820,7 +820,7 @@
         "path": "inimerge/merge.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0032,
+      "elapsed_s": 0.001,
       "exit_code": null,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -843,7 +843,7 @@
         "cmd": "python -m inimerge samples/base.ini samples/prod.ini && python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5351,
+      "elapsed_s": 0.3674,
       "exit_code": 0,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -857,7 +857,7 @@
       },
       "index": 27,
       "net": [],
-      "output": "[server]\nhost = 0.0.0.0\nport = 80\nMaxConnections = 200\n\n[database]\ndsn = host=db.internal;port=5432\npool = 20\n\n[logging]\nlevel = WARNING\nformat = %(asctime)s %(levelname)s %(message)s\n....                                                                     [100%]\n4 passed in 0.02s\n[exit code: 0]",
+      "output": "[server]\nhost = 0.0.0.0\nport = 80\nMaxConnections = 200\n\n[database]\ndsn = host=db.internal;port=5432\npool = 20\n\n[logging]\nlevel = WARNING\nformat = %(asctime)s %(levelname)s %(message)s\n....                                                                     [100%]\n4 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "inline-comments",
       "tool": "run"
     },
@@ -889,7 +889,7 @@
         "path": "inimerge/__main__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -961,7 +961,7 @@
         "cmd": "python -m inimerge --compact samples/base.ini samples/prod.ini && python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3785,
+      "elapsed_s": 0.3675,
       "exit_code": 0,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -1032,7 +1032,7 @@
         "path": "inimerge/merge.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",
@@ -1055,7 +1055,7 @@
         "cmd": "python -m inimerge samples/base.ini samples/prod.ini && python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5298,
+      "elapsed_s": 0.3177,
       "exit_code": 0,
       "fs_after": {
         "README.md": "cf7a0d1426fd63e60700a418dbbee6f6e526f980d020fb0b34030c2fed9e765c",

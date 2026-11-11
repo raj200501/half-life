@@ -54,3 +54,14 @@ def test_manifest_layout(tmp_path: Path) -> None:
     assert entry["reference_run"] == "artifacts/bench/reference/invoice-ledger.json"
     assert entry["sha256"] == loaded[0].sha256
     assert entry["constraint_types"] == ["procedure", "prohibition"]
+
+
+def test_every_template_carries_the_canary() -> None:
+    """Rule 9 of the brief: a canary string in every file of a dataset meant for release
+    (DECISIONS.md D-055), so the templates can be filtered out of training corpora."""
+    paths = bench.template_paths()
+    assert paths
+    for path in paths:
+        lines = path.read_text(encoding="utf-8").splitlines()
+        assert lines[1] == bench.CANARY, path.name
+    assert bench.CANARY_GUID in bench.CANARY and len(bench.CANARY_GUID) == 36

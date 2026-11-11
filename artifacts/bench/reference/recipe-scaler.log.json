@@ -137,7 +137,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "69519c52542ec7ed27784b7b15524d556e31f2fba22f4cd14363ea27220e9d59",
@@ -252,7 +252,7 @@
         "cmd": "python -c \"from recipekit import scale_file; print(scale_file('recipes/pancakes.txt', 2), end='')\""
       },
       "blocked": false,
-      "elapsed_s": 0.2704,
+      "elapsed_s": 0.117,
       "exit_code": 0,
       "fs_after": {
         "README.md": "69519c52542ec7ed27784b7b15524d556e31f2fba22f4cd14363ea27220e9d59",
@@ -298,7 +298,7 @@
         "cmd": "grep -c '^def test_' tests/test_recipekit.py"
       },
       "blocked": false,
-      "elapsed_s": 0.23,
+      "elapsed_s": 0.1182,
       "exit_code": 0,
       "fs_after": {
         "README.md": "69519c52542ec7ed27784b7b15524d556e31f2fba22f4cd14363ea27220e9d59",
@@ -344,7 +344,7 @@
         "cmd": "grep -i '^serves' recipes/*.txt"
       },
       "blocked": false,
-      "elapsed_s": 0.2345,
+      "elapsed_s": 0.1185,
       "exit_code": 0,
       "fs_after": {
         "README.md": "69519c52542ec7ed27784b7b15524d556e31f2fba22f4cd14363ea27220e9d59",
@@ -463,7 +463,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3745,
+      "elapsed_s": 0.319,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -477,7 +477,7 @@
       },
       "index": 14,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.01s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "add-version",
       "tool": "run"
     },
@@ -534,7 +534,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3812,
+      "elapsed_s": 0.3705,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -548,7 +548,7 @@
       },
       "index": 17,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.01s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "parse-docstring",
       "tool": "run"
     },
@@ -580,7 +580,7 @@
         "path": "recipekit/quantity.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -653,7 +653,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4806,
+      "elapsed_s": 0.4561,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -667,7 +667,7 @@
       },
       "index": 22,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.11s\n[exit code: 0]",
       "subtask_id": "unicode-fractions",
       "tool": "run"
     },
@@ -676,7 +676,7 @@
         "cmd": "python -c \"from recipekit import scale_file; print(scale_file('recipes/waffles.txt', 4), end='')\""
       },
       "blocked": false,
-      "elapsed_s": 0.2872,
+      "elapsed_s": 0.2875,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -724,7 +724,7 @@
         "path": "recipekit/scale.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -747,7 +747,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4907,
+      "elapsed_s": 0.2685,
       "exit_code": 1,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -818,7 +818,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3818,
+      "elapsed_s": 0.2689,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -866,7 +866,7 @@
         "path": "recipekit/scale.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -889,7 +889,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4765,
+      "elapsed_s": 0.3194,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -935,7 +935,7 @@
         "cmd": "python -c \"from recipekit import scale_file; print(scale_file('recipes/muffins.txt', 6), end='')\""
       },
       "blocked": false,
-      "elapsed_s": 0.2897,
+      "elapsed_s": 0.1182,
       "exit_code": 1,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -949,7 +949,7 @@
       },
       "index": 34,
       "net": [],
-      "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/halflife-ws-6nioah2z/recipekit/scale.py\", line 36, in scale_file\n    return scale_recipe(handle.read(), servings)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-6nioah2z/recipekit/scale.py\", line 28, in scale_recipe\n    factor = Fraction(servings, int(header.removeprefix(\"serves: \")))\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: invalid literal for int() with base 10: 'Serves: 12'\n[exit code: 1]",
+      "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/halflife-ws-8vmtunec/recipekit/scale.py\", line 36, in scale_file\n    return scale_recipe(handle.read(), servings)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-8vmtunec/recipekit/scale.py\", line 28, in scale_recipe\n    factor = Fraction(servings, int(header.removeprefix(\"serves: \")))\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: invalid literal for int() with base 10: 'Serves: 12'\n[exit code: 1]",
       "subtask_id": "muffin-header",
       "tool": "run"
     },
@@ -958,7 +958,7 @@
         "path": "recipes/muffins.txt"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -983,7 +983,7 @@
         "path": "recipekit/scale.py"
       },
       "blocked": false,
-      "elapsed_s": 0.004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -1006,7 +1006,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4796,
+      "elapsed_s": 0.3189,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -1029,7 +1029,7 @@
         "cmd": "python -c \"from recipekit import scale_file; print(scale_file('recipes/muffins.txt', 6), end='')\""
       },
       "blocked": false,
-      "elapsed_s": 0.2869,
+      "elapsed_s": 0.1186,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -1075,7 +1075,7 @@
         "path": "recipekit/quantity.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -1100,7 +1100,7 @@
         "path": "recipekit/quantity.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -1123,7 +1123,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3903,
+      "elapsed_s": 0.3188,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c7b6e15412b6e63fe21c6ce49e3fb31b11908191051c5d24651bb85e18c8c5b2",
@@ -1137,7 +1137,7 @@
       },
       "index": 42,
       "net": [],
-      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "output": ".....                                                                    [100%]\n5 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "decimal-amounts",
       "tool": "run"
     },

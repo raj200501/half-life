@@ -353,7 +353,7 @@
         "cmd": "grep -c '^def test_' tests/test_worker.py"
       },
       "blocked": false,
-      "elapsed_s": 0.191,
+      "elapsed_s": 0.1164,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "f6e33c8b46e88aad6ac07f6f26be47f874ff174214e375327ce0aebb0e39f328",
@@ -397,7 +397,7 @@
         "cmd": "python -c \"from jobq.handlers import thumbnail; p = {'width': 1920, 'height': 1080}; thumbnail(p); print(p['thumb'])\""
       },
       "blocked": false,
-      "elapsed_s": 0.2281,
+      "elapsed_s": 0.1167,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "f6e33c8b46e88aad6ac07f6f26be47f874ff174214e375327ce0aebb0e39f328",
@@ -443,7 +443,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "f6e33c8b46e88aad6ac07f6f26be47f874ff174214e375327ce0aebb0e39f328",
@@ -489,7 +489,7 @@
         "path": "jobq/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "f6e33c8b46e88aad6ac07f6f26be47f874ff174214e375327ce0aebb0e39f328",
@@ -583,7 +583,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "d36f315805f5d7acf9d3ffb16fb968d2aa75d3c9be885e9a21881303dac5aaea",
@@ -605,7 +605,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5293,
+      "elapsed_s": 0.3176,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "d36f315805f5d7acf9d3ffb16fb968d2aa75d3c9be885e9a21881303dac5aaea",
@@ -649,7 +649,7 @@
         "path": "jobq"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "d36f315805f5d7acf9d3ffb16fb968d2aa75d3c9be885e9a21881303dac5aaea",
@@ -693,7 +693,7 @@
         "path": "jobq/worker.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "d36f315805f5d7acf9d3ffb16fb968d2aa75d3c9be885e9a21881303dac5aaea",
@@ -741,7 +741,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "3fae764f92ffe3134bf8a3849b229954955ff1e4e3a05d874f583eeb4cf2e78a",
@@ -763,7 +763,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.2799,
+      "elapsed_s": 0.2667,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "3fae764f92ffe3134bf8a3849b229954955ff1e4e3a05d874f583eeb4cf2e78a",
@@ -855,7 +855,7 @@
         "path": "jobq/handlers.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "3fae764f92ffe3134bf8a3849b229954955ff1e4e3a05d874f583eeb4cf2e78a",
@@ -879,7 +879,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "e9a328f7361ccdd191405f4e4d22d5a76d163607363e7723783eda0ef33b1a9d",
@@ -901,7 +901,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4303,
+      "elapsed_s": 0.318,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "e9a328f7361ccdd191405f4e4d22d5a76d163607363e7723783eda0ef33b1a9d",
@@ -914,7 +914,7 @@
       },
       "index": 29,
       "net": [],
-      "output": "....                                                                     [100%]\n4 passed in 0.03s\n[exit code: 0]",
+      "output": "....                                                                     [100%]\n4 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "webhook",
       "tool": "run"
     },
@@ -947,7 +947,7 @@
         "path": "jobq/handlers.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "e9a328f7361ccdd191405f4e4d22d5a76d163607363e7723783eda0ef33b1a9d",
@@ -971,7 +971,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "414835b40345c3eb735c2bf8de338be172f5941d8ac193f6f8b92e022ed857f7",
@@ -1039,7 +1039,7 @@
         "path": "jobq/handlers.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "414835b40345c3eb735c2bf8de338be172f5941d8ac193f6f8b92e022ed857f7",
@@ -1063,7 +1063,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0036,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "4379c5d6ced5525100a3466040cf0f1dd058b6446d6746552b6ae9eecdb715f5",
@@ -1085,7 +1085,7 @@
         "cmd": "python - <<'EOF'\nimport urllib.request\n\ncalls = []\n\n\ndef fake_urlopen(request, *args, **kwargs):\n    calls.append(kwargs.get(\"timeout\"))\n    raise TimeoutError(\"simulated hang\")\n\n\nurllib.request.urlopen = fake_urlopen\nfrom jobq.handlers import webhook\n\ntry:\n    webhook({\"url\": \"https://hooks.example.com/orders\", \"data\": {}})\nexcept TimeoutError:\n    print(\"gave up, timeout passed to urlopen:\", calls)\nEOF\n"
       },
       "blocked": false,
-      "elapsed_s": 0.3311,
+      "elapsed_s": 0.1669,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "4379c5d6ced5525100a3466040cf0f1dd058b6446d6746552b6ae9eecdb715f5",
@@ -1107,7 +1107,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4354,
+      "elapsed_s": 0.3178,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "4379c5d6ced5525100a3466040cf0f1dd058b6446d6746552b6ae9eecdb715f5",
@@ -1153,7 +1153,7 @@
         "path": "jobq/worker.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "4379c5d6ced5525100a3466040cf0f1dd058b6446d6746552b6ae9eecdb715f5",
@@ -1177,7 +1177,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0034,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "973f8e92a0039a7e9d881c8e1694dffc620a5d4cb4566ead30d11c384a08bbe3",
@@ -1199,7 +1199,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5393,
+      "elapsed_s": 0.3179,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "973f8e92a0039a7e9d881c8e1694dffc620a5d4cb4566ead30d11c384a08bbe3",

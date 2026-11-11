@@ -15,3 +15,10 @@ Every changed or withdrawn claim gets a dated entry here (rule 3 of the build br
 - **What changed:** the CLI reference documents `--max-turns` for print mode; the flag is only absent from `claude --help`. The runbook and the docstring now say so.
 - **Why:** the inference came from the help text alone; the pre-release audit checked the reference.
 - **Support:** no artifact depends on it. The driver enforces the turn cap by counting turns in the stream either way, and no E2 session has run.
+
+## 2026-11-11: README claims the third independent review found
+
+- **Claims as stated:** README.md (commit af5ddc6) said the project ships "a preregistered analysis"; that "every number on this page" comes from `make report`; that the guard "is cheap relative to a model call"; that D-050 "extends" the score test to every preregistered hypothesis; and that the latest review's findings "are fixed".
+- **What changed:** no preregistration is committed, so the README now says the analysis was written and audited before any confirmatory data and will be frozen by a preregistration. The number sentence now covers result numbers, since counts that describe the design (thirty templates, two or three rules each) are design parameters. The guard sentence now says only that the overhead of the guard and the pin is measured, since no model-call latency is banked beside it. D-050 is described as decided and not implemented. The G12 line no longer says which findings are fixed.
+- **Why:** the third independent review (REVIEW: BLOCK at af5ddc6, B3 and non-blocking items) showed that each sentence claimed more than the repository supports. Rule 2 labels anything not preregistered as exploratory.
+- **Support:** `prereg/` holds no preregistration; `artifacts/e4/overhead.json` holds the measured overhead; `artifacts/review/latest.json` holds the review.

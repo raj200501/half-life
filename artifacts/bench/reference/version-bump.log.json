@@ -120,7 +120,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
@@ -230,7 +230,7 @@
         "cmd": "python -c \"from shipit.semver import bump; print(bump('1.9.9', 'minor'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3353,
+      "elapsed_s": 0.1165,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
@@ -322,7 +322,7 @@
         "path": "tests/test_semver.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
@@ -346,7 +346,7 @@
         "path": "tests/test_semver.py"
       },
       "blocked": false,
-      "elapsed_s": 0.003,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
@@ -368,7 +368,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4354,
+      "elapsed_s": 0.3701,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "535e3e29f775ed04b960bda18262968e5e175ce05576a7ffde7ec935bfd23ced",
@@ -460,7 +460,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3865,
+      "elapsed_s": 0.3177,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
@@ -504,7 +504,7 @@
         "cmd": "grep -c '^## [0-9]' CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.2278,
+      "elapsed_s": 0.1164,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
@@ -548,7 +548,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4873,
+      "elapsed_s": 0.3172,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
@@ -561,7 +561,7 @@
       },
       "index": 19,
       "net": [],
-      "output": "......                                                                   [100%]\n6 passed in 0.02s\n[exit code: 0]",
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "run-suite",
       "tool": "run"
     },
@@ -616,7 +616,7 @@
         "path": "shipit/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "53adaa47b6f0249a70dc23062b4d443b9fa85e1504befa4b05c6f459d681343a",
@@ -640,7 +640,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7ca0bf836f4bcb8bde519cfbd613b73d2e7a200cf4699b23a5ee1ed38818cf0b",
@@ -686,7 +686,7 @@
         "path": "shipit/semver.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0036,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "7ca0bf836f4bcb8bde519cfbd613b73d2e7a200cf4699b23a5ee1ed38818cf0b",
@@ -756,7 +756,7 @@
         "path": "shipit/semver.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "670029cafca36667327341e4e4145b7c1acf9bba04e58e8039d9b63e26649282",
@@ -780,7 +780,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0037,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
@@ -802,7 +802,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4833,
+      "elapsed_s": 0.3175,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
@@ -815,7 +815,7 @@
       },
       "index": 30,
       "net": [],
-      "output": "......                                                                   [100%]\n6 passed in 0.02s\n[exit code: 0]",
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "is-newer",
       "tool": "run"
     },
@@ -846,7 +846,7 @@
         "path": "shipit/notes.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
@@ -870,7 +870,7 @@
         "path": "shipit/notes.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1ccea7760ac12a47b2fbee2a997b75265bac8421010657498605bb0d01ad85bb",
@@ -916,7 +916,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3675,
+      "elapsed_s": 0.3173,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "20cb90f329ba8c3100f9daec9aab1e7699a57b801e2b6e9ab2dc689750856d6c",
@@ -929,7 +929,7 @@
       },
       "index": 35,
       "net": [],
-      "output": "......                                                                   [100%]\n6 passed in 0.02s\n[exit code: 0]",
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "release-section",
       "tool": "run"
     },
@@ -1008,7 +1008,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "9e08dfc01109193f11f61b83b88cd31065917d8a1854c418b6a2047a11be5ebc",

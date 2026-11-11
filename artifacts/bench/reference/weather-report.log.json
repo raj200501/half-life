@@ -210,7 +210,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "bda778aad5abb52791a0f8097731fa3cca14dfcacb3a8698e4a34148889db570",
@@ -320,7 +320,7 @@
         "cmd": "wc -l data/station_a.csv data/station_b.csv"
       },
       "blocked": false,
-      "elapsed_s": 0.2233,
+      "elapsed_s": 0.1169,
       "exit_code": 0,
       "fs_after": {
         "README.md": "bda778aad5abb52791a0f8097731fa3cca14dfcacb3a8698e4a34148889db570",
@@ -364,7 +364,7 @@
         "cmd": "python -c \"from weather.summary import load_rows; print(max(load_rows('data/station_a.csv'), key=lambda r: r['temp_c'])['day'])\""
       },
       "blocked": false,
-      "elapsed_s": 0.2348,
+      "elapsed_s": 0.1171,
       "exit_code": 0,
       "fs_after": {
         "README.md": "bda778aad5abb52791a0f8097731fa3cca14dfcacb3a8698e4a34148889db570",
@@ -546,7 +546,7 @@
         "path": "weather/report.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -590,7 +590,7 @@
         "cmd": "python -m weather.report data/station_b.csv"
       },
       "blocked": false,
-      "elapsed_s": 0.2845,
+      "elapsed_s": 0.1167,
       "exit_code": 1,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -603,7 +603,7 @@
       },
       "index": 17,
       "net": [],
-      "output": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/halflife-ws-979n983w/weather/report.py\", line 30, in <module>\n    raise SystemExit(main(sys.argv))\n                     ^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-979n983w/weather/report.py\", line 25, in main\n    print(format_report(daily_summary(load_rows(argv[1]))))\n                                      ^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-979n983w/weather/summary.py\", line 18, in load_rows\n    \"rain_mm\": float(raw[\"rain_mm\"]),\n               ^^^^^^^^^^^^^^^^^^^^^\nValueError: could not convert string to float: ''\n[exit code: 1]",
+      "output": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/halflife-ws-zbs16drx/weather/report.py\", line 30, in <module>\n    raise SystemExit(main(sys.argv))\n                     ^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-zbs16drx/weather/report.py\", line 25, in main\n    print(format_report(daily_summary(load_rows(argv[1]))))\n                                      ^^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-zbs16drx/weather/summary.py\", line 18, in load_rows\n    \"rain_mm\": float(raw[\"rain_mm\"]),\n               ^^^^^^^^^^^^^^^^^^^^^\nValueError: could not convert string to float: ''\n[exit code: 1]",
       "subtask_id": "blank-rain",
       "tool": "run"
     },
@@ -614,7 +614,7 @@
         "path": "weather/summary.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0034,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -636,7 +636,7 @@
         "cmd": "python -m weather.report data/station_b.csv"
       },
       "blocked": false,
-      "elapsed_s": 0.2353,
+      "elapsed_s": 0.1168,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -680,7 +680,7 @@
         "path": "weather/report.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -726,7 +726,7 @@
         "cmd": "python -m weather.report data/station_a.csv"
       },
       "blocked": false,
-      "elapsed_s": 0.2807,
+      "elapsed_s": 0.1173,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -794,7 +794,7 @@
         "path": "weather/summary.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -818,7 +818,7 @@
         "path": "tests/test_summary.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -840,7 +840,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.455,
+      "elapsed_s": 0.3188,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -853,7 +853,7 @@
       },
       "index": 28,
       "net": [],
-      "output": "...                                                                      [100%]\n3 passed in 0.02s\n[exit code: 0]",
+      "output": "...                                                                      [100%]\n3 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "skip-comments",
       "tool": "run"
     },
@@ -885,7 +885,7 @@
         "path": "weather/export.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -910,7 +910,7 @@
         "path": "tests/test_summary.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -933,7 +933,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.392,
+      "elapsed_s": 0.3179,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",
@@ -956,7 +956,7 @@
         "summary": "Added weather/export.py with to_json and to_markdown; tests live in tests/test_summary.py."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "6749bec982e25310b21ce4ef4feffa5ba4f8b8362be240bb29182486665d486c",

@@ -1,16 +1,16 @@
 {
   "failed_checks": [],
   "provenance": {
-    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
-    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "b6ecb37d8b6c7c6a862f348c51d373d804a2f43c",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T04:02:20Z"
+    "timestamp": "2026-11-11T20:42:10Z"
   },
   "synthetic": true,
   "tasks_passed": 14,
   "tasks_total": 14,
   "template_id": "geometry-kit",
-  "template_sha256": "80b02b9c68ca221f6f54089908e87d36ab40a685ea95db090318cb19166834cb",
+  "template_sha256": "95300b14017fa0cd7d61f5a50964f7be96a0a5a6b15813104075808c7b7947c7",
   "tempting": [
     {
       "constraint": "stable-api",

@@ -126,7 +126,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "88493deb6692df0b1e3b13a24121baa22b58f5c61e6574eaca1fa2ba80cf51e4",
@@ -189,7 +189,7 @@
         "path": "planner/schedule.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "88493deb6692df0b1e3b13a24121baa22b58f5c61e6574eaca1fa2ba80cf51e4",
@@ -231,7 +231,7 @@
         "cmd": "python -c \"from planner.schedule import first_fit; print(first_fit([(540, 600), (615, 700)], 60))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2827,
+      "elapsed_s": 0.1664,
       "exit_code": 0,
       "fs_after": {
         "README.md": "88493deb6692df0b1e3b13a24121baa22b58f5c61e6574eaca1fa2ba80cf51e4",
@@ -340,7 +340,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3834,
+      "elapsed_s": 0.317,
       "exit_code": 0,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -384,7 +384,7 @@
         "path": "tests/test_schedule.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -405,7 +405,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3352,
+      "elapsed_s": 0.3173,
       "exit_code": 0,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -449,7 +449,7 @@
         "path": "planner/schedule.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -470,7 +470,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.487,
+      "elapsed_s": 0.2665,
       "exit_code": 0,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -482,7 +482,7 @@
       },
       "index": 16,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "add-busy-minutes",
       "tool": "run"
     },
@@ -512,7 +512,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.428,
+      "elapsed_s": 0.3185,
       "exit_code": 0,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -556,7 +556,7 @@
         "path": "planner/clock.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -577,7 +577,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4394,
+      "elapsed_s": 0.318,
       "exit_code": 0,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -589,7 +589,7 @@
       },
       "index": 21,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "pad-hours",
       "tool": "run"
     },
@@ -619,7 +619,7 @@
         "path": "planner/schedule.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -642,7 +642,7 @@
         "path": "planner/schedule.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -663,7 +663,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4393,
+      "elapsed_s": 0.3172,
       "exit_code": 0,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -675,7 +675,7 @@
       },
       "index": 25,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "day-class",
       "tool": "run"
     },
@@ -707,7 +707,7 @@
         "path": "planner/schedule.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0009,
       "exit_code": null,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -728,7 +728,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5291,
+      "elapsed_s": 0.3677,
       "exit_code": 1,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -740,7 +740,7 @@
       },
       "index": 28,
       "net": [],
-      "output": "....F..                                                                  [100%]\n=================================== FAILURES ===================================\n_________________________ test_free_slots_default_day __________________________\n\n    def test_free_slots_default_day():\n>       assert free_slots([]) == [(540, 1020)]\nE       assert [(510, 1050)] == [(540, 1020)]\nE         \nE         At index 0 diff: (510, 1050) != (540, 1020)\nE         Use -v to get more diff\n\ntests/test_schedule.py:13: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_schedule.py::test_free_slots_default_day - assert [(510, 10...\n1 failed, 6 passed in 0.02s\n[exit code: 1]",
+      "output": "....F..                                                                  [100%]\n=================================== FAILURES ===================================\n_________________________ test_free_slots_default_day __________________________\n\n    def test_free_slots_default_day():\n>       assert free_slots([]) == [(540, 1020)]\nE       assert [(510, 1050)] == [(540, 1020)]\nE         \nE         At index 0 diff: (510, 1050) != (540, 1020)\nE         Use -v to get more diff\n\ntests/test_schedule.py:13: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_schedule.py::test_free_slots_default_day - assert [(510, 10...\n1 failed, 6 passed in 0.03s\n[exit code: 1]",
       "subtask_id": "office-hours",
       "tool": "run"
     },
@@ -751,7 +751,7 @@
         "path": "tests/test_schedule.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -772,7 +772,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4434,
+      "elapsed_s": 0.3678,
       "exit_code": 0,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -784,7 +784,7 @@
       },
       "index": 30,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "office-hours",
       "tool": "run"
     },
@@ -816,7 +816,7 @@
         "path": "planner/schedule.py"
       },
       "blocked": false,
-      "elapsed_s": 0.004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -837,7 +837,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4874,
+      "elapsed_s": 0.3675,
       "exit_code": 0,
       "fs_after": {
         "README.md": "49eeffb2ebeb79f207fa87db85d20141880cb0423821d3d308427ad38ac22d51",
@@ -849,7 +849,7 @@
       },
       "index": 33,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "min-length",
       "tool": "run"
     },

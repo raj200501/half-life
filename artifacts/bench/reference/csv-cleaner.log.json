@@ -180,7 +180,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "f2e865d69907db7c07e4833afe9e5425f513bdac6cc66d50a0e89a215c894116",
@@ -203,7 +203,7 @@
         "path": "csvclean/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "f2e865d69907db7c07e4833afe9e5425f513bdac6cc66d50a0e89a215c894116",
@@ -249,7 +249,7 @@
         "path": "csvclean/rows.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "f2e865d69907db7c07e4833afe9e5425f513bdac6cc66d50a0e89a215c894116",
@@ -295,7 +295,7 @@
         "cmd": "grep -c '^def test_' tests/test_headers.py tests/test_rows.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2769,
+      "elapsed_s": 0.1175,
       "exit_code": 0,
       "fs_after": {
         "README.md": "f2e865d69907db7c07e4833afe9e5425f513bdac6cc66d50a0e89a215c894116",
@@ -341,7 +341,7 @@
         "cmd": "python -c \"from csvclean.cli import clean_text; print(clean_text(' Full Name ,Age\\n  Ada  , 36\\n,\\n'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.1271,
+      "elapsed_s": 0.1192,
       "exit_code": 0,
       "fs_after": {
         "README.md": "f2e865d69907db7c07e4833afe9e5425f513bdac6cc66d50a0e89a215c894116",
@@ -387,7 +387,7 @@
         "path": "csvclean"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "f2e865d69907db7c07e4833afe9e5425f513bdac6cc66d50a0e89a215c894116",
@@ -531,7 +531,7 @@
         "path": "csvclean/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -577,7 +577,7 @@
         "cmd": "python -m pytest -q tests/test_headers.py"
       },
       "blocked": false,
-      "elapsed_s": 0.3251,
+      "elapsed_s": 0.3171,
       "exit_code": 1,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -625,7 +625,7 @@
         "path": "csvclean/headers.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -648,7 +648,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4858,
+      "elapsed_s": 0.3173,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -719,7 +719,7 @@
         "cmd": "python -c \"from csvclean.profile import profile_columns; print(profile_columns(['a'], [['1'], ['']]))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2824,
+      "elapsed_s": 0.1164,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -767,7 +767,7 @@
         "path": "csvclean/rows.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -819,7 +819,7 @@
         "path": "csvclean/rows.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -846,7 +846,7 @@
         "path": "csvclean/rows.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0009,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -871,7 +871,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4763,
+      "elapsed_s": 0.3177,
       "exit_code": 0,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -887,7 +887,7 @@
       },
       "index": 29,
       "net": [],
-      "output": "......                                                                   [100%]\n6 passed in 0.03s\n[exit code: 0]",
+      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "convert-numbers",
       "tool": "run"
     },
@@ -896,7 +896,7 @@
         "summary": "clean_rows(convert=True) converts numbers via a small csvclean/convert.py helper module."
       },
       "blocked": false,
-      "elapsed_s": 0.0,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",
@@ -948,7 +948,7 @@
         "path": "csvclean/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "e5953cf56f37d883d06605ffb20f0fdb5f6de4cbf3bbad7a662642c36dda878a",

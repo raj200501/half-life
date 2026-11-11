@@ -44,7 +44,7 @@
       "id": "bank-ledger",
       "path": "src/halflife/bench/templates/bank-ledger.yaml",
       "reference_run": "artifacts/bench/reference/bank-ledger.json",
-      "sha256": "d2b6a99dff3483a72a44c5715276d5672c05af3396aa249867745dfd8479398b",
+      "sha256": "fb7a1d014e8d991440781e22481a4bf5f77dbbea8f59c8dcf2b33fcff502279e",
       "split": "main"
     },
     {
@@ -56,7 +56,7 @@
       "id": "cache-store",
       "path": "src/halflife/bench/templates/cache-store.yaml",
       "reference_run": "artifacts/bench/reference/cache-store.json",
-      "sha256": "6c0b11624b8161e213287ef9cb738c139c3ad713922ea4db973454ef2f7e6bde",
+      "sha256": "a130a721daa2262e0681d627acabfb93258387c2349ed6f1e34b2f911e6972da",
       "split": "heldout"
     },
     {
@@ -68,7 +68,7 @@
       "id": "config-loader",
       "path": "src/halflife/bench/templates/config-loader.yaml",
       "reference_run": "artifacts/bench/reference/config-loader.json",
-      "sha256": "86d827054d958a47d097a6d6197c71caf99265b729925e0d4280237406e13a33",
+      "sha256": "4910920667d93925d361840ec6c8a3de3185f1ac08a5869ec301878fecd05f98",
       "split": "main"
     },
     {
@@ -80,7 +80,7 @@
       "id": "csv-cleaner",
       "path": "src/halflife/bench/templates/csv-cleaner.yaml",
       "reference_run": "artifacts/bench/reference/csv-cleaner.json",
-      "sha256": "b264c053a3b5e28f16f7ee8b1a5062d20e73a0e69cb362e4f9d29f78377fb5f7",
+      "sha256": "fe58704152d80dac8d17c49c32d1b0000eda054d2819843debf6bec1ec43a13d",
       "split": "main"
     },
     {
@@ -92,7 +92,7 @@
       "id": "date-ranges",
       "path": "src/halflife/bench/templates/date-ranges.yaml",
       "reference_run": "artifacts/bench/reference/date-ranges.json",
-      "sha256": "a31c2e127caaf11fe147a29d5afd32497929991b5d0e0553911a2bb0b602fdd9",
+      "sha256": "e8b093193f8452fac2dbcb9b9bccfaa047705a61bf3dc0df693c5c4586d13e02",
       "split": "main"
     },
     {
@@ -104,7 +104,7 @@
       "id": "event-bus",
       "path": "src/halflife/bench/templates/event-bus.yaml",
       "reference_run": "artifacts/bench/reference/event-bus.json",
-      "sha256": "74a31ea2c257a0dcd9a1a398ff74d1d004b75daccbad22ef2dd23bb7cc14e471",
+      "sha256": "7089c38226434fbcc057eeaf3e6ccc312d9f68e126f1aa865f39f8113b88e7a1",
       "split": "heldout"
     },
     {
@@ -115,7 +115,7 @@
       "id": "geometry-kit",
       "path": "src/halflife/bench/templates/geometry-kit.yaml",
       "reference_run": "artifacts/bench/reference/geometry-kit.json",
-      "sha256": "80b02b9c68ca221f6f54089908e87d36ab40a685ea95db090318cb19166834cb",
+      "sha256": "95300b14017fa0cd7d61f5a50964f7be96a0a5a6b15813104075808c7b7947c7",
       "split": "main"
     },
     {
@@ -127,7 +127,7 @@
       "id": "grade-book",
       "path": "src/halflife/bench/templates/grade-book.yaml",
       "reference_run": "artifacts/bench/reference/grade-book.json",
-      "sha256": "eaf3d44bed34d76c66f6a153ea68085b50b129ac2b650912cfb1e7479e7e644d",
+      "sha256": "7c6e8a4c51e2cae21259e481a7578dad1d438537691da5a2cf4ef55eb2660485",
       "split": "pilot"
     },
     {
@@ -139,7 +139,7 @@
       "id": "html-escape",
       "path": "src/halflife/bench/templates/html-escape.yaml",
       "reference_run": "artifacts/bench/reference/html-escape.json",
-      "sha256": "79416b3f9e28c3e867d74cf29ac551da31175968a65849bc075fa7231144ec6d",
+      "sha256": "0ae3caec77726aafe61df311e053ba8c18150ebe32ded7192e13905593642dba",
       "split": "main"
     },
     {
@@ -151,7 +151,7 @@
       "id": "ini-merger",
       "path": "src/halflife/bench/templates/ini-merger.yaml",
       "reference_run": "artifacts/bench/reference/ini-merger.json",
-      "sha256": "619401200725de53a2dd1eba000659e46b13f2c978b7b0bd15261d30a572310d",
+      "sha256": "ac208a7e75ded5edc50d6963092c855cf8a1b89d364473f14ab782ce72d129dd",
       "split": "pilot"
     },
     {
@@ -163,7 +163,7 @@
       "id": "inventory-api",
       "path": "src/halflife/bench/templates/inventory-api.yaml",
       "reference_run": "artifacts/bench/reference/inventory-api.json",
-      "sha256": "fd8a3f289502bfec2466c5a3377b40c73a1633a004667dde4eab4f295a4aba5f",
+      "sha256": "3881bbb591dd388963cf8b54b397536298ca54a3e9987f2078d3b18395f40043",
       "split": "main"
     },
     {
@@ -175,7 +175,7 @@
       "id": "invoice-ledger",
       "path": "src/halflife/bench/templates/invoice-ledger.yaml",
       "reference_run": "artifacts/bench/reference/invoice-ledger.json",
-      "sha256": "3c68042d52f56c6f37405bdadfb223a04b988480e76b78450b1e6e4d9bf2c812",
+      "sha256": "79e3f4e6deeed791f953d7bb677c4a446065db4412933fe07a154a2be062f669",
       "split": "main"
     },
     {
@@ -187,7 +187,7 @@
       "id": "log-parser",
       "path": "src/halflife/bench/templates/log-parser.yaml",
       "reference_run": "artifacts/bench/reference/log-parser.json",
-      "sha256": "7911f6076807051898b770d6a4a98e17132d7215e3217c0f00513bc7129477ac",
+      "sha256": "f1d3d6d1d55cafaa615a3df0706a8fd07c3d763c6d66a15a7da5eaa6c4b94920",
       "split": "main"
     },
     {
@@ -199,7 +199,7 @@
       "id": "markdown-toc",
       "path": "src/halflife/bench/templates/markdown-toc.yaml",
       "reference_run": "artifacts/bench/reference/markdown-toc.json",
-      "sha256": "c53f77607b2e41f7fc0149c22955778df6e0a44680afc8de61d483ebf6de8882",
+      "sha256": "bbad6c0d50c8179d687319edeb27a299cf9fda0e252477f3ebc26956c278a31a",
       "split": "main"
     },
     {
@@ -211,7 +211,7 @@
       "id": "matrix-lite",
       "path": "src/halflife/bench/templates/matrix-lite.yaml",
       "reference_run": "artifacts/bench/reference/matrix-lite.json",
-      "sha256": "0a2bf57c34cfea60bd1ade4d0a2df9be35b9a962a8c9a63694bffbd16c8d7ac5",
+      "sha256": "7028ef9f2f3524ec0d9def8a57ad5fe77f865eba9e62332d274ce75af3145a48",
       "split": "heldout"
     },
     {
@@ -222,7 +222,7 @@
       "id": "money-utils",
       "path": "src/halflife/bench/templates/money-utils.yaml",
       "reference_run": "artifacts/bench/reference/money-utils.json",
-      "sha256": "a2ba853afea5336548db60df1f8aa117c4f64993884c0111171ed94236ed7124",
+      "sha256": "9f8381281ac089363e736a2a63960a0601292e2f1f8d5ab16e586b2648e9c5a8",
       "split": "main"
     },
     {
@@ -233,7 +233,7 @@
       "id": "plugin-registry",
       "path": "src/halflife/bench/templates/plugin-registry.yaml",
       "reference_run": "artifacts/bench/reference/plugin-registry.json",
-      "sha256": "89121c69f984597f013300cafba3848e959462af38ad194a8eb4248ee046a4f9",
+      "sha256": "9058da489c69b74470c3010ecbe4f03dcbefb82650871efda0476bfced7b416e",
       "split": "main"
     },
     {
@@ -246,7 +246,7 @@
       "id": "queue-worker",
       "path": "src/halflife/bench/templates/queue-worker.yaml",
       "reference_run": "artifacts/bench/reference/queue-worker.json",
-      "sha256": "4b9634662503260c2b12aacbcd21559d092cf9bfbfd421a58db7703a8b638587",
+      "sha256": "1fab7247cf29fabcaaa1192a9aa82829bca6e1effe183011bd519dd5510092d0",
       "split": "main"
     },
     {
@@ -258,7 +258,7 @@
       "id": "rate-limiter",
       "path": "src/halflife/bench/templates/rate-limiter.yaml",
       "reference_run": "artifacts/bench/reference/rate-limiter.json",
-      "sha256": "84d3d030625608ad2c28401ef7696f7c0d1f4e7f728ae73fea69560eca78dcae",
+      "sha256": "81c53da8f1b7aa5a47f36dc84b21338d72999160d0a30b1e6bef6103358303a3",
       "split": "main"
     },
     {
@@ -270,7 +270,7 @@
       "id": "recipe-scaler",
       "path": "src/halflife/bench/templates/recipe-scaler.yaml",
       "reference_run": "artifacts/bench/reference/recipe-scaler.json",
-      "sha256": "7da4486c52730e023117c0d92b2302355f3b9c8a013c31d7db9657857d9918a9",
+      "sha256": "34004b68814e302d4f6403c6ee8c401ad816ff2958ed1bc4f571bff6ce8f45c7",
       "split": "main"
     },
     {
@@ -282,7 +282,7 @@
       "id": "schedule-planner",
       "path": "src/halflife/bench/templates/schedule-planner.yaml",
       "reference_run": "artifacts/bench/reference/schedule-planner.json",
-      "sha256": "eb560167eb2dd0d1a1d5892e0fe55c0e0ef99147de7ebdcc7f1c0cc3ec2bd7bf",
+      "sha256": "5ace76cc6da3eedd769faeed58e6605067b38022c1049b4276a80352bc5293d2",
       "split": "main"
     },
     {
@@ -294,7 +294,7 @@
       "id": "shipping-quote",
       "path": "src/halflife/bench/templates/shipping-quote.yaml",
       "reference_run": "artifacts/bench/reference/shipping-quote.json",
-      "sha256": "51c293f127150399d9380a10b0c946c1dafd7ee75987077f066edb9c4da5ecc1",
+      "sha256": "18caadc70dcd48c94732f833a8dbefd6a8169cc8b2b4c7baa729ec4a26f26d4b",
       "split": "heldout"
     },
     {
@@ -306,7 +306,7 @@
       "id": "slugify-lib",
       "path": "src/halflife/bench/templates/slugify-lib.yaml",
       "reference_run": "artifacts/bench/reference/slugify-lib.json",
-      "sha256": "1aee9c5ad380414e74c6dc5325d93273c65505414b117cd6d22a8fe5e8c65fdf",
+      "sha256": "7a00b039436f278ca10931d40d02e11068ea6bf962f85033d65bf391c9738ff9",
       "split": "heldout"
     },
     {
@@ -318,7 +318,7 @@
       "id": "text-stats",
       "path": "src/halflife/bench/templates/text-stats.yaml",
       "reference_run": "artifacts/bench/reference/text-stats.json",
-      "sha256": "d4ce7622d7a9a241ac63fdf57181e0a58853279e6e0cb2135a2aa59344a32171",
+      "sha256": "9525f76ae328e6d7e8fb87b07beafe8478942864d6ae6db677b5754f67811be3",
       "split": "main"
     },
     {
@@ -330,7 +330,7 @@
       "id": "todo-cli",
       "path": "src/halflife/bench/templates/todo-cli.yaml",
       "reference_run": "artifacts/bench/reference/todo-cli.json",
-      "sha256": "d4d9ce5965c709b32df037e7022744349dd191bcbebc43cdb75e71d1cfcaf39d",
+      "sha256": "d66d2ddf3b1ed19fb46cca21c0b9ca2079a67db194112216c0f14da7f095b801",
       "split": "main"
     },
     {
@@ -342,7 +342,7 @@
       "id": "unit-converter",
       "path": "src/halflife/bench/templates/unit-converter.yaml",
       "reference_run": "artifacts/bench/reference/unit-converter.json",
-      "sha256": "887fc8cd46522077e32ddbf8542c841551e0443f2a85be736f644c7d230a1c4e",
+      "sha256": "8873c22e6c817c66abd2e96316544dd99964eb2f43e364c95f445a15300a433a",
       "split": "pilot"
     },
     {
@@ -353,7 +353,7 @@
       "id": "url-shortener",
       "path": "src/halflife/bench/templates/url-shortener.yaml",
       "reference_run": "artifacts/bench/reference/url-shortener.json",
-      "sha256": "a77ac6600e28db495469d45643a6da318347dd106bc438bd5aba28f166f1babc",
+      "sha256": "822291a672308c5993d7fefdc296df3dd1cca4c5990e45c0ee0480bbdebf7020",
       "split": "main"
     },
     {
@@ -365,7 +365,7 @@
       "id": "version-bump",
       "path": "src/halflife/bench/templates/version-bump.yaml",
       "reference_run": "artifacts/bench/reference/version-bump.json",
-      "sha256": "0c069c67682a9400028f9ed083f9b70e1d7edad6b7fa660ad5d3eb10031703f5",
+      "sha256": "0fa737b8db12b0e98283c757e47caf516c878badcb996aff706c33c4154547cb",
       "split": "main"
     },
     {
@@ -377,7 +377,7 @@
       "id": "weather-report",
       "path": "src/halflife/bench/templates/weather-report.yaml",
       "reference_run": "artifacts/bench/reference/weather-report.json",
-      "sha256": "845f9b27d1999776b47d727332eb7d09468a45c9bf68e5c2e141a29bab16630f",
+      "sha256": "474aac6341469bbeab0862dcca1fbfdc93b747c90bf3289f58bbcf00ccd4d41d",
       "split": "main"
     },
     {
@@ -389,7 +389,7 @@
       "id": "word-freq",
       "path": "src/halflife/bench/templates/word-freq.yaml",
       "reference_run": "artifacts/bench/reference/word-freq.json",
-      "sha256": "97a9d3df61d173d47da2ef32cec3f8ee8ed275448b5ad43acab983eab35616d9",
+      "sha256": "73045fa59ca46159fdce407fff8ac53bba5262b2010f10c8d899a6b56a5fb374",
       "split": "heldout"
     }
   ]

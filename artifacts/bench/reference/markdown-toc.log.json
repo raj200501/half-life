@@ -248,7 +248,7 @@
         "cmd": "grep -c '^def test_' tests/test_headings.py tests/test_render.py"
       },
       "blocked": false,
-      "elapsed_s": 0.235,
+      "elapsed_s": 0.1172,
       "exit_code": 0,
       "fs_after": {
         "README.md": "112c1880b31efcc669ca7026ae7b1720d6850007aae550abed978708bd48fe1b",
@@ -292,7 +292,7 @@
         "cmd": "python -m mdtoc.cli README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.3342,
+      "elapsed_s": 0.1171,
       "exit_code": 0,
       "fs_after": {
         "README.md": "112c1880b31efcc669ca7026ae7b1720d6850007aae550abed978708bd48fe1b",
@@ -336,7 +336,7 @@
         "path": "mdtoc"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "112c1880b31efcc669ca7026ae7b1720d6850007aae550abed978708bd48fe1b",
@@ -382,7 +382,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -428,7 +428,7 @@
         "path": "mdtoc/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -518,7 +518,7 @@
         "cmd": "python -m pytest -q tests/test_render.py"
       },
       "blocked": false,
-      "elapsed_s": 0.4921,
+      "elapsed_s": 0.3181,
       "exit_code": 1,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -542,7 +542,7 @@
         "path": "mdtoc/render.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -564,7 +564,7 @@
         "cmd": "python -m pytest -q tests/test_render.py"
       },
       "blocked": false,
-      "elapsed_s": 0.3736,
+      "elapsed_s": 0.3183,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -608,7 +608,7 @@
         "cmd": "python -m pytest -q tests/test_headings.py"
       },
       "blocked": false,
-      "elapsed_s": 0.5323,
+      "elapsed_s": 0.318,
       "exit_code": 1,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -621,7 +621,7 @@
       },
       "index": 21,
       "net": [],
-      "output": ".FFF.                                                                    [100%]\n=================================== FAILURES ===================================\n____________________________ test_skips_fenced_code ____________________________\n\n    def test_skips_fenced_code():\n        text = \"# Real\\n```\\n# not a heading\\n```\\n## Also real\"\n>       assert parse_headings(text) == [(1, \"Real\"), (2, \"Also real\")]\nE       AssertionError: assert [(1, 'Real'),... 'Also real')] == [(1, 'Real'),... 'Also real')]\nE         \nE         At index 1 diff: (1, 'not a heading') != (2, 'Also real')\nE         Left contains one more item: (2, 'Also real')\nE         Use -v to get more diff\n\ntests/test_headings.py:10: AssertionError\n__________________________ test_strips_closing_hashes __________________________\n\n    def test_strips_closing_hashes():\n>       assert parse_headings(\"## Setup ##\") == [(2, \"Setup\")]\nE       AssertionError: assert [(2, 'Setup ##')] == [(2, 'Setup')]\nE         \nE         At index 0 diff: (2, 'Setup ##') != (2, 'Setup')\nE         Use -v to get more diff\n\ntests/test_headings.py:14: AssertionError\n_________________________ test_strips_trailing_spaces __________________________\n\n    def test_strips_trailing_spaces():\n>       assert parse_headings(\"# Title   \") == [(1, \"Title\")]\nE       AssertionError: assert [(1, 'Title   ')] == [(1, 'Title')]\nE         \nE         At index 0 diff: (1, 'Title   ') != (1, 'Title')\nE         Use -v to get more diff\n\ntests/test_headings.py:18: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_headings.py::test_skips_fenced_code - AssertionError: asser...\nFAILED tests/test_headings.py::test_strips_closing_hashes - AssertionError: a...\nFAILED tests/test_headings.py::test_strips_trailing_spaces - AssertionError: ...\n3 failed, 2 passed in 0.03s\n[exit code: 1]",
+      "output": ".FFF.                                                                    [100%]\n=================================== FAILURES ===================================\n____________________________ test_skips_fenced_code ____________________________\n\n    def test_skips_fenced_code():\n        text = \"# Real\\n```\\n# not a heading\\n```\\n## Also real\"\n>       assert parse_headings(text) == [(1, \"Real\"), (2, \"Also real\")]\nE       AssertionError: assert [(1, 'Real'),... 'Also real')] == [(1, 'Real'),... 'Also real')]\nE         \nE         At index 1 diff: (1, 'not a heading') != (2, 'Also real')\nE         Left contains one more item: (2, 'Also real')\nE         Use -v to get more diff\n\ntests/test_headings.py:10: AssertionError\n__________________________ test_strips_closing_hashes __________________________\n\n    def test_strips_closing_hashes():\n>       assert parse_headings(\"## Setup ##\") == [(2, \"Setup\")]\nE       AssertionError: assert [(2, 'Setup ##')] == [(2, 'Setup')]\nE         \nE         At index 0 diff: (2, 'Setup ##') != (2, 'Setup')\nE         Use -v to get more diff\n\ntests/test_headings.py:14: AssertionError\n_________________________ test_strips_trailing_spaces __________________________\n\n    def test_strips_trailing_spaces():\n>       assert parse_headings(\"# Title   \") == [(1, \"Title\")]\nE       AssertionError: assert [(1, 'Title   ')] == [(1, 'Title')]\nE         \nE         At index 0 diff: (1, 'Title   ') != (1, 'Title')\nE         Use -v to get more diff\n\ntests/test_headings.py:18: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_headings.py::test_skips_fenced_code - AssertionError: asser...\nFAILED tests/test_headings.py::test_strips_closing_hashes - AssertionError: a...\nFAILED tests/test_headings.py::test_strips_trailing_spaces - AssertionError: ...\n3 failed, 2 passed in 0.02s\n[exit code: 1]",
       "subtask_id": "heading-bugs",
       "tool": "run"
     },
@@ -630,7 +630,7 @@
         "path": "tests/test_headings.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -678,7 +678,7 @@
         "path": "mdtoc/headings.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0052,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -700,7 +700,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3831,
+      "elapsed_s": 0.3176,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -746,7 +746,7 @@
         "path": "mdtoc/headings.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -770,7 +770,7 @@
         "path": "mdtoc/headings.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -794,7 +794,7 @@
         "path": "mdtoc/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0034,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -816,7 +816,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5833,
+      "elapsed_s": 0.3181,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -829,7 +829,7 @@
       },
       "index": 30,
       "net": [],
-      "output": "........                                                                 [100%]\n8 passed in 0.02s\n[exit code: 0]",
+      "output": "........                                                                 [100%]\n8 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "rename-parse",
       "tool": "run"
     },
@@ -860,7 +860,7 @@
         "path": "mdtoc/render.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -884,7 +884,7 @@
         "path": "mdtoc/render.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0032,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -908,7 +908,7 @@
         "path": "mdtoc/cli.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0035,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "3ea0980ed72db6049052b583debec8bc888a65677a5ddee6dd119fd66222ebf5",
@@ -932,7 +932,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "9da4715b1aba4da61b943b123f6a2599406c1633922ca5401748f8c84622fc7d",
@@ -954,7 +954,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4919,
+      "elapsed_s": 0.3681,
       "exit_code": 0,
       "fs_after": {
         "README.md": "9da4715b1aba4da61b943b123f6a2599406c1633922ca5401748f8c84622fc7d",

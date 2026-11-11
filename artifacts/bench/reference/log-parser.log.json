@@ -223,7 +223,7 @@
         "cmd": "wc -l sample/access.log"
       },
       "blocked": false,
-      "elapsed_s": 0.1234,
+      "elapsed_s": 0.118,
       "exit_code": 0,
       "fs_after": {
         "README.md": "ec62985b9bf96b44b9c1a509ef67e3be37c6aa617d90b1cf97897746eb397bdd",
@@ -267,7 +267,7 @@
         "cmd": "python -c \"from logparse import parse_lines, summarize; print(summarize(parse_lines(open('sample/access.log').read().splitlines())))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3349,
+      "elapsed_s": 0.168,
       "exit_code": 0,
       "fs_after": {
         "README.md": "ec62985b9bf96b44b9c1a509ef67e3be37c6aa617d90b1cf97897746eb397bdd",
@@ -311,7 +311,7 @@
         "path": "logparse"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "ec62985b9bf96b44b9c1a509ef67e3be37c6aa617d90b1cf97897746eb397bdd",
@@ -403,7 +403,7 @@
         "path": "logparse/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -449,7 +449,7 @@
         "path": "logparse/parse.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -517,7 +517,7 @@
         "path": "logparse/parse.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0032,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -541,7 +541,7 @@
         "path": "logparse/parse.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -563,7 +563,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5393,
+      "elapsed_s": 0.3186,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -585,7 +585,7 @@
         "summary": "parse_line adds entry['when'] using datetime.strptime with a %z offset."
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -631,7 +631,7 @@
         "path": "logparse/parse.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -653,7 +653,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4872,
+      "elapsed_s": 0.3194,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -697,7 +697,7 @@
         "path": "logparse/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -743,7 +743,7 @@
         "cmd": "python -c \"from logparse import parse_lines; from logparse.hours import render_hours; print(render_hours(parse_lines(open('sample/access.log').read().splitlines())))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2307,
+      "elapsed_s": 0.1683,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -789,7 +789,7 @@
         "path": "logparse/parse.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -814,7 +814,7 @@
         "path": "logparse/parse.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -837,7 +837,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5291,
+      "elapsed_s": 0.3199,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -851,7 +851,7 @@
       },
       "index": 32,
       "net": [],
-      "output": "....                                                                     [100%]\n4 passed in 0.02s\n[exit code: 0]",
+      "output": "....                                                                     [100%]\n4 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "bot-flag",
       "tool": "run"
     },
@@ -883,7 +883,7 @@
         "path": "logparse/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -907,7 +907,7 @@
         "path": "logparse/sizes.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0009,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -959,7 +959,7 @@
         "path": "logparse/stats.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0039,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",
@@ -983,7 +983,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5352,
+      "elapsed_s": 0.3191,
       "exit_code": 0,
       "fs_after": {
         "README.md": "3b880c7b3b1c21873de0b18edb6b8624588dd68d60dee543dd6879e0a58b1b2f",

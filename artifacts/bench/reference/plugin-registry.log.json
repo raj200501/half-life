@@ -141,7 +141,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "05aaad54d16bdde5d8b657e4114a71e633ac822fca66ee245f64de43b8f37dcc",
@@ -297,7 +297,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -365,7 +365,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3352,
+      "elapsed_s": 0.3178,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -378,7 +378,7 @@
       },
       "index": 10,
       "net": [],
-      "output": "......                                                                   [100%]\n6 passed in 0.01s\n[exit code: 0]",
+      "output": "......                                                                   [100%]\n6 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "add-title-plugin",
       "tool": "run"
     },
@@ -387,7 +387,7 @@
         "summary": "Added the Title plugin."
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -433,7 +433,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4348,
+      "elapsed_s": 0.2676,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -479,7 +479,7 @@
         "path": "tests/test_loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -503,7 +503,7 @@
         "path": "tests/test_loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -525,7 +525,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4305,
+      "elapsed_s": 0.3176,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -538,7 +538,7 @@
       },
       "index": 17,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "test-bad-spec",
       "tool": "run"
     },
@@ -569,7 +569,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.432,
+      "elapsed_s": 0.317,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -636,7 +636,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -658,7 +658,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5375,
+      "elapsed_s": 0.3177,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -680,7 +680,7 @@
         "summary": "Registry now stores plugins in a single dict; the tests pass."
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -704,7 +704,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -726,7 +726,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4831,
+      "elapsed_s": 0.3179,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -739,7 +739,7 @@
       },
       "index": 26,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "remove-verb",
       "tool": "run"
     },
@@ -770,7 +770,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -840,7 +840,7 @@
         "path": "plugbox/registry.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -862,7 +862,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4871,
+      "elapsed_s": 0.3174,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c3e42a578dc6007290a3aa095eddf74235ed7a668ce8cdf01510f0753cad8e8e",
@@ -875,7 +875,7 @@
       },
       "index": 32,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "lookup-default",
       "tool": "run"
     },

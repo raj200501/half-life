@@ -107,7 +107,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -222,7 +222,7 @@
         "cmd": "python -c \"import csv; print(len({row['student'] for row in csv.DictReader(open('records/term2.csv'))}))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2785,
+      "elapsed_s": 0.117,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -268,7 +268,7 @@
         "cmd": "python -c \"from gradebook.report import term_report; print(term_report('records/term1.csv'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2869,
+      "elapsed_s": 0.1676,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -314,7 +314,7 @@
         "path": "records"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -362,7 +362,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -410,7 +410,7 @@
         "path": "gradebook/grades.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "1def0406dfb8aade713bead4fb273520da2e67426313a9fa2c32611fa46cba00",
@@ -483,7 +483,7 @@
         "path": "gradebook/grades.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "54e2a475a92ebd031657b42241eaef593ba2bf9ad4cb66e75ae01825f58adf57",
@@ -508,7 +508,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "006daba59101b411f1add82caa136522917784031054ca493d1378f471c42f77",
@@ -556,7 +556,7 @@
         "path": "tests/test_grades.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "006daba59101b411f1add82caa136522917784031054ca493d1378f471c42f77",
@@ -579,7 +579,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3444,
+      "elapsed_s": 0.3193,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "006daba59101b411f1add82caa136522917784031054ca493d1378f471c42f77",
@@ -625,7 +625,7 @@
         "cmd": "python -c \"from gradebook.report import term_report; print(term_report('records/term2.csv'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2349,
+      "elapsed_s": 0.117,
       "exit_code": 1,
       "fs_after": {
         "CHANGELOG.md": "006daba59101b411f1add82caa136522917784031054ca493d1378f471c42f77",
@@ -639,7 +639,7 @@
       },
       "index": 22,
       "net": [],
-      "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/halflife-ws-6qk71mpk/gradebook/report.py\", line 22, in term_report\n    for student, marks in sorted(load_scores(path).items()):\n                                 ^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-6qk71mpk/gradebook/report.py\", line 15, in load_scores\n    scores.setdefault(row[\"student\"], []).append(float(row[\"score\"]))\n                                                 ^^^^^^^^^^^^^^^^^^^\nValueError: could not convert string to float: ''\n[exit code: 1]",
+      "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/tmp/halflife-ws-g5odcqa4/gradebook/report.py\", line 22, in term_report\n    for student, marks in sorted(load_scores(path).items()):\n                                 ^^^^^^^^^^^^^^^^^\n  File \"/tmp/halflife-ws-g5odcqa4/gradebook/report.py\", line 15, in load_scores\n    scores.setdefault(row[\"student\"], []).append(float(row[\"score\"]))\n                                                 ^^^^^^^^^^^^^^^^^^^\nValueError: could not convert string to float: ''\n[exit code: 1]",
       "subtask_id": "blank-score",
       "tool": "run"
     },
@@ -673,7 +673,7 @@
         "path": "gradebook/report.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "006daba59101b411f1add82caa136522917784031054ca493d1378f471c42f77",
@@ -698,7 +698,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0059,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "73881e7e1cb525b642a066157a81e9e2477af07f129c5f192162b14c2c752ae8",
@@ -746,7 +746,7 @@
         "path": "gradebook/grades.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "73881e7e1cb525b642a066157a81e9e2477af07f129c5f192162b14c2c752ae8",
@@ -771,7 +771,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "08b890ed6e61ba893f87cde734553452769a4a860780fed3edbd03ac0ca9d244",
@@ -817,7 +817,7 @@
         "path": "gradebook/report.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "08b890ed6e61ba893f87cde734553452769a4a860780fed3edbd03ac0ca9d244",
@@ -842,7 +842,7 @@
         "path": "gradebook/report.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0032,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "08b890ed6e61ba893f87cde734553452769a4a860780fed3edbd03ac0ca9d244",
@@ -867,7 +867,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0034,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "94345760cee42ec6333e34ef31559e94f4bd6338c5f635856433838356b88004",
@@ -890,7 +890,7 @@
         "cmd": "python -c \"from gradebook.report import term_report; print(term_report('records/term1.csv'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.283,
+      "elapsed_s": 0.1174,
       "exit_code": 0,
       "fs_after": {
         "CHANGELOG.md": "94345760cee42ec6333e34ef31559e94f4bd6338c5f635856433838356b88004",
@@ -938,7 +938,7 @@
         "path": "gradebook/report.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0041,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "94345760cee42ec6333e34ef31559e94f4bd6338c5f635856433838356b88004",
@@ -963,7 +963,7 @@
         "path": "CHANGELOG.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "CHANGELOG.md": "e58ae12add9b56c27548fc891d6cc22c4f6e733b1e3e0dc49b57b4cd096640c4",

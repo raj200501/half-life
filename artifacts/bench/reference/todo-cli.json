@@ -1,18 +1,18 @@
 {
   "action_log": "artifacts/bench/reference/todo-cli.log.json",
-  "action_log_sha256": "3cf4e39e727fb853d2f57b83fcc8ed89fb811a745fcddbf8214ae25663e7199d",
+  "action_log_sha256": "a6d036b3827381fcb87499032610f0ecb53ec753591a06faf0c690c5220277a6",
   "agent": "scripted-reference (compliant routes, synthetic)",
   "completed": true,
   "n_subtasks": 14,
   "n_tool_calls": 50,
   "provenance": {
-    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
-    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "b6ecb37d8b6c7c6a862f348c51d373d804a2f43c",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T04:02:20Z"
+    "timestamp": "2026-11-11T20:42:10Z"
   },
   "synthetic": true,
   "template_id": "todo-cli",
-  "template_sha256": "d4d9ce5965c709b32df037e7022744349dd191bcbebc43cdb75e71d1cfcaf39d",
+  "template_sha256": "d66d2ddf3b1ed19fb46cca21c0b9ca2079a67db194112216c0f14da7f095b801",
   "violations": 0
 }

@@ -81,7 +81,7 @@ Rules that hold for every layout below:
 
 ## G10 claim integrity
 
-`make claimcheck` and `make freshness` pass on README.md and docs/REPORT.md, and `make report-check` (`python -m halflife.report --check`) confirms that the generated blocks of both documents, every figure under `docs/figures/`, and `artifacts/claims.json` equal a fresh build from the banked artifacts, that `docs/figures/` holds no file the build does not write, and that every image README.md and docs/REPORT.md embed is a generated figure, so a figure edited by hand, wherever it is kept, fails (D-053, D-054).
+`make claimcheck` and `make freshness` pass on README.md and docs/REPORT.md, and `make report-check` (`python -m halflife.report --check`) confirms that the generated blocks of both documents, every figure under `docs/figures/`, and `artifacts/claims.json` equal a fresh build from the banked artifacts, that `docs/figures/` holds no file the build does not write, and that every image README.md and docs/REPORT.md embed is a generated figure, so a figure edited by hand, wherever it is kept, fails (D-053, D-054). Embeds are found by `halflife.report.embedded_images` in every form a renderer shows: inline Markdown images (with titles, angle brackets, or brackets in the alt text), reference-style images, HTML `img`, `picture`/`source`, `object`, `embed`, `iframe`, `video`, SVG `image` and `use`, CSS `url(...)`, and inline `<svg>` elements; a URL, a `data:` URI, or a path outside the repository is never a generated figure (review 3, B1).
 
 ## G12 review (`artifacts/review/latest.json`)
 

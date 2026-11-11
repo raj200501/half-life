@@ -1,6 +1,6 @@
 # half-life
 
-**How long do AI coding agents keep the rules you give them?** half-life measures rule persistence as a survival problem: rules are stated at the start of a long session, decision points later make breaking one the easiest way to finish a request, and a discrete-time hazard model estimates how the chance of a violation changes with tool calls since the rule was stated and with context compaction. It ships a benchmark, a sandboxed harness, validated detectors, a preregistered analysis, and a mitigation kit for Claude Code.
+**How long do AI coding agents keep the rules you give them?** half-life measures rule persistence as a survival problem: rules are stated at the start of a long session, decision points later make breaking one the easiest way to finish a request, and a discrete-time hazard model estimates how the chance of a violation changes with tool calls since the rule was stated and with context compaction. It ships a benchmark, a sandboxed harness, validated detectors, an analysis written and audited before any confirmatory data (to be frozen by a preregistration before the main study), and a mitigation kit for Claude Code.
 
 <!-- report:begin headline -->
 **Finding so far.** Before any model run, the rule-violation detectors reached precision <!-- claim:e0.precision -->1.000<!-- /claim --> (95% confidence interval [<!-- claim:e0.precision.lo -->0.978<!-- /claim -->, <!-- claim:e0.precision.hi -->1.000<!-- /claim -->]) and recall <!-- claim:e0.recall -->1.000<!-- /claim --> ([<!-- claim:e0.recall.lo -->0.978<!-- /claim -->, <!-- claim:e0.recall.hi -->1.000<!-- /claim -->]) on <!-- claim:e0.cases -->328<!-- /claim --> seeded synthetic action logs; the main study has not run.
@@ -19,14 +19,14 @@ Recall probes leaked into the main run in <!-- claim:e0.leak.leaks -->0<!-- /cla
 
 ## Status
 
-This is a release before the main study: the instrument is validated (E0) and the family pilot is done, but E1 to E4 have not run, so there is no half-life estimate and no compaction effect yet. Every number on this page is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`.
+This is a release before the main study: the instrument is validated (E0) and the family pilot is done, but E1 to E4 have not run, so there is no half-life estimate and no compaction effect yet. Every result number on this page (a measured rate, count, estimate, or interval) is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`; counts that describe the design, such as how many templates the bench has, are not results.
 
-`make ship-check` checks the fourteen gates in section 6 of [docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md) on a fresh clone. In the latest run recorded in [STATUS.md](STATUS.md):
+`make ship-check` checks the fourteen gates in section 6 of [docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md) on a fresh clone. In the latest run recorded in [STATUS.md](STATUS.md), a fast run (the brief counts only a full run as the ship check):
 
 - **Passing:** G1 build and tests, G2 static quality, G3 CI parity, G4 offline demo, G5 instrument validity (E0), G6 benchmark complete, G10 claim integrity, G11 preregistration integrity (trivially: no preregistration is committed yet), G13 documentation, and G14 hygiene.
-- **Not passing yet:** G7 main study (E1 is designed and its analysis code has been through an adversarial audit; a second round of statistics fixes, D-050, and the preregistration come before any E1 run), G8 ecological and placement arms (E2 needs a machine where the Claude billing guard passes; E3 has not run), G9 mitigations (the kit is packaged with install docs and its overhead is banked; the E4 study has not run), and G12 independent review (the latest review returned BLOCK; its findings are fixed and a new review is pending).
+- **Not passing yet:** G7 main study (E1 is designed and its analysis code has been through an adversarial audit; a second round of statistics fixes, D-050, and the preregistration come before any E1 run), G8 ecological and placement arms (E2 needs a machine where the Claude billing guard passes; E3 has not run), G9 mitigations (the kit is packaged with install docs and its overhead is banked; the E4 study has not run), and G12 independent review (no review has returned SHIP yet; each review's blocking findings and their fixes are recorded in [DECISIONS.md](DECISIONS.md), and its other findings in [docs/REVIEW_LOG.md](docs/REVIEW_LOG.md)).
 
-The bench templates do not carry a canary string yet, so half-life-bench is not yet packaged as a dataset release.
+Every bench template carries the half-life-bench canary string (DECISIONS.md D-055), so the templates can be filtered out of training corpora.
 
 ## Quickstart (about a minute; the demo runs offline)
 
@@ -61,7 +61,7 @@ Every result is banked under `artifacts/` with provenance and reported in [docs/
 - **The decision points do tempt real models.** In the exploratory family pilot, small open-weight agents broke stated rules at some decision points, and the pilot picked the two families E1 will use by reach, engagement, and speed, never by outcome ([artifacts/pilot/](artifacts/pilot/), D-026, D-042).
 ![Pilot: decision points reached, acted at, and broken, per model family](docs/figures/pilot.svg)
 
-- **The guard is cheap** relative to a model call ([artifacts/e4/overhead.json](artifacts/e4/overhead.json)).
+- **The overhead of the guard and the pin is measured** per guarded tool call and per session ([artifacts/e4/overhead.json](artifacts/e4/overhead.json)); what they do to violations, and what that costs in tokens, latency, and task success, waits for E4.
 - **An adversarial audit caught real statistical bugs before any data existed**: contrast p-values that could never fall below one, two families' sessions silently merged in pooled risk sets, separated fits reported as numbers, and a decision rule that rejected true nulls too often. Each fix is test-first and recorded (D-049, D-050).
 
 ## How it works
@@ -81,7 +81,7 @@ flowchart LR
   H --> R["artifacts/ + claims.json<br/>make report, claimcheck, freshness"]
 ```
 
-A **session template** is a small project plus an ordered list of requests. The generator interleaves filler requests so each decision point lands at a different tool-call position in every session, pads every study session to at least twenty requests with neutral read-only requests (D-043), and draws forced compactions independently of decision-point positions, with a small token budget as a backstop (D-047). The **agent** works one request at a time through six tools inside a sandbox (user, network, mount, and process namespaces; credentials removed). After every tool call the harness hashes every workspace file, so a protected file changed by any route shows up as a hash change on that path. **Detectors** turn the action log into violations; each reached decision point becomes an **opportunity** with its position, compaction count, outcome, and pre-decision recall. The **analysis** fits a discrete-time hazard model on each session's opportunities up to its first violation, decides contrasts with score tests whose variance allows correlation within a plan (D-049; D-050 extends the same test to every preregistered hypothesis), and resamples whole plans for intervals.
+A **session template** is a small project plus an ordered list of requests. The generator interleaves filler requests so each decision point lands at a different tool-call position in every session, pads every study session to at least twenty requests with neutral read-only requests (D-043), and draws forced compactions independently of decision-point positions, with a small token budget as a backstop (D-047). The **agent** works one request at a time through six tools inside a sandbox (user, network, mount, and process namespaces; credentials removed). After every tool call the harness hashes every workspace file, so a protected file changed by any route shows up as a hash change on that path. **Detectors** turn the action log into violations; each reached decision point becomes an **opportunity** with its position, compaction count, outcome, and pre-decision recall. The **analysis** fits a discrete-time hazard model on each session's opportunities up to its first violation, decides contrasts with score tests whose variance allows correlation within a plan (D-049; under D-050, not implemented yet, the same test will decide every hypothesis the preregistration names), and resamples whole plans for intervals.
 
 ## Use it on your own agent or benchmark
 

@@ -1,16 +1,16 @@
 {
   "failed_checks": [],
   "provenance": {
-    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
-    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "b6ecb37d8b6c7c6a862f348c51d373d804a2f43c",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T04:02:20Z"
+    "timestamp": "2026-11-11T20:42:10Z"
   },
   "synthetic": true,
   "tasks_passed": 16,
   "tasks_total": 16,
   "template_id": "inventory-api",
-  "template_sha256": "fd8a3f289502bfec2466c5a3377b40c73a1633a004667dde4eab4f295a4aba5f",
+  "template_sha256": "3881bbb591dd388963cf8b54b397536298ca54a3e9987f2078d3b18395f40043",
   "tempting": [
     {
       "constraint": "service-api",

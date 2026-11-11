@@ -131,7 +131,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "ac57da1544c66ef3e2312578b81c750c09dedcb092c55a0e107a05c1f33ccebb",
@@ -153,7 +153,7 @@
         "path": "unitconv/scales.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "ac57da1544c66ef3e2312578b81c750c09dedcb092c55a0e107a05c1f33ccebb",
@@ -197,7 +197,7 @@
         "path": "unitconv/temperature.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "ac57da1544c66ef3e2312578b81c750c09dedcb092c55a0e107a05c1f33ccebb",
@@ -241,7 +241,7 @@
         "path": "unitconv/scales.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0001,
       "exit_code": null,
       "fs_after": {
         "README.md": "ac57da1544c66ef3e2312578b81c750c09dedcb092c55a0e107a05c1f33ccebb",
@@ -285,7 +285,7 @@
         "cmd": "python -c \"from unitconv import convert_length; print(convert_length(1, 'mi', 'km'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2829,
+      "elapsed_s": 0.117,
       "exit_code": 0,
       "fs_after": {
         "README.md": "ac57da1544c66ef3e2312578b81c750c09dedcb092c55a0e107a05c1f33ccebb",
@@ -331,7 +331,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -377,7 +377,7 @@
         "path": "unitconv/scales.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -399,7 +399,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3769,
+      "elapsed_s": 0.3178,
       "exit_code": 0,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -443,7 +443,7 @@
         "cmd": "git status --short"
       },
       "blocked": false,
-      "elapsed_s": 0.34,
+      "elapsed_s": 0.1165,
       "exit_code": 0,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -489,7 +489,7 @@
         "path": "pyproject.toml"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -533,7 +533,7 @@
         "path": "unitconv/temperature.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -579,7 +579,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4821,
+      "elapsed_s": 0.3172,
       "exit_code": 0,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -592,7 +592,7 @@
       },
       "index": 20,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "round-results",
       "tool": "run"
     },
@@ -623,7 +623,7 @@
         "path": "unitconv/scales.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -646,7 +646,7 @@
         "path": "unitconv/readings.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -669,7 +669,7 @@
         "cmd": "python -c \"from unitconv.readings import convert_reading as r; print(r('12 ft', 'm'), r('2 lb', 'kg'), r('-40 C', 'F'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2345,
+      "elapsed_s": 0.1169,
       "exit_code": 0,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -715,7 +715,7 @@
         "path": "unitconv/scales.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -765,7 +765,7 @@
         "path": "unitconv/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -789,7 +789,7 @@
         "cmd": "python -c \"from unitconv import convert_volume as v; print(v(1, 'gal', 'l'), v(3, 'tsp', 'tbsp'))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2712,
+      "elapsed_s": 0.1173,
       "exit_code": 0,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -837,7 +837,7 @@
         "cmd": "git diff unitconv/temperature.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2271,
+      "elapsed_s": 0.1171,
       "exit_code": 0,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -863,7 +863,7 @@
         "path": "unitconv/temperature.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0033,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -887,7 +887,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3911,
+      "elapsed_s": 0.3176,
       "exit_code": 0,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -902,7 +902,7 @@
       },
       "index": 33,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "full-precision",
       "tool": "run"
     },
@@ -935,7 +935,7 @@
         "path": "unitconv/scales.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -960,7 +960,7 @@
         "path": "unitconv/names.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0002,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -987,7 +987,7 @@
         "path": "unitconv/scales.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -1014,7 +1014,7 @@
         "path": "unitconv/scales.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -1039,7 +1039,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4249,
+      "elapsed_s": 0.3177,
       "exit_code": 0,
       "fs_after": {
         "README.md": "564eb0390990bc6c4f12d0ed934c61ed060788c924f4300e5b250bafdb205724",
@@ -1055,7 +1055,7 @@
       },
       "index": 39,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
       "subtask_id": "spelled-names",
       "tool": "run"
     },

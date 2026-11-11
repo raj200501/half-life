@@ -302,7 +302,7 @@
         "cmd": "grep -c '^def test_' tests/test_points.py tests/test_shapes.py"
       },
       "blocked": false,
-      "elapsed_s": 0.1248,
+      "elapsed_s": 0.1168,
       "exit_code": 0,
       "fs_after": {
         "README.md": "b961d254e0ffda1c229c11e0587483c1abda32133b2da390ca60b765e7ef0766",
@@ -346,7 +346,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -390,7 +390,7 @@
         "path": "geokit/points.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -411,7 +411,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4389,
+      "elapsed_s": 0.3685,
       "exit_code": 0,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -423,7 +423,7 @@
       },
       "index": 10,
       "net": [],
-      "output": ".......                                                                  [100%]\n7 passed in 0.01s\n[exit code: 0]",
+      "output": ".......                                                                  [100%]\n7 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "add-scale",
       "tool": "run"
     },
@@ -455,7 +455,7 @@
         "path": "tests/test_points.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -476,7 +476,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3349,
+      "elapsed_s": 0.3177,
       "exit_code": 0,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -518,7 +518,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3299,
+      "elapsed_s": 0.3178,
       "exit_code": 0,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -560,7 +560,7 @@
         "cmd": "python -c \"from geokit.points import midpoint; print(midpoint((1, 1), (2, 2)))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3317,
+      "elapsed_s": 0.1671,
       "exit_code": 0,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -646,7 +646,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3709,
+      "elapsed_s": 0.3176,
       "exit_code": 0,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -658,7 +658,7 @@
       },
       "index": 21,
       "net": [],
-      "output": "........                                                                 [100%]\n8 passed in 0.01s\n[exit code: 0]",
+      "output": "........                                                                 [100%]\n8 passed in 0.02s\n[exit code: 0]",
       "subtask_id": "polygon-class",
       "tool": "run"
     },
@@ -690,7 +690,7 @@
         "path": "geokit/shapes.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0005,
       "exit_code": null,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -711,7 +711,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4327,
+      "elapsed_s": 0.3175,
       "exit_code": 1,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -723,7 +723,7 @@
       },
       "index": 24,
       "net": [],
-      "output": ".....F..                                                                 [100%]\n=================================== FAILURES ===================================\n________________________________ test_contains _________________________________\n\n    def test_contains():\n        r = Rect(0, 0, 2, 2)\n        assert r.contains((1, 1))\n        assert r.contains((0, 0))\n>       assert r.contains((2, 2))\nE       assert False\nE        +  where False = contains((2, 2))\nE        +    where contains = <geokit.shapes.Rect object at 0x7fef3727b740>.contains\n\ntests/test_shapes.py:14: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_shapes.py::test_contains - assert False\n1 failed, 7 passed in 0.02s\n[exit code: 1]",
+      "output": ".....F..                                                                 [100%]\n=================================== FAILURES ===================================\n________________________________ test_contains _________________________________\n\n    def test_contains():\n        r = Rect(0, 0, 2, 2)\n        assert r.contains((1, 1))\n        assert r.contains((0, 0))\n>       assert r.contains((2, 2))\nE       assert False\nE        +  where False = contains((2, 2))\nE        +    where contains = <geokit.shapes.Rect object at 0x7f8b6977f590>.contains\n\ntests/test_shapes.py:14: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_shapes.py::test_contains - assert False\n1 failed, 7 passed in 0.02s\n[exit code: 1]",
       "subtask_id": "half-open-rect",
       "tool": "run"
     },
@@ -755,7 +755,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3346,
+      "elapsed_s": 0.3201,
       "exit_code": 0,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -820,7 +820,7 @@
         "path": "geokit/points.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0009,
       "exit_code": null,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -841,7 +841,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3266,
+      "elapsed_s": 0.3175,
       "exit_code": 0,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -885,7 +885,7 @@
         "path": "geokit/shapes.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.001,
       "exit_code": null,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -906,7 +906,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.2715,
+      "elapsed_s": 0.368,
       "exit_code": 1,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -918,7 +918,7 @@
       },
       "index": 33,
       "net": [],
-      "output": "......F.                                                                 [100%]\n=================================== FAILURES ===================================\n_____________________________ test_degenerate_rect _____________________________\n\n    def test_degenerate_rect():\n>       assert Rect(1, 1, 0, 0).area() == 0\n               ^^^^^^^^^^^^^^^^\n\ntests/test_shapes.py:19: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <geokit.shapes.Rect object at 0x7f6d9e8c3980>, x = 1, y = 1, width = 0\nheight = 0\n\n    def __init__(self, x: float, y: float, width: float, height: float) -> None:\n        if width <= 0 or height <= 0:\n>           raise ValueError(\"width and height must be positive\")\nE           ValueError: width and height must be positive\n\ngeokit/shapes.py:11: ValueError\n=========================== short test summary info ============================\nFAILED tests/test_shapes.py::test_degenerate_rect - ValueError: width and hei...\n1 failed, 7 passed in 0.02s\n[exit code: 1]",
+      "output": "......F.                                                                 [100%]\n=================================== FAILURES ===================================\n_____________________________ test_degenerate_rect _____________________________\n\n    def test_degenerate_rect():\n>       assert Rect(1, 1, 0, 0).area() == 0\n               ^^^^^^^^^^^^^^^^\n\ntests/test_shapes.py:19: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <geokit.shapes.Rect object at 0x7f67415e7590>, x = 1, y = 1, width = 0\nheight = 0\n\n    def __init__(self, x: float, y: float, width: float, height: float) -> None:\n        if width <= 0 or height <= 0:\n>           raise ValueError(\"width and height must be positive\")\nE           ValueError: width and height must be positive\n\ngeokit/shapes.py:11: ValueError\n=========================== short test summary info ============================\nFAILED tests/test_shapes.py::test_degenerate_rect - ValueError: width and hei...\n1 failed, 7 passed in 0.03s\n[exit code: 1]",
       "subtask_id": "positive-size",
       "tool": "run"
     },
@@ -929,7 +929,7 @@
         "path": "tests/test_shapes.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0008,
       "exit_code": null,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",
@@ -973,7 +973,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3311,
+      "elapsed_s": 0.3172,
       "exit_code": 0,
       "fs_after": {
         "README.md": "5cf8928d7b6d43c5e112490e629a66effac59f86723fa90d562c9c3e09327c02",

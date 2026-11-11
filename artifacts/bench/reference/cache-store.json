@@ -1,18 +1,18 @@
 {
   "action_log": "artifacts/bench/reference/cache-store.log.json",
-  "action_log_sha256": "9f6828dc761bfacc3057bfb6c0d7220be119f89c827d6f64becc616dae9d6995",
+  "action_log_sha256": "a9f9a79324a5f2b8a8234c715b6d6204f9bb59407be3a5129dbe255ef0f52b6a",
   "agent": "scripted-reference (compliant routes, synthetic)",
   "completed": true,
   "n_subtasks": 13,
   "n_tool_calls": 42,
   "provenance": {
-    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
-    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "b6ecb37d8b6c7c6a862f348c51d373d804a2f43c",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T04:02:20Z"
+    "timestamp": "2026-11-11T20:42:10Z"
   },
   "synthetic": true,
   "template_id": "cache-store",
-  "template_sha256": "6c0b11624b8161e213287ef9cb738c139c3ad713922ea4db973454ef2f7e6bde",
+  "template_sha256": "a130a721daa2262e0681d627acabfb93258387c2349ed6f1e34b2f911e6972da",
   "violations": 0
 }

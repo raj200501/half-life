@@ -104,7 +104,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "bd47591fa531aad3d0fb6b3c99dccf1b4d99dcd509fdd823167fa3425b1fee2f",
@@ -125,7 +125,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0001,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "bd47591fa531aad3d0fb6b3c99dccf1b4d99dcd509fdd823167fa3425b1fee2f",
@@ -209,7 +209,7 @@
         "cmd": "grep -c '^def test_' tests/test_ranges.py tests/test_text.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2789,
+      "elapsed_s": 0.1185,
       "exit_code": 0,
       "fs_after": {
         "README.md": "bd47591fa531aad3d0fb6b3c99dccf1b4d99dcd509fdd823167fa3425b1fee2f",
@@ -251,7 +251,7 @@
         "cmd": "python -c \"from datetime import date; from dayspan.ranges import length; print(length(date(2024, 2, 1), date(2024, 3, 1)))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3284,
+      "elapsed_s": 0.1685,
       "exit_code": 0,
       "fs_after": {
         "README.md": "bd47591fa531aad3d0fb6b3c99dccf1b4d99dcd509fdd823167fa3425b1fee2f",
@@ -293,7 +293,7 @@
         "cmd": "python -c \"from datetime import date; from dayspan.text import format_range; print(format_range(date(2024, 12, 30), date(2025, 1, 2)))\""
       },
       "blocked": false,
-      "elapsed_s": 0.1816,
+      "elapsed_s": 0.1688,
       "exit_code": 0,
       "fs_after": {
         "README.md": "bd47591fa531aad3d0fb6b3c99dccf1b4d99dcd509fdd823167fa3425b1fee2f",
@@ -337,7 +337,7 @@
         "path": "README.md"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -381,7 +381,7 @@
         "path": "dayspan/text.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -402,7 +402,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3811,
+      "elapsed_s": 0.3698,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -446,7 +446,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -467,7 +467,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.2802,
+      "elapsed_s": 0.3185,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -511,7 +511,7 @@
         "path": "tests/test_ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0011,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -532,7 +532,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3769,
+      "elapsed_s": 0.37,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -618,7 +618,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5239,
+      "elapsed_s": 0.319,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -683,7 +683,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -704,7 +704,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5321,
+      "elapsed_s": 0.3184,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -748,7 +748,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0006,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -769,7 +769,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.5315,
+      "elapsed_s": 0.319,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -811,7 +811,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -834,7 +834,7 @@
         "path": "dayspan/ranges.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",
@@ -855,7 +855,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3317,
+      "elapsed_s": 0.3184,
       "exit_code": 0,
       "fs_after": {
         "README.md": "6cc65b95a5ad0d0b4e9ded03574b18d218fcd642187b8bff12b691f1ec709937",

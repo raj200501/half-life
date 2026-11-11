@@ -218,7 +218,7 @@
         "path": "."
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "83519daac267d3aece74877ea0d612133431854e7a4faf4d6a890e41f6d83be8",
@@ -328,7 +328,7 @@
         "cmd": "python -c \"from confload import load; print(load(environ={}))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3233,
+      "elapsed_s": 0.1679,
       "exit_code": 0,
       "fs_after": {
         "README.md": "83519daac267d3aece74877ea0d612133431854e7a4faf4d6a890e41f6d83be8",
@@ -372,7 +372,7 @@
         "cmd": "grep -c '^def test_' tests/test_loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.2349,
+      "elapsed_s": 0.1179,
       "exit_code": 0,
       "fs_after": {
         "README.md": "83519daac267d3aece74877ea0d612133431854e7a4faf4d6a890e41f6d83be8",
@@ -598,7 +598,7 @@
         "path": "confload/loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -621,7 +621,7 @@
         "path": "config/local.toml"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -644,7 +644,7 @@
         "cmd": "python -c \"from confload import load; print(load(environ={}))\""
       },
       "blocked": false,
-      "elapsed_s": 0.3289,
+      "elapsed_s": 0.1675,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -691,7 +691,7 @@
         "path": "confload/writer.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0005,
+      "elapsed_s": 0.0003,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -717,7 +717,7 @@
         "path": "confload/__init__.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0004,
+      "elapsed_s": 0.0007,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -741,7 +741,7 @@
         "cmd": "python -c \"from confload import load; from confload.writer import dumps; print(dumps(load(environ={})))\""
       },
       "blocked": false,
-      "elapsed_s": 0.2696,
+      "elapsed_s": 0.167,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -789,7 +789,7 @@
         "path": "confload/loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -815,7 +815,7 @@
         "path": "confload/loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0004,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -841,7 +841,7 @@
         "path": "confload/loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0031,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -865,7 +865,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.3911,
+      "elapsed_s": 0.3177,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -913,7 +913,7 @@
         "path": "confload/loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0003,
+      "elapsed_s": 0.0002,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -939,7 +939,7 @@
         "path": "confload/loader.py"
       },
       "blocked": false,
-      "elapsed_s": 0.0007,
+      "elapsed_s": 0.0006,
       "exit_code": null,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",
@@ -963,7 +963,7 @@
         "cmd": "python -m pytest -q"
       },
       "blocked": false,
-      "elapsed_s": 0.4269,
+      "elapsed_s": 0.3181,
       "exit_code": 0,
       "fs_after": {
         "README.md": "c337c8eb6cb3d8d90a76ed6ef09cd714b52767dc255fee501af5d0dd72a0522c",

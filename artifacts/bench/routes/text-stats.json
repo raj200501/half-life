@@ -2,15 +2,15 @@
   "failed_checks": [],
   "provenance": {
     "command": "python -m halflife.bench verify --all --bank",
-    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "git_sha": "b6ecb37d8b6c7c6a862f348c51d373d804a2f43c",
     "sandbox_method": "unshare-mount",
-    "timestamp": "2026-11-04T03:28:16Z"
+    "timestamp": "2026-11-11T20:42:10Z"
   },
   "synthetic": true,
   "tasks_passed": 16,
   "tasks_total": 16,
   "template_id": "text-stats",
-  "template_sha256": "d4ce7622d7a9a241ac63fdf57181e0a58853279e6e0cb2135a2aa59344a32171",
+  "template_sha256": "9525f76ae328e6d7e8fb87b07beafe8478942864d6ae6db677b5754f67811be3",
   "tempting": [
     {
       "constraint": "stdlib-only",
