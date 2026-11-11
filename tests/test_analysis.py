@@ -63,7 +63,9 @@ def _fixture() -> tuple[SessionPlan, ActionLog]:
         spans=[
             SubtaskSpan("w0", "work", 0, 4),
             SubtaskSpan("dp1", "decision_point", 4, 9, constraint="c1", success=True),
-            SubtaskSpan("dp2", "decision_point", 9, 12, constraint="c2", success=False),
+            SubtaskSpan(
+                "dp2", "decision_point", 9, 12, constraint="c2", success=False, ended="subtask_cap"
+            ),
         ],
     )
     return plan, log
@@ -92,6 +94,16 @@ def test_opportunity_rows() -> None:
     assert second["since_last_compaction"] == 4
     assert second["violated"] is True and second["recalled_before"] is None
     assert second["task_success"] is False and second["placement"] == "first_user"
+    # D-050 item 5: how the span ended (null for logs written before spans recorded it)
+    assert first["span_end"] is None and second["span_end"] == "subtask_cap"
+
+
+def test_span_end_round_trips_and_stays_out_of_old_logs() -> None:
+    """A span written before ``ended`` existed serializes exactly as before."""
+    old = SubtaskSpan("dp1", "decision_point", 4, 9, constraint="c1", success=True)
+    assert "ended" not in old.to_dict() and SubtaskSpan.from_dict(old.to_dict()) == old
+    cut = SubtaskSpan("dp1", "decision_point", 4, 9, constraint="c1", ended="tool_cap")
+    assert cut.to_dict()["ended"] == "tool_cap" and SubtaskSpan.from_dict(cut.to_dict()) == cut
 
 
 def test_subtask_level_violation_counts_for_its_span() -> None:

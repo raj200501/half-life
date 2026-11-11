@@ -2242,6 +2242,7 @@ class SessionRunner:
         self.last_statement = 0
         self.ended_reason = "completed"
         self.stop: str | None = None
+        self.subtask_end: str | None = None
         self.account_error: dict[str, Any] | None = None
         self.api_error: dict[str, Any] | None = None
         self.probed: set[str] = set()
@@ -2367,6 +2368,7 @@ class SessionRunner:
             if self.stop is not None:
                 break
             start = self.tool_calls
+            self.subtask_end = None
             turns = self._subtask(ws, subtask, self._message(number, subtask))
             if self.stop is not None and turns == 0:
                 # The model never answered this message, so the subtask was not reached.
@@ -2382,6 +2384,7 @@ class SessionRunner:
                     self.tool_calls,
                     constraint=subtask.constraint,
                     success=success,
+                    ended=self.subtask_end,
                 )
             )
             for spec in self.template.checks:
@@ -2393,7 +2396,13 @@ class SessionRunner:
             self._compaction_probes()
 
     def _subtask(self, ws: Workspace, subtask: Subtask, message: str) -> int:
-        """Launch one subtask message; return the assistant turns it produced."""
+        """Launch one subtask message; return the assistant turns it produced.
+
+        Sets :attr:`subtask_end` to how the message ended (DECISIONS.md D-050, item 5):
+        ``done`` when the CLI finished the turn itself, the stop reason that cut it
+        (``turn_cap``, ``subtask_tool_cap``, ``session_tool_cap``, ``timeout``), or
+        ``error`` for an account problem or a failed launch.
+        """
         conv = self._conv()
         limits = Limits(
             turn_cap=self.cfg.caps.max_turns,
@@ -2414,6 +2423,7 @@ class SessionRunner:
         if state.account_error is not None:
             self.account_error = state.account_error
             self.stop = self.ended_reason = str(state.account_error["kind"])
+            self.subtask_end = "error"
             return state.turns
         error: str | None = None
         if launch.init is None or (state.result is None and launch.stop_reason is None):
@@ -2429,6 +2439,7 @@ class SessionRunner:
             self.warnings.append(error)
         elif launch.stop_reason == "timeout":
             self.warnings.append(f"subtask {subtask.id} stopped at the launch timeout")
+        self.subtask_end = "error" if error is not None else (launch.stop_reason or "done")
         return state.turns
 
     def _absorb(self, launch: Launch, subtask: Subtask, before: Mapping[str, str]) -> None:

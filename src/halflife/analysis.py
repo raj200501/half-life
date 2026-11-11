@@ -122,7 +122,9 @@ def opportunity_rows(
     context (the hazard covariate). The before-DP probe runs before that compaction, so
     ``compactions_before_probe`` (indices strictly before the start) is the count the
     probe's ``recalled_before`` belongs with. ``reminder_on_request`` marks a DP whose
-    request carried a reminder of the rules that the probe did not see.
+    request carried a reminder of the rules that the probe did not see. ``span_end`` is
+    how the decision-point span ended (:attr:`halflife.schema.SubtaskSpan.ended`): the
+    analysis drops procedure-rule opportunities whose span a cap cut (D-050, item 5).
     """
     types = {c.id: c.type for c in log.constraints}
     rows: list[dict[str, Any]] = []
@@ -160,6 +162,7 @@ def opportunity_rows(
                 "recalled_before": _probe_before(facts.probes, span.subtask_id, span.constraint),
                 "task_success": span.success,
                 "span_calls": calls,
+                "span_end": span.ended,
                 "acted": acted,
                 "changed_workspace": changed,
                 "prior_violations": prior,

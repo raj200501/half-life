@@ -372,6 +372,7 @@ def test_agent_runs_session_with_scheduled_compaction_and_probes() -> None:
     assert [s.subtask_id for s in log.spans] == ["w0", "dp1", "dp2", "dp3"]
     assert [(s.start, s.end) for s in log.spans] == [(0, 2), (2, 4), (4, 6), (6, 8)]
     assert all(s.success for s in log.spans)
+    assert [s.ended for s in log.spans] == ["done"] * 4  # D-050 item 5
     assert len(result.compactions) == 1 and result.compactions[0].tool_call_index == 3
     checkpoints = [p.checkpoint for p in result.probes]
     assert checkpoints == ["before_dp:dp1", "after_compaction:c1", "before_dp:dp2", "before_dp:dp3"]
@@ -389,6 +390,7 @@ def test_agent_tool_cap_and_invalid_replies() -> None:
     assert result.ended_reason == "tool_cap"
     assert [e.tool for e in result.log.events] == ["invalid"] * 5
     assert [(s.start, s.end) for s in result.log.spans] == [(0, 3), (3, 5)]
+    assert [s.ended for s in result.log.spans] == ["subtask_cap", "tool_cap"]
 
 
 def test_budget_compaction_and_memory_and_reinject() -> None:

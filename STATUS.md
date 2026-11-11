@@ -20,7 +20,7 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 | G9 Mitigations shipped | FAIL | kit packaged with install docs and banked overhead; E4 not run |
 | G10 Claim integrity | PASS | claimcheck, freshness, and report-check pass on README.md and docs/REPORT.md |
 | G11 Preregistration integrity | PASS (trivially) | no preregistration committed yet |
-| G12 Independent review | FAIL | the latest review (of 15c4319) returned BLOCK; its findings are fixed in 8c2bde7 (D-054); a new review of the release commit is pending |
+| G12 Independent review | FAIL | the latest review (of af5ddc6) returned BLOCK; its three blocking findings are fixed (image forms in report-check, the bench canary D-055, README wording); a new review is pending |
 | G13 Documentation | PASS | README follows section 11, REPORT complete, citecheck verified |
 | G14 Hygiene | PASS | secrets clean, cash_usd = 0, caps respected, tree clean |
 
@@ -40,6 +40,8 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Now
 
+- Review 3 (BLOCK at af5ddc6) fixed: `report --check` now finds embedded images in every Markdown and HTML form (B1); every bench template carries the half-life-bench canary and the bench routes, reference runs, manifest, and probe-scoring hashes are re-banked with their scripts (B2, D-055); README.md no longer calls the analysis preregistered, plus four smaller wording fixes (B3, CORRECTIONS.md).
+- D-050 item 5, harness side: every span records how it ended (`done` or the cap that cut it) and opportunity rows carry `span_end`; the statistics items run in a subagent.
 - Release sprint (2026-11-11, Raj): experiments on hold. Publish-safety pass: `make secrets-scan` clean, nothing under private/ tracked, no personal data beyond Raj's name and GitHub noreply email (the only other addresses are reserved example domains in tests and templates), the bench templates are original synthetic projects whose only outside names are reserved example domains and documentation links. README.md gains a Status section with the gate state. The third independent review was paused for the sprint and resumes after it.
 - Pre-release pass (2026-11-11): the build brief in README.md is replaced by the real project README (section 11), generated in part from artifacts by `make report`; a pilot figure and violation counts join the report; a pre-release correction is logged (CORRECTIONS.md); G12 accepts the reviewer's own log after the reviewed commit (D-051).
 - Banked so far: E0 instrument validity (detectors, probe scorer, probe leakage, compaction logs), the half-life-bench templates with routes and reference runs, the family pilot with its D-042 choice (SmolLM2 and Granite), and the overhead of halflife-guard and halflife-pin.

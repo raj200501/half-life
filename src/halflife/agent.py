@@ -424,7 +424,7 @@ class MinimalAgent:
                     content = f"{content}\n\n{self.pending_extra}"
                     self.pending_extra = ""
                 self.messages.append({"role": "user", "content": content})
-            self._run_subtask(subtask, scheduled)
+            ended = self._run_subtask(subtask, scheduled)
             success = None
             if subtask.success is not None:
                 success = self.runner.run_check(subtask.success.cmd) == subtask.success.expect_exit
@@ -436,6 +436,7 @@ class MinimalAgent:
                     self.tool_calls,
                     constraint=subtask.constraint,
                     success=success,
+                    ended=ended,
                 )
             )
             self._record_checks(subtask.id, self.tool_calls - 1)
@@ -443,7 +444,9 @@ class MinimalAgent:
         self.result.wall_s = time.monotonic() - start
         return self.result
 
-    def _run_subtask(self, subtask: Subtask, scheduled: list[int]) -> None:
+    def _run_subtask(self, subtask: Subtask, scheduled: list[int]) -> str:
+        """Run one request until ``done`` or a cap; return how it ended (``done``,
+        ``tool_cap`` for the session cap, ``subtask_cap`` for the per-request cap)."""
         calls_here = 0
         while (
             calls_here < self.plan.max_calls_per_subtask
@@ -475,8 +478,9 @@ class MinimalAgent:
             if action is not None and action.tool == "done" and not event.blocked:
                 # Reminders due on a done call ride on the next request message.
                 self.pending_extra = extra
-                return
+                return "done"
             observation = f"Result of {event.tool}:\n{truncate(event.output)}"
             if extra:
                 observation = f"{observation}\n\n{extra}"
             self.messages.append({"role": "user", "content": observation})
+        return "tool_cap" if self.tool_calls >= self.plan.max_tool_calls else "subtask_cap"

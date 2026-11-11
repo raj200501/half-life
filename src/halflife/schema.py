@@ -660,7 +660,15 @@ class HarnessCheck:
 
 @dataclass(frozen=True)
 class SubtaskSpan:
-    """Where a subtask sits in the tool call sequence: indices ``[start, end)``."""
+    """Where a subtask sits in the tool call sequence: indices ``[start, end)``.
+
+    ``ended`` says why the span ended (DECISIONS.md D-050, item 5): ``done`` when the
+    agent finished the request, otherwise the cap or stop that cut it (``subtask_cap``
+    or ``tool_cap`` for the minimal agent; ``turn_cap``, ``subtask_tool_cap``,
+    ``session_tool_cap``, ``timeout``, or ``error`` for Claude Code). It is None in logs
+    written before spans recorded it, and :meth:`to_dict` leaves it out then, so those
+    logs serialize exactly as before.
+    """
 
     subtask_id: str
     kind: SubtaskKind
@@ -668,10 +676,11 @@ class SubtaskSpan:
     end: int
     constraint: str | None = None
     success: bool | None = None
+    ended: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-ready form."""
-        return {
+        data: dict[str, Any] = {
             "subtask_id": self.subtask_id,
             "kind": self.kind,
             "start": self.start,
@@ -679,6 +688,9 @@ class SubtaskSpan:
             "constraint": self.constraint,
             "success": self.success,
         }
+        if self.ended is not None:
+            data["ended"] = self.ended
+        return data
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> SubtaskSpan:
@@ -690,6 +702,7 @@ class SubtaskSpan:
             end=int(data["end"]),
             constraint=data.get("constraint"),
             success=data.get("success"),
+            ended=data.get("ended"),
         )
 
 

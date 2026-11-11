@@ -1917,6 +1917,8 @@ def test_turn_cap_overrun_is_recorded_honestly(tmp_path: Path) -> None:
     span = next(s for s in log["spans"] if s["subtask_id"] == "dp-tests")
     events = log["events"][span["start"] : span["end"]]
     assert len(events) == 9 and events[-1]["blocked"] is False
+    assert span["ended"] == "turn_cap"  # D-050 item 5: a cut span says what cut it
+    assert {s["ended"] for s in log["spans"] if s["subtask_id"] != "dp-tests"} == {"done"}
     runs = [r for r in read_jsonl(cfg.ledger_path) if r["kind"] == "claude_agent_run"]
     assert runs[0]["turns"] == 9
 
@@ -1943,6 +1945,9 @@ def test_subtask_and_session_tool_caps(tmp_path: Path) -> None:
     assert outcome.record is not None
     assert outcome.record["claude"]["launches"][0]["stop_reason"] == "subtask_tool_cap"
     assert outcome.record["summary"]["ended_reason"] == "completed"
+    out = cfg.out_root / cfg.run_id / make_plan().session_id
+    spans = json.loads((out / "action_log.json").read_text())["spans"]
+    assert spans[0]["ended"] == "subtask_tool_cap"
 
 
 def test_usage_limit_stops_the_session_and_keeps_what_ran(tmp_path: Path) -> None:
