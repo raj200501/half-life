@@ -12,6 +12,8 @@ Milestones mapped to the section 6 gates, with risks, environment-dependent fall
 
 ## Milestones
 
+Progress as of 2026-11-11 (the gate table in STATUS.md is the live record): M0 to M4 are done; M5 has its pilot, family choice, and audited analysis code but not its preregistration or the E1 runs; M6 has the E2 driver, runbook, and E3 design but no runs; M7 has the kit, its documentation, and measured overhead but not the E4 runs; M8 has claims, freshness, citations, the report pipeline, the README, and the report; M9 waits on the review. The environment section below is the bootstrap snapshot; the current one is in STATUS.md.
+
 | # | Milestone | Gates | Main work |
 |---|---|---|---|
 | M0 | Bootstrap | G2, G3 (partial), G14 | Scaffold, doctor, budget, secrets scan, ship check, state files. Done 2026-10-23. |
