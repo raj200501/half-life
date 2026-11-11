@@ -1130,6 +1130,8 @@ E1_FILES = (
     "hazard.json",
     "half_life.json",
     "km.json",
+    "contrasts.json",
+    "descriptive.json",
 )
 
 
@@ -1140,6 +1142,38 @@ def check_interval(record: dict[str, Any], key: str) -> bool:
     except (KeyError, TypeError, ValueError):
         return False
     return all(math.isfinite(x) for x in (lo, value, hi)) and lo <= value <= hi
+
+
+# Reasons halflife.stats.not_estimable_terms gives for a term without a finite estimate,
+# and what the fit diagnostics must show for each (D-029, D-050 gate pass).
+NOT_ESTIMABLE_CODES = ("no_violations", "all_violations", "separation", "not_converged")
+
+
+def not_estimable_problem(record: dict[str, Any], fit: dict[str, Any] | None) -> str | None:
+    """Why a not-estimable estimate is not backed by its fit diagnostics, or None.
+
+    The estimate must give no number and a reason the analysis writes, and the fit must
+    show that reason: no violations, only violations, a separated term, or no
+    convergence. A number beside ``not_estimable`` is refused.
+    """
+    code = record.get("not_estimable")
+    if code not in NOT_ESTIMABLE_CODES:
+        return f"not-estimable reason {code!r} is not one the analysis writes"
+    if any(record.get(key) is not None for key in ("estimate", "half_life", "lo", "hi")):
+        return "reports a number beside not estimable"
+    if not isinstance(fit, dict):
+        return "has no fit diagnostics behind not estimable"
+    events, rows = fit.get("n_events"), fit.get("n_rows")
+    shown = {
+        "no_violations": events == 0,
+        "all_violations": is_count(events) and events == rows,
+        "separation": fit.get("separation") is True
+        and (
+            record.get("term") is None or record.get("term") in (fit.get("separated_terms") or [])
+        ),
+        "not_converged": fit.get("converged") is False,
+    }[code]
+    return None if shown else f"fit diagnostics do not show {code}"
 
 
 def check_half_life(record: dict[str, Any]) -> bool:
@@ -1218,7 +1252,7 @@ def run_provenance_problem(
 
 
 # Analysis outputs G7 recomputes from the banked rows (halflife.e1_analysis writes them).
-E1_RECOMPUTED = ("hazard.json", "half_life.json", "km.json")
+E1_RECOMPUTED = ("hazard.json", "half_life.json", "km.json", "contrasts.json", "descriptive.json")
 E1_ROWS = ("sessions.jsonl", "opportunities.jsonl")
 
 
@@ -1311,6 +1345,37 @@ def prereg_settings_problem(ctx: Context, prereg: str, base: Path) -> str | None
         want = fixed.get(key)
         if not isinstance(want, int) or isinstance(want, bool) or want != value:
             return f"hazard.json settings {key} {value} != {want!r} fixed in {prereg}"
+    return None
+
+
+def code_pins_problem(ctx: Context, prereg: str) -> str | None:
+    """Why the analysis the clone would rerun is not the preregistered code, or None.
+
+    The preregistration's settings block pins every module of the analysis
+    (``"code_sha256"``, the output of ``python -m halflife.e1_analysis --code-sha256``
+    when it was frozen). The clone's own environment prints the same mapping now, and
+    the two must be equal, so neither an edited module nor a module added to or dropped
+    from the analysis passes (D-050 gate pass).
+    """
+    path = ctx.clone / prereg
+    fixed = prereg_settings(path.read_text(encoding="utf-8") if path.is_file() else "") or {}
+    pins = fixed.get("code_sha256")
+    if not isinstance(pins, dict) or not pins:
+        return f"{prereg} pins no analysis code (code_sha256)"
+    if (blocked := setup_failed(ctx)) is not None:
+        return blocked.evidence
+    result = ctx.run(
+        "e1-code-pins", [*ctx.python, "-I", "-m", "halflife.e1_analysis", "--code-sha256"]
+    )
+    try:
+        current = json.loads(result.output) if result.returncode == 0 else None
+    except json.JSONDecodeError:
+        current = None
+    if not isinstance(current, dict):
+        return f"halflife.e1_analysis --code-sha256 failed: rc={result.returncode}"
+    changed = sorted(k for k in set(pins) | set(current) if pins.get(k) != current.get(k))
+    if changed:
+        return f"analysis code differs from the pins in {prereg}: {', '.join(changed)}"
     return None
 
 
@@ -1427,15 +1492,43 @@ def gate_g7(ctx: Context) -> GateResult:
         return fail(
             f"{len(claimed - seen)} session(s) claim reached_first_dp with no opportunities"
         )
+    hazard = load_json(base / "hazard.json")
+    fits = {str(f.get("family")): f for f in hazard.get("fits") or [] if isinstance(f, dict)}
     for name in ("hazard.json", "half_life.json"):
         estimates = load_json(base / name)["estimates"]
         families = {e["family"] for e in estimates}
         if not set(reached) <= families:
             return fail(f"{name} lacks estimates for {sorted(set(reached) - families)}")
         for est in estimates:
+            family = est.get("family")
+            if est.get("not_estimable") is not None:
+                fit = (
+                    fits.get(str(family))
+                    if name == "hazard.json"
+                    else (
+                        (est.get("model") or {}).get("fit")
+                        if isinstance(est.get("model"), dict)
+                        else None
+                    )
+                )
+                problem = not_estimable_problem(est, fit)
+                if problem is not None and name == "half_life.json":
+                    return fail(f"{name}: estimate for {family} lacks a valid interval ({problem})")
+                if problem is not None:
+                    return fail(f"{name}: estimate for {family} {problem}")
+                continue
             ok = check_interval(est, "estimate") if name == "hazard.json" else check_half_life(est)
             if not ok:
-                return fail(f"{name}: estimate for {est.get('family')} lacks a valid interval")
+                return fail(f"{name}: estimate for {family} lacks a valid interval")
+    rates = {
+        str(r.get("family")): r.get("violation_rate")
+        for r in load_json(base / "descriptive.json").get("by_family") or []
+        if isinstance(r, dict)
+    }
+    for family in sorted(reached):
+        rate = rates.get(family)
+        if not (isinstance(rate, dict) and check_interval(rate, "value")):
+            return fail(f"descriptive.json lacks a valid violation-rate interval for {family}")
     km = load_json(base / "km.json")
     if km.get("descriptive") is not True or not km.get("curves"):
         return fail("km.json missing or not labeled descriptive")
@@ -1443,7 +1536,11 @@ def gate_g7(ctx: Context) -> GateResult:
     summary = f"E1 preregistered; sessions reaching DP {counts}; estimates with intervals"
     if ctx.fast:
         return GateResult(True, f"{summary}; not recomputed (fast)")
-    problem = prereg_settings_problem(ctx, prereg, base) or recompute_e1(ctx, base)
+    problem = (
+        prereg_settings_problem(ctx, prereg, base)
+        or code_pins_problem(ctx, prereg)
+        or recompute_e1(ctx, base)
+    )
     if problem:
         return fail(problem)
     return GateResult(True, f"{summary}, recomputed from the banked rows")

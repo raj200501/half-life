@@ -1659,7 +1659,28 @@ def e1_files(prereg: str = PREREG) -> dict[str, Any]:
                         "violated": i % 4 == 0,
                     }
                 )
-    hazard = [{"family": f, "estimate": 0.02, "lo": 0.01, "hi": 0.04} for f in FAMILIES]
+    hazard = [
+        {"family": f, "term": "log1p(position)", "estimate": 0.02, "lo": 0.01, "hi": 0.04}
+        for f in FAMILIES
+    ]
+    fits = [
+        {
+            "family": f,
+            "n_events": 10,
+            "n_rows": 40,
+            "separation": False,
+            "separated_terms": [],
+            "converged": True,
+        }
+        for f in FAMILIES
+    ]
+    rates = [
+        {
+            "family": f,
+            "violation_rate": {"k": 10, "n": 40, "value": 0.25, "lo": 0.14, "hi": 0.4},
+        }
+        for f in FAMILIES
+    ]
     half_life = [
         {"family": FAMILIES[0], "half_life": 35.0, "lo": 22.0, "hi": 61.0},
         {"family": FAMILIES[1], "half_life": None, "not_reached_within": 150},
@@ -1675,9 +1696,11 @@ def e1_files(prereg: str = PREREG) -> dict[str, Any]:
         f"{E1}/provenance.json": provenance,
         f"{E1}/sessions.jsonl": sessions,
         f"{E1}/opportunities.jsonl": opportunities,
-        f"{E1}/hazard.json": {"estimates": hazard},
+        f"{E1}/hazard.json": {"estimates": hazard, "fits": fits},
         f"{E1}/half_life.json": {"estimates": half_life},
         f"{E1}/km.json": {"descriptive": True, "curves": curves},
+        f"{E1}/descriptive.json": {"by_family": rates},
+        f"{E1}/contrasts.json": {"h2a": [], "h3_pairs": []},
     }
 
 
@@ -1695,7 +1718,12 @@ def build_g7(
 
 def prereg_text(**fixed: Any) -> str:
     """A preregistration whose settings block fixes ``fixed`` over the fixture's values."""
-    block = {"analysis": "halflife.e1_analysis", "n_boot": N_BOOT, "seed": BOOT_SEED} | fixed
+    block = {
+        "analysis": "halflife.e1_analysis",
+        "n_boot": N_BOOT,
+        "seed": BOOT_SEED,
+        "code_sha256": e1_analysis.analysis_code_sha256(),
+    } | fixed
     return (
         "# E1 preregistration\n\nDate: 2026-11-04\n\n```json\n"
         + json.dumps({"halflife_prereg": block})
@@ -1812,6 +1840,20 @@ def open_upper_bound(files: dict[str, Any]) -> None:
     estimate(files, "half_life.json", 0).update({"hi": None, "hi_not_reached_within": 150})
 
 
+def not_estimable_term(files: dict[str, Any]) -> None:
+    """The first family's term is not estimable because it had no violations, as its fit
+    diagnostics in hazard.json show."""
+    estimate(files, "hazard.json", 0).update(
+        estimate=None, lo=None, hi=None, not_estimable="no_violations"
+    )
+    output(files, "hazard.json")["fits"][0].update(n_events=0, separation=True)
+
+
+def not_estimable_without_fit(files: dict[str, Any]) -> None:
+    not_estimable_term(files)
+    output(files, "hazard.json")["fits"].pop(0)
+
+
 def set_estimate(name: str, index: int, **changes: Any) -> Edit:
     return lambda files: estimate(files, name, index).update(changes)
 
@@ -1878,6 +1920,59 @@ G7_CASES = params(
             "session-run-provenance-names-no-commit",
             "names no git commit",
             lambda f: table(f, "sessions.jsonl")[2]["run_provenance"].update(git_sha="HEAD"),
+        ),
+        # D-050 gate pass: a not-estimable term only with its reason and the fit behind it,
+        # and a descriptive interval for every family.
+        g7(
+            "hazard-not-estimable-for-an-unknown-reason",
+            "not-estimable reason 'because' is not one the analysis writes",
+            lambda f: estimate(f, "hazard.json", 0).update(
+                estimate=None, lo=None, hi=None, not_estimable="because"
+            ),
+        ),
+        g7(
+            "hazard-not-estimable-against-its-fit",
+            "fit diagnostics do not show no_violations",
+            lambda f: estimate(f, "hazard.json", 0).update(
+                estimate=None, lo=None, hi=None, not_estimable="no_violations"
+            ),
+        ),
+        g7(
+            "hazard-not-estimable-beside-a-number",
+            "reports a number beside not estimable",
+            lambda f: estimate(f, "hazard.json", 0).update(not_estimable="no_violations"),
+        ),
+        g7(
+            "hazard-not-estimable-without-fit-diagnostics",
+            "has no fit diagnostics",
+            not_estimable_without_fit,
+        ),
+        g7(
+            "descriptive-rates-missing",
+            "missing artifacts/e1/descriptive.json",
+            lambda f: f.pop(f"{E1}/descriptive.json"),
+        ),
+        g7(
+            "descriptive-rate-missing-for-a-family",
+            "descriptive.json lacks a valid violation-rate interval for llama3.2",
+            lambda f: output(f, "descriptive.json")["by_family"].pop(),
+        ),
+        g7(
+            "descriptive-rate-interval-inverted",
+            "descriptive.json lacks a valid violation-rate interval for qwen2.5",
+            lambda f: output(f, "descriptive.json")["by_family"][0]["violation_rate"].update(
+                lo=0.3
+            ),
+        ),
+        g7(
+            "contrasts-missing",
+            "missing artifacts/e1/contrasts.json",
+            lambda f: f.pop(f"{E1}/contrasts.json"),
+        ),
+        g7(
+            "half-life-not-estimable-for-an-unknown-reason",
+            HL_INVALID,
+            set_estimate("half_life.json", 0, half_life=None, lo=None, hi=None, not_estimable="x"),
         ),
         g7(
             "session-cites-another-preregistration",
@@ -2005,6 +2100,11 @@ def test_g7_control_passes(tmp_path: Path) -> None:
     result = evaluate(7, build_g7(tmp_path))
     assert result.passed, result.evidence
     assert "llama3.2=40, qwen2.5=40" in result.evidence
+
+
+def test_g7_not_estimable_term_with_its_reason_and_fit_passes(tmp_path: Path) -> None:
+    result = evaluate(7, build_g7(tmp_path, not_estimable_term))
+    assert result.passed, result.evidence
 
 
 def test_g7_open_upper_bound_passes(tmp_path: Path) -> None:
@@ -2159,6 +2259,11 @@ def g7_prereg(name: str, expect: str, text: str) -> Case:
     return Case(name, expect, lambda root: build_g7_full(root, None, text))
 
 
+def differs_prefix(name: str) -> str:
+    """Evidence pattern: the recomputed ``name`` differs from the banked one somewhere."""
+    return "^" + re.escape(f"recomputed {name} differs from the banked file at ")
+
+
 def differs(name: str, where: str) -> str:
     """Evidence pattern: the recomputed ``name`` first differs from the banked one at ``where``."""
     return re.escape(f"recomputed {name} differs from the banked file at {where}") + "$"
@@ -2214,8 +2319,41 @@ def rows_without_strategy(files: dict[str, Any]) -> None:
 NO_SETTINGS = r"^hazard\.json does not record the analysis settings"
 HAZARD_DIFFERS = r"^recomputed hazard\.json differs from the banked file at "
 
+
+def wrong_pin() -> dict[str, str]:
+    """The analysis pins with one module's hash changed (code edited after the freeze)."""
+    pins = e1_analysis.analysis_code_sha256()
+    pins["halflife/stats.py"] = "0" * 64
+    return pins
+
+
+def h2a_p_value_edited(files: dict[str, Any]) -> None:
+    for entry in output(files, "contrasts.json")["h2a"]:
+        if entry.get("p_value") is not None:
+            entry["p_value"] = 0.001
+            return
+    raise AssertionError("the fixture has no H2a p-value to edit")  # pragma: no cover
+
+
 G7_FULL_CASES = params(
     [
+        # D-050 gate pass: the rerun analysis is the preregistered code, and every
+        # confirmatory output (H2a and H3 included) is recomputed.
+        g7_prereg(
+            "prereg-pins-no-analysis-code",
+            re.escape("prereg/0001-e1.md pins no analysis code (code_sha256)"),
+            prereg_text(code_sha256=None),
+        ),
+        g7_prereg(
+            "analysis-code-differs-from-the-pins",
+            "analysis code differs from the pins in prereg/0001-e1.md: halflife/stats.py",
+            prereg_text(code_sha256=wrong_pin()),
+        ),
+        g7_full(
+            "h2a-p-value-edited-after-the-analysis",
+            differs_prefix("contrasts.json"),
+            h2a_p_value_edited,
+        ),
         g7_prereg(
             "prereg-has-no-settings-block",
             "prereg/0001-e1.md has no halflife_prereg settings block",
@@ -2411,7 +2549,10 @@ def test_g7_recomputation_writes_nothing_in_the_clone(tmp_path: Path) -> None:
     assert result.passed, result.evidence
     assert {path.name: path.read_bytes() for path in (root / E1).iterdir()} == banked
     assert run_git(root, "status", "--porcelain", "--untracked-files=all") == ""
-    assert sorted(path.name for path in ctx.logs.iterdir()) == ["e1-recompute.log"]
+    assert sorted(path.name for path in ctx.logs.iterdir()) == [
+        "e1-code-pins.log",
+        "e1-recompute.log",
+    ]
 
 
 # --------------------------------------------------------------------------- G8
