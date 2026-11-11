@@ -10,6 +10,7 @@ not Claude Code. Every template, plan, reply, and number here is synthetic.
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import io
 import json
@@ -2396,6 +2397,18 @@ def test_finished_sessions_are_skipped(tmp_path: Path) -> None:
     cfg.launcher = second
     again = cc.SessionRunner(plan, TEMPLATE, cfg).run()
     assert again.skipped and again.record == outcome.record and second.calls == []
+
+
+def test_a_finished_session_is_not_skipped_for_a_changed_plan(tmp_path: Path) -> None:
+    """D-050 item 6: a rerun whose plan changed under the same session id is refused, so a
+    result saved under one plan is never banked as the result of another."""
+    _, cfg, _, plan = run_full_session(tmp_path)
+    second = FakeLauncher(script(tmp_path / "transcripts", {}))
+    cfg.launcher = second
+    changed = dataclasses.replace(plan, seed=plan.seed + 1)
+    with pytest.raises(cc.UnsupportedPlan, match="stored plan differs"):
+        cc.SessionRunner(changed, TEMPLATE, cfg).run()
+    assert second.calls == []
 
 
 def test_caps_refuse_a_session_before_anything_happens(tmp_path: Path) -> None:

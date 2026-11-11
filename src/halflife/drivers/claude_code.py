@@ -2266,6 +2266,18 @@ class SessionRunner:
         """
         done = self.out_dir / "result.json"
         if done.exists():
+            stored_plan = self.out_dir / "plan.json"
+            stored = (
+                json.loads(stored_plan.read_text(encoding="utf-8"))
+                if stored_plan.is_file()
+                else None
+            )
+            if stored != json.loads(json.dumps(self.plan.to_dict())):
+                # D-050 item 6: never bank a result saved under one plan as another's.
+                raise UnsupportedPlan(
+                    f"{self.plan.session_id}: the stored plan differs from the plan being run "
+                    f"(use a new run id, or remove {self.out_dir})"
+                )
             loaded: dict[str, Any] = json.loads(done.read_text(encoding="utf-8"))
             return SessionOutcome(loaded, saved=True, skipped=True)
         require_clean_guard(self.cfg.guard)
