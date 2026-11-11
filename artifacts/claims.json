@@ -1,6 +1,11 @@
 {
   "allowlist": [
     {
+      "context": "95% Wilson score interval",
+      "reason": "interval level recorded in the power artifact (design parameter) [make report]",
+      "value": "95"
+    },
+    {
       "context": "95% Wilson score intervals",
       "reason": "interval level of the Wilson intervals in halflife.e0 and halflife.probe_validation (design parameter) [make report]",
       "value": "95"
@@ -900,6 +905,828 @@
       "where": {
         "violated": true
       }
+    },
+    "power.alpha": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/0/inputs/alpha",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.0": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/0/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.1": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/1/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.10": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/10/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.11": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/11/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.12": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/12/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.13": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/13/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.14": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/14/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.15": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/15/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.16": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/16/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.17": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/17/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.18": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/18/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.19": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/19/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.2": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/2/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.20": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/20/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.21": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/21/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.22": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/22/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.23": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/23/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.24": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/24/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.25": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/25/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.26": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/26/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.27": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/27/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.28": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/28/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.29": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/29/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.3": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/3/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.30": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/30/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.31": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/31/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.32": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/32/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.33": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/33/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.34": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/34/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.35": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/35/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.36": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/36/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.37": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/37/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.38": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/38/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.39": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/39/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.4": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/4/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.40": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/40/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.41": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/41/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.42": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/42/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.43": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/43/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.44": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/44/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.45": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/45/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.46": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/46/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.47": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/47/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.5": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/5/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.6": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/6/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.7": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/7/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.8": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/8/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.compaction.9": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/9/compaction/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.0": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/0/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.1": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/1/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.10": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/10/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.11": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/11/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.12": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/12/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.13": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/13/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.14": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/14/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.15": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/15/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.16": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/16/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.17": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/17/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.18": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/18/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.19": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/19/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.2": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/2/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.20": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/20/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.21": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/21/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.22": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/22/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.23": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/23/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.24": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/24/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.25": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/25/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.26": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/26/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.27": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/27/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.28": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/28/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.29": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/29/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.3": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/3/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.30": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/30/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.31": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/31/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.32": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/32/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.33": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/33/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.34": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/34/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.35": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/35/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.36": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/36/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.37": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/37/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.38": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/38/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.39": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/39/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.4": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/4/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.40": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/40/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.41": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/41/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.42": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/42/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.43": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/43/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.44": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/44/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.45": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/45/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.46": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/46/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.47": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/47/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.5": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/5/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.6": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/6/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.7": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/7/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.8": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/8/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.contrast.9": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/9/contrast/value",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "power.effect.0": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/0/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.1": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/1/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.10": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/10/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.11": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/11/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.2": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/2/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.3": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/3/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.4": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/4/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.5": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/5/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.6": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/6/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.7": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/7/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.8": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/8/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.effect.9": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/9/inputs/effect_log_odds",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "power.n_sim": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/0/inputs/n_sim",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.pilot.compactions": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/compactions_per_session",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.pilot.dps": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/opportunities_per_session",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.pilot.k": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/violations",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.pilot.length": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/max_position",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.pilot.n": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/opportunities",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.pilot.procedure_cut": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/opportunities_procedure_cut",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.pilot.rate": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/violation_rate/value",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.pilot.rate.hi": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/violation_rate/hi",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.pilot.rate.lo": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/violation_rate/lo",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.pilot.reached": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/sessions_reaching_first_dp",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.pilot.sessions": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/pilot/sessions",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.rate.0": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/0/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.1": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/1/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.10": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/10/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.11": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/11/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.2": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/2/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.3": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/3/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.4": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/4/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.5": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/5/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.6": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/6/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.7": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/7/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.8": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/8/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.rate.9": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/9/inputs/base_rate",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "power.sessions.0": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/0/inputs/n_sessions",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.sessions.12": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/12/inputs/n_sessions",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.sessions.24": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/24/inputs/n_sessions",
+      "format": "d",
+      "note": "make report"
+    },
+    "power.sessions.36": {
+      "artifact": "artifacts/power/e1.json",
+      "field": "/grid/36/inputs/n_sessions",
+      "format": "d",
+      "note": "make report"
     }
   },
   "derivations": {
@@ -969,6 +1796,27 @@
       "note": "make report",
       "params": {
         "answers": "src/halflife/data/probe_answers.yaml"
+      }
+    },
+    "artifacts/power/e1.json": {
+      "compare": [
+        "/synthetic",
+        "/pilot",
+        "/grid"
+      ],
+      "derive": "halflife.derive:power_e1",
+      "inputs": [
+        "artifacts/pilot/sessions.jsonl",
+        "artifacts/pilot/opportunities.jsonl"
+      ],
+      "note": "make report",
+      "params": {
+        "families": [
+          "smollm",
+          "granite"
+        ],
+        "n_sim": 400,
+        "seed": 20261105
       }
     }
   },
