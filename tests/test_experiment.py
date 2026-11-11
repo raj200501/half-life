@@ -195,6 +195,9 @@ def test_bank_runs(tmp_path: Path) -> None:
     (runs / "s1" / "usage.json").write_text(json.dumps(usage), encoding="utf-8")
     meta = {"git_sha": "b" * 40, "git_dirty": False, "started": "x", "finished": "y"}
     _dump(runs / "s1" / "run_meta.json", meta)
+    stamp = {"run_id": "r1", "git_sha": "c" * 40, "started": "a", "finished": "b"}
+    result = json.loads((runs / "s2" / "result.json").read_text())
+    _dump(runs / "s2" / "result.json", result | {"run_provenance": stamp})
     design = root / "design.yaml"
     shutil.copy(EXEMPLAR, design)
     out = root / "artifacts" / "e1"
@@ -213,6 +216,7 @@ def test_bank_runs(tmp_path: Path) -> None:
     assert all(s["prereg"] == PREREG for s in sessions)  # the run-time tag, kept
     assert sessions[0]["usage"] == usage and sessions[1]["usage"] is None
     assert sessions[0]["run_meta"] == meta and sessions[1]["run_meta"] is None
+    assert sessions[0]["run_provenance"] is None and sessions[1]["run_provenance"] == stamp
     assert sessions[0]["run_settings"] == {"temperature": 0.7, "max_step_tokens": 384}
     files = sessions[0]["files_sha256"]
     assert files["plan.json"] == experiment._sha256(runs / "s1" / "plan.json")

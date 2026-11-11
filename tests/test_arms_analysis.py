@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import random
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -400,3 +403,33 @@ def test_e2_summary_is_ecological_and_lists_tiers(tmp_path: Path) -> None:
         )
     assert arms_analysis.main(["e2", "--dir", str(tmp_path), "--n-boot", "20"]) == 0
     assert {p.stem for p in tmp_path.glob("*.json")} == {"rates", "summary"}
+
+
+def test_code_pins_cover_every_module_the_analysis_loads() -> None:
+    """D-050 item 6: the E3 and E4 preregistrations pin every module the analysis runs."""
+    loaded = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys, halflife.arms_analysis; "
+            "print(' '.join(sorted(m for m in sys.modules if m.startswith('halflife'))))",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    hashes = arms_analysis.analysis_code_sha256()
+    expected = {
+        ("halflife/__init__.py" if m == "halflife" else m.replace(".", "/") + ".py") for m in loaded
+    }
+    assert set(hashes) == expected
+    source = Path(arms_analysis.__file__).resolve().parent.parent
+    for rel, digest in hashes.items():
+        assert digest == hashlib.sha256((source / rel).read_bytes()).hexdigest()
+
+
+def test_cli_prints_the_code_pins(capsys: pytest.CaptureFixture[str]) -> None:
+    assert arms_analysis.main(["e3", "--code-sha256"]) == 0
+    assert json.loads(capsys.readouterr().out) == arms_analysis.analysis_code_sha256()
+    with pytest.raises(SystemExit):
+        arms_analysis.main(["e3"])  # --dir is required unless printing the pins

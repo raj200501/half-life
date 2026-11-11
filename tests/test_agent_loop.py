@@ -212,7 +212,8 @@ def test_compaction_strategies_retention(strategy: str, kept: bool) -> None:
     assert after[0] == {"role": "system", "content": "sys"}
     assert event.constraint_text_retained == {"tests-frozen": kept}
     assert after[-1]["content"].endswith("Next request")
-    assert len(event.sha256()) == 64
+    assert event.sha256() == hashlib.sha256(event.to_json().encode()).hexdigest()
+    assert event.to_json().endswith("}\n") and json.loads(event.to_json()) == event.to_dict()
     assert event.to_dict()["strategy"] == strategy
     assert (event.summary is None) == (strategy == "sliding_window")
 

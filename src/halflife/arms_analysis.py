@@ -53,6 +53,7 @@ Holm adjustments keep tests whose p-value cannot be computed in the family
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections.abc import Mapping, Sequence
@@ -528,14 +529,46 @@ def analyze_e2(
     }
 
 
+ANALYSIS_MODULES = (
+    "halflife/__init__.py",
+    "halflife/analysis.py",
+    "halflife/arms_analysis.py",
+    "halflife/e1_analysis.py",
+    "halflife/schema.py",
+    "halflife/stats.py",
+)
+"""Every module ``python -m halflife.arms_analysis`` loads (paths under ``src/``). The
+E2, E3, and E4 analyses reuse :mod:`halflife.e1_analysis` and run their statistics in
+:mod:`halflife.stats`, so their preregistrations pin all of these, as E1's pins
+:data:`halflife.e1_analysis.ANALYSIS_MODULES` (DECISIONS.md D-050, item 6)."""
+
+
+def analysis_code_sha256() -> dict[str, str]:
+    """SHA-256 of each module in :data:`ANALYSIS_MODULES`, by its path under ``src/``."""
+    source = Path(__file__).resolve().parent.parent
+    return {
+        rel: hashlib.sha256((source / rel).read_bytes()).hexdigest() for rel in ANALYSIS_MODULES
+    }
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """``python -m halflife.arms_analysis {e2,e3,e4} --dir artifacts/e3``: write the outputs."""
     parser = argparse.ArgumentParser(description="E2, E3, and E4 analyses.")
     parser.add_argument("experiment", choices=("e2", "e3", "e4"))
-    parser.add_argument("--dir", type=Path, required=True, help="banked experiment directory")
+    parser.add_argument("--dir", type=Path, help="banked experiment directory")
     parser.add_argument("--n-boot", type=int, default=Settings.n_boot)
     parser.add_argument("--seed", type=int, default=Settings.seed)
+    parser.add_argument(
+        "--code-sha256",
+        action="store_true",
+        help="print the SHA-256 of every module the analysis runs (for the preregistration)",
+    )
     args = parser.parse_args(argv)
+    if args.code_sha256:
+        print(json.dumps(analysis_code_sha256(), indent=2, sort_keys=True))
+        return 0
+    if args.dir is None:
+        parser.error("--dir is required")
     settings = Settings(n_boot=args.n_boot, seed=args.seed)
     analyze = {"e2": analyze_e2, "e3": analyze_e3, "e4": analyze_e4}[args.experiment]
     outputs = analyze(

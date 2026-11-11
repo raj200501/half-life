@@ -8,7 +8,9 @@ finished run into ``artifacts/`` is a separate, explicit step.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
+import subprocess
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -75,6 +77,48 @@ class RunContext:
     reinject_text: Callable[[Sequence[str]], str] | None = None
 
 
+SOURCE_ROOT = Path(__file__).resolve().parents[2]
+"""The checkout this package runs from (not a git checkout when installed as a wheel)."""
+
+
+def _utc_now() -> str:
+    return dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _git(*args: str) -> str | None:
+    """Output of a git command in :data:`SOURCE_ROOT`, or None outside a checkout."""
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(SOURCE_ROOT), *args],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.strip()
+
+
+def run_provenance(ctx: RunContext, started: str | None) -> dict[str, Any]:
+    """The run provenance stamped on every saved session (DECISIONS.md D-050, item 6).
+
+    It names the run and its preregistration tag, the code version (the git SHA, and
+    whether tracked files under ``src/`` or ``designs/`` differed from it), and when the
+    session started and finished, so a banked session shows under which code and when it
+    ran even when no model call was billed to it. Fields that cannot be known are null.
+    """
+    status = _git("status", "--porcelain", "--untracked-files=no", "--", "src", "designs")
+    return {
+        "run_id": ctx.run_id,
+        "prereg": ctx.prereg,
+        "git_sha": _git("rev-parse", "HEAD"),
+        "git_dirty": None if status is None else bool(status),
+        "started": started,
+        "finished": _utc_now(),
+    }
+
+
 def _write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -85,15 +129,21 @@ def save_session(
     result: SessionResult,
     violations: Sequence[Violation],
     ctx: RunContext,
+    started: str | None = None,
 ) -> dict[str, Any]:
-    """Write every output file for one session and return the result record."""
+    """Write every output file for one session and return the result record.
+
+    The record carries :func:`run_provenance` under ``run_provenance``; ``started`` is
+    the session's start time (UTC, ISO 8601) when the caller knows it.
+    """
     plan = result.plan
     _write_json(out_dir / "plan.json", plan.to_dict())
     (out_dir / "action_log.json").write_text(result.log.dumps() + "\n", encoding="utf-8")
     compactions = []
     for event in result.compactions:
         rel = f"compactions/{event.event_id}.json"
-        _write_json(out_dir / rel, event.to_dict())
+        (out_dir / rel).parent.mkdir(parents=True, exist_ok=True)
+        (out_dir / rel).write_bytes(event.to_json().encode("utf-8"))
         compactions.append(
             {
                 "run_id": ctx.run_id,
@@ -134,6 +184,7 @@ def save_session(
             "keep_last": ctx.settings.keep_last,
             "selfcheck_every": ctx.settings.selfcheck_every,
         },
+        "run_provenance": run_provenance(ctx, started),
     }
     _write_json(out_dir / "result.json", record)
     return record
@@ -154,6 +205,7 @@ def run_session(
     if done.exists():
         loaded: dict[str, Any] = json.loads(done.read_text(encoding="utf-8"))
         return loaded
+    started = _utc_now()
     with Workspace(template.files) as workspace:
         runner = WorkspaceRunner(workspace, ctx.sandbox)
         guard = (
@@ -173,7 +225,7 @@ def run_session(
         )
         result = agent.run()
     violations = detect_all(result.log)
-    return save_session(out_dir, result, violations, ctx)
+    return save_session(out_dir, result, violations, ctx, started)
 
 
 def run_plans(

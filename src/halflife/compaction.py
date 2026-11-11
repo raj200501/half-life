@@ -126,10 +126,14 @@ class CompactionEvent:
             "prompt_variant": self.prompt_variant,
         }
 
+    def to_json(self) -> str:
+        """The log file's text: canonical JSON (sorted keys, indent 2) and a final newline."""
+        return json.dumps(self.to_dict(), sort_keys=True, indent=2) + "\n"
+
     def sha256(self) -> str:
-        """Hash of the canonical JSON log."""
-        text = json.dumps(self.to_dict(), sort_keys=True, indent=2)
-        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+        """SHA-256 of the log file's bytes (:meth:`to_json`), so the hash a run records
+        equals the hash of the file it writes (DECISIONS.md D-050, item 6)."""
+        return hashlib.sha256(self.to_json().encode("utf-8")).hexdigest()
 
 
 def render_transcript(messages: Sequence[Mapping[str, str]]) -> str:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -112,13 +113,27 @@ def test_run_session_end_to_end(tmp_path: Path) -> None:
     assert opp["fix-discount"]["violated"] is True
     assert opp["tz-dates"]["violated"] is False
     comp = record["compactions"][0]
-    assert (out / comp["log_path"]).is_file() and len(comp["log_sha256"]) == 64
+    written = (out / comp["log_path"]).read_bytes()
+    assert comp["log_sha256"] == hashlib.sha256(written).hexdigest()  # D-050 item 6
     log = ActionLog.from_dict(json.loads((out / "action_log.json").read_text()))
     assert log.events[0].tool == "read_file" and log.blobs
+    stamp = record["run_provenance"]  # D-050 item 6: every saved session carries it
+    assert stamp["run_id"] == "r1" and stamp["prereg"] is None
+    assert stamp["started"] <= stamp["finished"] and stamp["finished"].endswith("Z")
+    if (runner.SOURCE_ROOT / ".git").exists():
+        assert len(stamp["git_sha"]) == 40 and isinstance(stamp["git_dirty"], bool)
     again = runner.run_session(
         _plan(), TEMPLATE, ScriptedPolicy(), protected_detector, ctx, tmp_path
     )
     assert again == json.loads((out / "result.json").read_text())
+
+
+def test_run_provenance_without_a_checkout(monkeypatch: Any) -> None:
+    monkeypatch.setattr(runner, "_git", lambda *args: None)
+    ctx = runner.RunContext(run_id="r9", family="fake", model="scripted", prereg="p")
+    stamp = runner.run_provenance(ctx, None)
+    assert stamp["git_sha"] is None and stamp["git_dirty"] is None
+    assert stamp["started"] is None and stamp["prereg"] == "p" and stamp["run_id"] == "r9"
 
 
 def test_guard_factory_blocks_test_edits(tmp_path: Path) -> None:

@@ -167,9 +167,9 @@ def _line_sha256(data: Any) -> str:
 
 
 def _log_hashes(path: Path) -> set[str]:
-    """The hashes a run may have recorded for a compaction log: of the file's bytes (the E2
-    driver) and of its canonical JSON without the final newline
-    (``halflife.compaction.CompactionEvent.sha256``)."""
+    """The hashes a run may have recorded for a compaction log: of the file's bytes (the
+    E2 driver, and the runner since DECISIONS.md D-050) and of its canonical JSON without
+    the final newline (runner runs from before D-050, such as the banked pilot)."""
     raw = path.read_bytes()
     found = {hashlib.sha256(raw).hexdigest()}
     try:
@@ -303,8 +303,10 @@ def bank_runs(
     compaction log that changed. Rows keep the run-time preregistration tag (opportunity
     rows get their session's when they lack one), and each session row records the
     SHA-256 of its plan, action log, and violations, its run settings, and the run-time
-    ``run_meta.json`` (git SHA, dirty flag, times) when ``experiment run`` wrote one;
-    provenance records every run's ``run.json`` and ``invocations.jsonl``.
+    ``run_meta.json`` (git SHA, dirty flag, times) when ``experiment run`` wrote one,
+    and the ``run_provenance`` stamp of its ``result.json`` (null for sessions saved
+    before DECISIONS.md D-050); provenance records every run's ``run.json`` and
+    ``invocations.jsonl``.
 
     Raises:
         BankError: with every problem found.
@@ -325,6 +327,7 @@ def bank_runs(
         row["probe_leaks"] = list(record.get("summary", {}).get("leaks", []))
         row["usage"] = _read_json(session_dir / "usage.json")
         row["run_meta"] = _read_json(session_dir / "run_meta.json")
+        row["run_provenance"] = record.get("run_provenance")
         row["run_settings"] = record.get("settings")
         row["files_sha256"] = {
             name: _sha256(session_dir / name) if (session_dir / name).is_file() else None
