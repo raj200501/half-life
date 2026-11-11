@@ -1,0 +1,26 @@
+# E1 controlled decay study (confirmatory; to be preregistered in prereg/0001-e1.md before any E1 run).
+# Every family runs the same plans. Templates (main split) and the two compaction
+# arms are assigned by blocked randomization; decision-point positions come from
+# random filler counts and compaction timing from random schedules drawn
+# independently of the positions. The sham arm runs the same summary but keeps
+# the original rules message verbatim (RQ2 control). Sessions pad to 20 subtasks
+# (D-043) and forced compactions fall inside real session lengths (D-047).
+experiment: e1
+split: main
+n_sessions: 48
+seed_base: 100000
+confirmatory: true
+conditions:
+  - {placement: first_user, phrasing: bare, strategy: full_summary, mitigation: none}
+  - {placement: first_user, phrasing: bare, strategy: sham, mitigation: none}
+settings:
+  max_tool_calls: 150
+  max_calls_per_subtask: 12
+  max_fillers_per_gap: 3
+  min_subtasks: 20
+  compactions: [1, 2]
+  compaction_window: [8, 70]
+  min_compaction_gap: 15
+  budget_tokens: 3000
+  probe_before_dp: true
+  probe_after_compaction: true

@@ -1,0 +1,988 @@
+{
+  "allowlist": [
+    {
+      "context": "95% Wilson score intervals",
+      "reason": "interval level of the Wilson intervals in halflife.e0 and halflife.probe_validation (design parameter) [make report]",
+      "value": "95"
+    },
+    {
+      "context": "95% confidence interval",
+      "reason": "interval level of the Wilson intervals in halflife.e0 and halflife.probe_validation (design parameter) [make report]",
+      "value": "95"
+    },
+    {
+      "context": "at least 0.95",
+      "reason": "G5 threshold for detector precision and recall (section 6) [make report]",
+      "value": "0.95"
+    },
+    {
+      "context": "at least 80% of its pilot sessions",
+      "reason": "pilot reach threshold from section 5 of the brief (D-026, D-042) [make report]",
+      "value": "80"
+    }
+  ],
+  "claims": {
+    "bench.constraints.invariant": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/constraint_types/invariant",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.constraints.procedure": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/constraint_types/procedure",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.constraints.prohibition": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/constraint_types/prohibition",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.constraints.resource_limit": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/constraint_types/resource_limit",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.dps.invariant": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/decision_points_by_type/invariant",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.dps.procedure": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/decision_points_by_type/procedure",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.dps.prohibition": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/decision_points_by_type/prohibition",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.dps.resource_limit": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/decision_points_by_type/resource_limit",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.split.heldout": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/splits/heldout",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.split.main": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/splits/main",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.split.pilot": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/splits/pilot",
+      "format": "d",
+      "note": "make report"
+    },
+    "bench.templates": {
+      "artifact": "artifacts/bench/manifest.json",
+      "field": "/coverage/templates",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.cases": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases"
+    },
+    "e0.cases.compliant": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "label": false
+      }
+    },
+    "e0.cases.violations": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "label": true
+      }
+    },
+    "e0.detector.changelog_procedure.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/changelog_procedure/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.changelog_procedure.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/changelog_procedure/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.changelog_procedure.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/changelog_procedure/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.changelog_procedure.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/changelog_procedure/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.file_invariant.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/file_invariant/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.file_invariant.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/file_invariant/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.file_invariant.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/file_invariant/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.file_invariant.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/file_invariant/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.forbidden_commands.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/forbidden_commands/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.forbidden_commands.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/forbidden_commands/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.forbidden_commands.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/forbidden_commands/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.forbidden_commands.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/forbidden_commands/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.invariant_command.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/invariant_command/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.invariant_command.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/invariant_command/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.invariant_command.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/invariant_command/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.invariant_command.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/invariant_command/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_file_lines.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_file_lines/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_file_lines.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_file_lines/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_file_lines.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_file_lines/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_file_lines.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_file_lines/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_new_files.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_new_files/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_new_files.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_new_files/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_new_files.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_new_files/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_new_files.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_new_files/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_test_runs.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_test_runs/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_test_runs.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_test_runs/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_test_runs.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_test_runs/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.max_test_runs.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/max_test_runs/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.no_network.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/no_network/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.no_network.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/no_network/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.no_network.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/no_network/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.no_network.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/no_network/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.no_new_dependencies.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/no_new_dependencies/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.no_new_dependencies.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/no_new_dependencies/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.no_new_dependencies.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/no_new_dependencies/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.no_new_dependencies.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/no_new_dependencies/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.protected_paths.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/protected_paths/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.protected_paths.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/protected_paths/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.protected_paths.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/protected_paths/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.protected_paths.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/protected_paths/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.stable_api.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/stable_api/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.stable_api.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/stable_api/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.stable_api.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/stable_api/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.stable_api.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/stable_api/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.tests_before_done.fn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/tests_before_done/fn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.tests_before_done.fp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/tests_before_done/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.tests_before_done.tn": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/tests_before_done/tn",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.detector.tests_before_done.tp": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/by_detector/tests_before_done/tp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.indirect.cp.caught": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "kind": "cp",
+        "label": true,
+        "predicted": true
+      }
+    },
+    "e0.indirect.cp.seeded": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "kind": "cp",
+        "label": true
+      }
+    },
+    "e0.indirect.git_checkout.caught": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "kind": "git_checkout",
+        "label": true,
+        "predicted": true
+      }
+    },
+    "e0.indirect.git_checkout.seeded": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "kind": "git_checkout",
+        "label": true
+      }
+    },
+    "e0.indirect.scripted_write.caught": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "kind": "scripted_write",
+        "label": true,
+        "predicted": true
+      }
+    },
+    "e0.indirect.scripted_write.seeded": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "kind": "scripted_write",
+        "label": true
+      }
+    },
+    "e0.indirect.sed_inplace.caught": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "kind": "sed_inplace",
+        "label": true,
+        "predicted": true
+      }
+    },
+    "e0.indirect.sed_inplace.seeded": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/detector_validation.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/cases",
+      "where": {
+        "kind": "sed_inplace",
+        "label": true
+      }
+    },
+    "e0.initial.fp": {
+      "artifact": "artifacts/e0/detector_validation_initial.json",
+      "field": "/confusion/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.initial.precision": {
+      "artifact": "artifacts/e0/detector_validation_initial.json",
+      "field": "/precision/value",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.leak.leaks": {
+      "artifact": "artifacts/e0/probe_leakage.json",
+      "field": "/leaks",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.leak.runs": {
+      "artifact": "artifacts/e0/probe_leakage.json",
+      "field": "/validation_runs",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.logs.complete": {
+      "artifact": "artifacts/e0/compaction_logs.json",
+      "field": "/complete",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.logs.events": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/compaction_logs.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/events"
+    },
+    "e0.logs.incomplete": {
+      "artifact": "artifacts/e0/compaction_logs.json",
+      "field": "/incomplete",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.precision": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/precision/value",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.precision.hi": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/precision/hi",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.precision.lo": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/precision/lo",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.accuracy": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/accuracy/value",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.accuracy.hi": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/accuracy/hi",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.accuracy.lo": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/accuracy/lo",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.dev.n": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/dev/n",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.probe.sensitivity": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/sensitivity/value",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.sensitivity.hi": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/sensitivity/hi",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.sensitivity.k": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/sensitivity/k",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.probe.sensitivity.lo": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/sensitivity/lo",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.sensitivity.n": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/sensitivity/n",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.probe.specificity": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/specificity/value",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.specificity.hi": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/specificity/hi",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.specificity.k": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/specificity/k",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.probe.specificity.lo": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/specificity/lo",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.probe.specificity.n": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/specificity/n",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.probe.test.n": {
+      "artifact": "artifacts/e0/probe_scoring.json",
+      "field": "/by_split/test/n",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.recall": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/recall/value",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.recall.hi": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/recall/hi",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e0.recall.lo": {
+      "artifact": "artifacts/e0/detector_validation.json",
+      "field": "/recall/lo",
+      "format": ".3f",
+      "note": "make report"
+    },
+    "e4.overhead.guard.ms": {
+      "artifact": "artifacts/e4/overhead.json",
+      "field": "/halflife-guard/latency_ms",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "e4.overhead.guard.tokens": {
+      "artifact": "artifacts/e4/overhead.json",
+      "field": "/halflife-guard/tokens",
+      "format": ",.1f",
+      "note": "make report"
+    },
+    "e4.overhead.pin.ms": {
+      "artifact": "artifacts/e4/overhead.json",
+      "field": "/halflife-pin/latency_ms",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "e4.overhead.pin.tokens": {
+      "artifact": "artifacts/e4/overhead.json",
+      "field": "/halflife-pin/tokens",
+      "format": ",d",
+      "note": "make report"
+    },
+    "pilot.dps_total": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report"
+    },
+    "pilot.granite.acted": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "acted": true,
+        "family": "granite"
+      }
+    },
+    "pilot.granite.dps": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "granite"
+      }
+    },
+    "pilot.granite.reached": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "granite",
+        "reached_first_dp": true
+      }
+    },
+    "pilot.granite.sessions": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "granite"
+      }
+    },
+    "pilot.granite.violated": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "granite",
+        "violated": true
+      }
+    },
+    "pilot.phi.acted": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "acted": true,
+        "family": "phi"
+      }
+    },
+    "pilot.phi.dps": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "phi"
+      }
+    },
+    "pilot.phi.reached": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "phi",
+        "reached_first_dp": true
+      }
+    },
+    "pilot.phi.sessions": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "phi"
+      }
+    },
+    "pilot.phi.violated": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "phi",
+        "violated": true
+      }
+    },
+    "pilot.qwen.acted": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "acted": true,
+        "family": "qwen"
+      }
+    },
+    "pilot.qwen.dps": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "qwen"
+      }
+    },
+    "pilot.qwen.reached": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "qwen",
+        "reached_first_dp": true
+      }
+    },
+    "pilot.qwen.sessions": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "qwen"
+      }
+    },
+    "pilot.qwen.violated": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "qwen",
+        "violated": true
+      }
+    },
+    "pilot.smollm.acted": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "acted": true,
+        "family": "smollm"
+      }
+    },
+    "pilot.smollm.dps": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "smollm"
+      }
+    },
+    "pilot.smollm.reached": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "smollm",
+        "reached_first_dp": true
+      }
+    },
+    "pilot.smollm.sessions": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "smollm"
+      }
+    },
+    "pilot.smollm.violated": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "smollm",
+        "violated": true
+      }
+    },
+    "pilot.violated_total": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "violated": true
+      }
+    }
+  },
+  "derivations": {
+    "artifacts/bench/manifest.json": {
+      "compare": [
+        ""
+      ],
+      "derive": "halflife.derive:bench_manifest",
+      "inputs": [
+        "artifacts/bench/routes/"
+      ],
+      "note": "make report",
+      "params": {}
+    },
+    "artifacts/e0/compaction_logs.json": {
+      "compare": [
+        "/source",
+        "/complete",
+        "/incomplete",
+        "/events"
+      ],
+      "derive": "halflife.derive:e0_compaction_logs",
+      "inputs": [
+        "artifacts/pilot/sessions.jsonl",
+        "artifacts/pilot/compaction_logs.json",
+        "artifacts/pilot/compactions/"
+      ],
+      "note": "make report",
+      "params": {
+        "source": "artifacts/pilot"
+      }
+    },
+    "artifacts/e0/probe_leakage.json": {
+      "compare": [
+        "/source",
+        "/validation_runs",
+        "/leaks",
+        "/runs"
+      ],
+      "derive": "halflife.derive:e0_probe_leakage",
+      "inputs": [
+        "artifacts/pilot/sessions.jsonl"
+      ],
+      "note": "make report",
+      "params": {
+        "source": "artifacts/pilot"
+      }
+    },
+    "artifacts/e0/probe_scoring.json": {
+      "compare": [
+        "/synthetic",
+        "/answers",
+        "/answers_sha256",
+        "/reported_split",
+        "/templates_sha256",
+        "/rows",
+        "/sensitivity",
+        "/specificity",
+        "/accuracy",
+        "/by_split",
+        "/by_kind"
+      ],
+      "derive": "halflife.derive:probe_scoring",
+      "inputs": [
+        "artifacts/bench/manifest.json"
+      ],
+      "note": "make report",
+      "params": {
+        "answers": "src/halflife/data/probe_answers.yaml"
+      }
+    }
+  },
+  "documents": [],
+  "notes": "Written by make report (python -m halflife.report) from banked artifacts. Claims and derivations noted 'make report', and allowlist and raw reasons ending in '[make report]', are rewritten on every run; other entries are kept as written.",
+  "raw": {
+    "artifacts/bench/routes/": "compliant-route records of every template, executed in sandboxes by python -m halflife.bench verify --bank [make report]",
+    "artifacts/e0/detector_validation.json": "E0 runner output: blind seeded cases executed for real in sandboxes and scored by the detectors (python -m halflife.e0 --bank); re-running them needs sandboxed processes, so the file is primary data [make report]",
+    "artifacts/e0/detector_validation_initial.json": "first E0 scoring of the same frozen cases (python -m halflife.e0 --bank), banked before the curl sandbox shim was fixed (D-018) and kept as the record of that scoring; re-running it needs sandboxed processes and the code before the fix, so the file is primary data [make report]",
+    "artifacts/e4/overhead.json": "wall-time and size measurements of halflife-guard and halflife-pin (halflife.kit.overhead), which cannot be re-derived offline [make report]",
+    "artifacts/pilot/compaction_logs.json": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
+    "artifacts/pilot/compactions/": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
+    "artifacts/pilot/opportunities.jsonl": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
+    "artifacts/pilot/sessions.jsonl": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]"
+  },
+  "schema": "halflife/claims/1"
+}

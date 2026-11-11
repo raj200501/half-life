@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/html-escape.log.json",
+  "action_log_sha256": "41e52e5ca4d727202a2aa97b87a53dab6c7bdc8211ab9e0de0e4fd467faf0e57",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 42,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "html-escape",
+  "template_sha256": "79416b3f9e28c3e867d74cf29ac551da31175968a65849bc075fa7231144ec6d",
+  "violations": 0
+}

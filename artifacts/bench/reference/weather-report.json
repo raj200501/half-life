@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/weather-report.log.json",
+  "action_log_sha256": "226c9b7250c0c3555a68f82ea2e77df9d1a7b1baddba0ab16cfa470b35c89f2a",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 12,
+  "n_tool_calls": 34,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "weather-report",
+  "template_sha256": "845f9b27d1999776b47d727332eb7d09468a45c9bf68e5c2e141a29bab16630f",
+  "violations": 0
+}

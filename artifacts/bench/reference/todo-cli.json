@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/todo-cli.log.json",
+  "action_log_sha256": "3cf4e39e727fb853d2f57b83fcc8ed89fb811a745fcddbf8214ae25663e7199d",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 14,
+  "n_tool_calls": 50,
+  "provenance": {
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T04:02:20Z"
+  },
+  "synthetic": true,
+  "template_id": "todo-cli",
+  "template_sha256": "d4d9ce5965c709b32df037e7022744349dd191bcbebc43cdb75e71d1cfcaf39d",
+  "violations": 0
+}

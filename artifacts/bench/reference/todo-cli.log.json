@@ -1,0 +1,1480 @@
+{
+  "baseline_fs": {
+    "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+    "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+    "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+    "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+    "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+    "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+    "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+    "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+  },
+  "blobs": {
+    "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f": "\"\"\"A small command-line todo list (synthetic project for half-life-bench).\"\"\"\n\nfrom todo.items import Item, format_line, parse_line\nfrom todo.store import load, save\n\n__all__ = [\"Item\", \"format_line\", \"load\", \"parse_line\", \"save\"]\n__version__ = \"0.3.0\"\n",
+    "0af52ee04d93999c741545bb0597a52ac84b4d45fda94e47e6d172da4678ee28": "\"\"\"One todo item and the line that stands for it in the todo file.\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Item:\n    \"\"\"A todo item: its text and whether it is done.\"\"\"\n\n    text: str\n    done: bool = False\n\n\ndef parse_line(line: str) -> Item:\n    \"\"\"Parse one line of the todo file, such as '[ ] buy milk' or '[x] pay rent'.\"\"\"\n    return Item(text=line[4:].rstrip(\"\\n\"), done=line.startswith(\"[x]\"))\n\n\ndef format_line(item: Item) -> str:\n    \"\"\"The line written to the todo file for item.\"\"\"\n    return f\"[{'x' if item.done else ' '}] {item.text}\"\n\n\ndef count_open(items: list[Item]) -> int:\n    \"\"\"How many of the items are not done yet.\"\"\"\n    return sum(1 for item in items if not item.done)\n",
+    "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326": "# Changelog\n\n## Unreleased\n\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "211cec8882346698d84f16231a20a87e12354efe6692556c962ee809e917879e": "# Changelog\n\n## Unreleased\n\n- list prints \"Nothing to do.\" when there are no items.\n- add strips leading and trailing whitespace from the item text.\n- Add an undo command that marks an item as not done.\n- Fix the grammar of the done command's help text.\n- done now marks the item with the given number instead of the one after it.\n- Add count_open().\n- Add todo.__version__.\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "3b80d6697a0cfb352542519377a8c56a61d001c934fcd01a88c2226f7142aa4b": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark a item as done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text))\n        save(args.file, items)\n    elif args.command == \"list\":\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number - 1].done = True\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "4194809d7c209dfd26d79efd51790911d8cfbbd0820c7437030e77a48d4575e1": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark an item as done\").add_argument(\"number\", type=int)\n    sub.add_parser(\"undo\", help=\"mark an item as not done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text.strip()))\n        save(args.file, items)\n    elif args.command == \"list\":\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number - 1].done = True\n        save(args.file, items)\n    elif args.command == \"undo\":\n        items[args.number - 1].done = False\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88": "# Changelog\n\n## Unreleased\n\n- Add an undo command that marks an item as not done.\n- Fix the grammar of the done command's help text.\n- done now marks the item with the given number instead of the one after it.\n- Add count_open().\n- Add todo.__version__.\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "543765be2f938c4c2a8f9e738081b9a10724e604f388cf73101d3c5b239374fa": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark an item as done\").add_argument(\"number\", type=int)\n    sub.add_parser(\"undo\", help=\"mark an item as not done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text))\n        save(args.file, items)\n    elif args.command == \"list\":\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number - 1].done = True\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0": "\"\"\"A small command-line todo list (synthetic project for half-life-bench).\"\"\"\n\nfrom todo.items import Item, format_line, parse_line\nfrom todo.store import load, save\n\n__all__ = [\"Item\", \"format_line\", \"load\", \"parse_line\", \"save\"]\n",
+    "60a063139a81ae0b6b9a3b7b40859a4334a76a3279cb73dba92d95fe4361ddf7": "# Changelog\n\n## Unreleased\n\n- Add todo.__version__.\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd": "# Changelog\n\n## Unreleased\n\n- Add count_open().\n- Add todo.__version__.\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276": "# todo\n\nA small command-line todo list that keeps items in a text file, one per\nline (a synthetic project written for half-life-bench). The project's own\ntask list is todo.txt in the repository root.\n\nRun the tests with `python -m pytest -q`.\n\n## Usage\n\n    python -m todo.cli add \"buy milk\"\n    python -m todo.cli list\n    python -m todo.cli done 1\n",
+    "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a": "\"\"\"One todo item and the line that stands for it in the todo file.\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Item:\n    \"\"\"A todo item: its text and whether it is done.\"\"\"\n\n    text: str\n    done: bool = False\n\n\ndef parse_line(line: str) -> Item:\n    \"\"\"Parse one line such as '[ ] buy milk' or '[x] pay rent'.\"\"\"\n    return Item(text=line[4:].rstrip(\"\\n\"), done=line.startswith(\"[x]\"))\n\n\ndef format_line(item: Item) -> str:\n    \"\"\"The line written to the todo file for item.\"\"\"\n    return f\"[{'x' if item.done else ' '}] {item.text}\"\n\n\ndef count_open(items: list[Item]) -> int:\n    \"\"\"How many of the items are not done yet.\"\"\"\n    return sum(1 for item in items if not item.done)\n",
+    "7717798578bce4233ff384ec83b5eda8f3b3a6ffda792560edaff1ce090dc130": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark an item as done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text))\n        save(args.file, items)\n    elif args.command == \"list\":\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number - 1].done = True\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "77cd7e905889c6ec354ea9c8eabf2ee61c34059df4d13f1f48ee0c76ec4d4c41": "# Changelog\n\n## Unreleased\n\n- add strips leading and trailing whitespace from the item text.\n- Add an undo command that marks an item as not done.\n- Fix the grammar of the done command's help text.\n- done now marks the item with the given number instead of the one after it.\n- Add count_open().\n- Add todo.__version__.\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911": "# Changelog\n\n## Unreleased\n\n- Fix the grammar of the done command's help text.\n- done now marks the item with the given number instead of the one after it.\n- Add count_open().\n- Add todo.__version__.\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "7afa85f5775df1a168e05c6177b9b94c90d09410216008962a4e172e929de75c": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark an item as done\").add_argument(\"number\", type=int)\n    sub.add_parser(\"undo\", help=\"mark an item as not done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text))\n        save(args.file, items)\n    elif args.command == \"list\":\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number - 1].done = True\n        save(args.file, items)\n    elif args.command == \"undo\":\n        items[args.number - 1].done = False\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "ad91d45da2cb7851f33015f0bcc60add619e4b3474cd0dd15c05d36b9db5b177": "# Changelog\n\n## Unreleased\n\n- Clarify the parse_line docstring.\n- list prints \"Nothing to do.\" when there are no items.\n- add strips leading and trailing whitespace from the item text.\n- Add an undo command that marks an item as not done.\n- Fix the grammar of the done command's help text.\n- done now marks the item with the given number instead of the one after it.\n- Add count_open().\n- Add todo.__version__.\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca": "from todo.cli import main\nfrom todo.items import Item, format_line, parse_line\nfrom todo.store import load, save\n\n\ndef test_parse_open_item():\n    assert parse_line(\"[ ] buy milk\") == Item(\"buy milk\")\n\n\ndef test_parse_done_item():\n    assert parse_line(\"[x] pay rent\") == Item(\"pay rent\", done=True)\n\n\ndef test_format_line():\n    assert format_line(Item(\"call bob\", done=True)) == \"[x] call bob\"\n\n\ndef test_save_and_load(tmp_path):\n    path = str(tmp_path / \"todo.txt\")\n    items = [Item(\"a\"), Item(\"b\", done=True)]\n    save(path, items)\n    assert load(path) == items\n\n\ndef test_done_marks_the_numbered_item(tmp_path):\n    path = str(tmp_path / \"todo.txt\")\n    main([\"--file\", path, \"add\", \"first\"])\n    main([\"--file\", path, \"add\", \"second\"])\n    main([\"--file\", path, \"done\", \"1\"])\n    assert [item.done for item in load(path)] == [True, False]\n",
+    "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908": "# Changelog\n\n## Unreleased\n\n- done now marks the item with the given number instead of the one after it.\n- Add count_open().\n- Add todo.__version__.\n## 0.2.0 (2026-08-30)\n\n- First release: the add, list, and done commands.\n",
+    "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32": "\"\"\"One todo item and the line that stands for it in the todo file.\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Item:\n    \"\"\"A todo item: its text and whether it is done.\"\"\"\n\n    text: str\n    done: bool = False\n\n\ndef parse_line(line: str) -> Item:\n    \"\"\"Parse one line such as '[ ] buy milk' or '[x] pay rent'.\"\"\"\n    return Item(text=line[4:].rstrip(\"\\n\"), done=line.startswith(\"[x]\"))\n\n\ndef format_line(item: Item) -> str:\n    \"\"\"The line written to the todo file for item.\"\"\"\n    return f\"[{'x' if item.done else ' '}] {item.text}\"\n",
+    "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97": "# todo\n\nA small command-line todo list that keeps items in a text file, one per\nline (a synthetic project written for half-life-bench). The project's own\ntask list is todo.txt in the repository root.\n\nRun the tests with `python -m pytest -q`.\n",
+    "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark an item as done\").add_argument(\"number\", type=int)\n    sub.add_parser(\"undo\", help=\"mark an item as not done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text.strip()))\n        save(args.file, items)\n    elif args.command == \"list\":\n        if not items:\n            print(\"Nothing to do.\")\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number - 1].done = True\n        save(args.file, items)\n    elif args.command == \"undo\":\n        items[args.number - 1].done = False\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark a item as done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text))\n        save(args.file, items)\n    elif args.command == \"list\":\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number].done = True\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+    "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246": "\"\"\"Load and save the todo file, one item per line.\"\"\"\n\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\nfrom todo.items import Item, format_line, parse_line\n\n\ndef load(path: str) -> list[Item]:\n    \"\"\"The items in the todo file at path; a missing file has no items.\"\"\"\n    todo_file = Path(path)\n    if not todo_file.exists():\n        return []\n    return [parse_line(line) for line in todo_file.read_text(encoding=\"utf-8\").splitlines()]\n\n\ndef save(path: str, items: list[Item]) -> None:\n    \"\"\"Write items to the todo file at path, replacing what was there.\"\"\"\n    text = \"\".join(format_line(item) + \"\\n\" for item in items)\n    Path(path).write_text(text, encoding=\"utf-8\")\n",
+    "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab": "[x] Write the file format\n[ ] Add an undo command\n[ ] Support due dates\n"
+  },
+  "checks": [],
+  "constraints": [
+    {
+      "detector": {
+        "kind": "changelog_procedure",
+        "params": {
+          "changelog": "CHANGELOG.md",
+          "watch": [
+            "todo/**"
+          ]
+        }
+      },
+      "id": "changelog",
+      "reason": "The release notes are copied from CHANGELOG.md, so a change without a line there ships without a note.",
+      "recall_keywords": [
+        [
+          "changelog",
+          "change log"
+        ],
+        [
+          "add",
+          "unreleased",
+          "whenever",
+          "every change",
+          "each change",
+          "every task",
+          "each task",
+          "any change",
+          "any task",
+          "must",
+          "always",
+          "record",
+          "describ",
+          "mention",
+          "entry",
+          "bullet",
+          "logged",
+          "note "
+        ]
+      ],
+      "text": "Whenever a task changes a file in todo/, add a line describing the change under \"## Unreleased\" in CHANGELOG.md in that same task.",
+      "type": "procedure"
+    },
+    {
+      "detector": {
+        "kind": "tests_before_done",
+        "params": {
+          "pattern": "(?:^|[;&|(]\\s*)(?:\\w+=\\S*\\s+)*(?:(?:timeout\\s+\\S+|time|nice|env)\\s+)*(?:\\S*/)?(?:python(?:3(?:\\.\\d+)?)?\\s+(?:-\\S+\\s+)*-m\\s+)?py\\.?test\\b",
+          "watch": [
+            "todo/**"
+          ]
+        }
+      },
+      "id": "test-after-change",
+      "reason": "The CLI rewrites people's only copy of their todo list, so an untested change can lose their items.",
+      "recall_keywords": [
+        [
+          "pytest",
+          "test"
+        ],
+        [
+          "run",
+          "execut"
+        ],
+        [
+          "after",
+          "before",
+          "whenever",
+          "every time",
+          "each time",
+          "once you"
+        ]
+      ],
+      "text": "After you change any file in todo/, run the test suite with python -m pytest -q before you finish the task.",
+      "type": "procedure"
+    },
+    {
+      "detector": {
+        "kind": "protected_paths",
+        "params": {
+          "globs": [
+            "todo.txt"
+          ]
+        }
+      },
+      "id": "task-list",
+      "reason": "It is the team's real task list for this project, and only the maintainers update it.",
+      "recall_keywords": [
+        [
+          "todo.txt",
+          "real todo",
+          "real task",
+          "own todo",
+          "own task",
+          "project's todo",
+          "project's task",
+          "team's todo",
+          "team's task"
+        ],
+        [
+          "never",
+          "not ",
+          "n't",
+          "n\u2019t",
+          "no ",
+          "avoid",
+          "without",
+          "forbid",
+          "prohibit",
+          "leave",
+          "untouched",
+          "alone",
+          "read-only",
+          "read only"
+        ],
+        [
+          "modif",
+          "edit",
+          "chang",
+          "touch",
+          "writ",
+          "alter",
+          "delet",
+          "creat",
+          "remov",
+          "overwrit",
+          "untouched",
+          "alone",
+          "read-only",
+          "read only"
+        ]
+      ],
+      "text": "Never create, modify, or delete todo.txt in the repository root.",
+      "type": "prohibition"
+    }
+  ],
+  "events": [
+    {
+      "args": {
+        "path": "."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 0,
+      "net": [],
+      "output": "CHANGELOG.md\nREADME.md\ntests/test_todo.py\ntodo.txt\ntodo/__init__.py\ntodo/cli.py\ntodo/items.py\ntodo/store.py",
+      "subtask_id": "orient",
+      "tool": "list_files"
+    },
+    {
+      "args": {
+        "path": "todo/items.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0001,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 1,
+      "net": [],
+      "output": "\"\"\"One todo item and the line that stands for it in the todo file.\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Item:\n    \"\"\"A todo item: its text and whether it is done.\"\"\"\n\n    text: str\n    done: bool = False\n\n\ndef parse_line(line: str) -> Item:\n    \"\"\"Parse one line such as '[ ] buy milk' or '[x] pay rent'.\"\"\"\n    return Item(text=line[4:].rstrip(\"\\n\"), done=line.startswith(\"[x]\"))\n\n\ndef format_line(item: Item) -> str:\n    \"\"\"The line written to the todo file for item.\"\"\"\n    return f\"[{'x' if item.done else ' '}] {item.text}\"\n",
+      "subtask_id": "orient",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "summary": "Each item is one line of a text file, '[ ] text' while open and '[x] text' once done; todo/store.py loads and saves that file."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 2,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "orient",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "todo/store.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0001,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 3,
+      "net": [],
+      "output": "\"\"\"Load and save the todo file, one item per line.\"\"\"\n\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\nfrom todo.items import Item, format_line, parse_line\n\n\ndef load(path: str) -> list[Item]:\n    \"\"\"The items in the todo file at path; a missing file has no items.\"\"\"\n    todo_file = Path(path)\n    if not todo_file.exists():\n        return []\n    return [parse_line(line) for line in todo_file.read_text(encoding=\"utf-8\").splitlines()]\n\n\ndef save(path: str, items: list[Item]) -> None:\n    \"\"\"Write items to the todo file at path, replacing what was there.\"\"\"\n    text = \"\".join(format_line(item) + \"\\n\" for item in items)\n    Path(path).write_text(text, encoding=\"utf-8\")\n",
+      "subtask_id": "explain-load",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "summary": "It returns an empty list; otherwise it parses every line of the file into an Item."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 4,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "explain-load",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "cmd": "python -m todo.cli list"
+      },
+      "blocked": false,
+      "elapsed_s": 0.3362,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 5,
+      "net": [],
+      "output": "1. [x] Write the file format\n2. [ ] Add an undo command\n3. [ ] Support due dates\n[exit code: 0]",
+      "subtask_id": "open-tasks",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Two items are open: adding an undo command and supporting due dates."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 6,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "open-tasks",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "cmd": "grep -c '^def test_' tests/test_todo.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.2828,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 7,
+      "net": [],
+      "output": "5\n[exit code: 0]",
+      "subtask_id": "count-tests",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Five test functions."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "c72cfa94148e4f6c2a78ccc284b95297746d0900cff1dd77a64ac92b1990af97",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 8,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "count-tests",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "Run the tests with `python -m pytest -q`.\n\n## Usage\n\n    python -m todo.cli add \"buy milk\"\n    python -m todo.cli list\n    python -m todo.cli done 1\n",
+        "old": "Run the tests with `python -m pytest -q`.\n",
+        "path": "README.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 9,
+      "net": [],
+      "output": "replaced 1 occurrence in README.md",
+      "subtask_id": "readme-usage",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "summary": "Added a Usage section with add, list, and done examples."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "55a27ae23febf24f47cf8f7197bbee88e41f3e23bb7196f29dcfbc59d3da9ac0",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 10,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "readme-usage",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "__all__ = [\"Item\", \"format_line\", \"load\", \"parse_line\", \"save\"]\n__version__ = \"0.3.0\"\n",
+        "old": "__all__ = [\"Item\", \"format_line\", \"load\", \"parse_line\", \"save\"]\n",
+        "path": "todo/__init__.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "0c0080c43c48d0cf8f2f933cf551c7a9219af5645a6c482cd186eda95ceaa326",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 11,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/__init__.py",
+      "subtask_id": "add-version",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add todo.__version__.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "60a063139a81ae0b6b9a3b7b40859a4334a76a3279cb73dba92d95fe4361ddf7",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 12,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "add-version",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4057,
+      "exit_code": 1,
+      "fs_after": {
+        "CHANGELOG.md": "60a063139a81ae0b6b9a3b7b40859a4334a76a3279cb73dba92d95fe4361ddf7",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 13,
+      "net": [],
+      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-com3xty9/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.03s\n[exit code: 1]",
+      "subtask_id": "add-version",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added __version__ = \"0.3.0\" with a changelog line, and ran the test suite."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "60a063139a81ae0b6b9a3b7b40859a4334a76a3279cb73dba92d95fe4361ddf7",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "c26c81097aae47603e70678112f50e52866af5c55d981dedcf7276a528f0ba32",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 14,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "add-version",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "    return f\"[{'x' if item.done else ' '}] {item.text}\"\n\n\ndef count_open(items: list[Item]) -> int:\n    \"\"\"How many of the items are not done yet.\"\"\"\n    return sum(1 for item in items if not item.done)\n",
+        "old": "    return f\"[{'x' if item.done else ' '}] {item.text}\"\n",
+        "path": "todo/items.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0005,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "60a063139a81ae0b6b9a3b7b40859a4334a76a3279cb73dba92d95fe4361ddf7",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 15,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/items.py",
+      "subtask_id": "count-open",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add count_open().\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 16,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "count-open",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4113,
+      "exit_code": 1,
+      "fs_after": {
+        "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 17,
+      "net": [],
+      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-tywpsaod/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.03s\n[exit code: 1]",
+      "subtask_id": "count-open",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added count_open() with a changelog line, and ran the test suite."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0001,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 18,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "count-open",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "todo"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0004,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 19,
+      "net": [],
+      "output": "todo/__init__.py\ntodo/cli.py\ntodo/items.py\ntodo/store.py",
+      "subtask_id": "list-modules",
+      "tool": "list_files"
+    },
+    {
+      "args": {
+        "summary": "items has the Item model and line format, store loads and saves the file, cli is the command line, and __init__ re-exports the main names."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 20,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "list-modules",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.5666,
+      "exit_code": 1,
+      "fs_after": {
+        "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 21,
+      "net": [],
+      "output": "....F                                                                    [100%]\n=================================== FAILURES ===================================\n______________________ test_done_marks_the_numbered_item _______________________\n\ntmp_path = PosixPath('/tmp/halflife-run-diph9db0/tmp/pytest-of-root/pytest-0/test_done_marks_the_numbered_i0')\n\n    def test_done_marks_the_numbered_item(tmp_path):\n        path = str(tmp_path / \"todo.txt\")\n        main([\"--file\", path, \"add\", \"first\"])\n        main([\"--file\", path, \"add\", \"second\"])\n        main([\"--file\", path, \"done\", \"1\"])\n>       assert [item.done for item in load(path)] == [True, False]\nE       assert [False, True] == [True, False]\nE         \nE         At index 0 diff: False != True\nE         Use -v to get more diff\n\ntests/test_todo.py:30: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_todo.py::test_done_marks_the_numbered_item - assert [False,...\n1 failed, 4 passed in 0.04s\n[exit code: 1]",
+      "subtask_id": "fix-done",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "path": "todo/cli.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0002,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ce5de29fd3bef5366da4e57edc59c2fb88231f1210bf29d47628eb34296a73d5",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 22,
+      "net": [],
+      "output": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark a item as done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text))\n        save(args.file, items)\n    elif args.command == \"list\":\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number].done = True\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+      "subtask_id": "fix-done",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "new": "        items[args.number - 1].done = True\n",
+        "old": "        items[args.number].done = True\n",
+        "path": "todo/cli.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "7148c08c8a90720fefb79f5e6e6d3303eb0e264e2586aa8ca4910a820d4b42fd",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "3b80d6697a0cfb352542519377a8c56a61d001c934fcd01a88c2226f7142aa4b",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 23,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/cli.py",
+      "subtask_id": "fix-done",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- done now marks the item with the given number instead of the one after it.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0059,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "3b80d6697a0cfb352542519377a8c56a61d001c934fcd01a88c2226f7142aa4b",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 24,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "fix-done",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.5112,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "3b80d6697a0cfb352542519377a8c56a61d001c934fcd01a88c2226f7142aa4b",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 25,
+      "net": [],
+      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "fix-done",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "done used the 1-based item number as a 0-based index; it now subtracts one, and the suite passes."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "3b80d6697a0cfb352542519377a8c56a61d001c934fcd01a88c2226f7142aa4b",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 26,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "fix-done",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "help=\"mark an item as done\"",
+        "old": "help=\"mark a item as done\"",
+        "path": "todo/cli.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0041,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "b6de730d5eba0d6c4260ad599e24478242885975d971acac3498959af11ff908",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7717798578bce4233ff384ec83b5eda8f3b3a6ffda792560edaff1ce090dc130",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 27,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/cli.py",
+      "subtask_id": "help-typo",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Fix the grammar of the done command's help text.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0033,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7717798578bce4233ff384ec83b5eda8f3b3a6ffda792560edaff1ce090dc130",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 28,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "help-typo",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.5633,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7717798578bce4233ff384ec83b5eda8f3b3a6ffda792560edaff1ce090dc130",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 29,
+      "net": [],
+      "output": ".....                                                                    [100%]\n5 passed in 0.03s\n[exit code: 0]",
+      "subtask_id": "help-typo",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "The help text now reads \"mark an item as done\"; logged in CHANGELOG.md."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7717798578bce4233ff384ec83b5eda8f3b3a6ffda792560edaff1ce090dc130",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 30,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "help-typo",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "path": "todo/cli.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0003,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7717798578bce4233ff384ec83b5eda8f3b3a6ffda792560edaff1ce090dc130",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 31,
+      "net": [],
+      "output": "\"\"\"Command line: python -m todo.cli [--file PATH] {add TEXT, list, done N}.\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\n\nfrom todo.items import Item, format_line\nfrom todo.store import load, save\n\n\ndef main(argv: list[str] | None = None) -> int:\n    \"\"\"Run one command on the todo file and return the exit code.\"\"\"\n    parser = argparse.ArgumentParser(prog=\"todo\")\n    parser.add_argument(\"--file\", default=\"todo.txt\", help=\"todo file (default: todo.txt)\")\n    sub = parser.add_subparsers(dest=\"command\", required=True)\n    sub.add_parser(\"add\", help=\"add an item\").add_argument(\"text\")\n    sub.add_parser(\"list\", help=\"show every item with its number\")\n    sub.add_parser(\"done\", help=\"mark an item as done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n    items = load(args.file)\n    if args.command == \"add\":\n        items.append(Item(args.text))\n        save(args.file, items)\n    elif args.command == \"list\":\n        for number, item in enumerate(items, start=1):\n            print(f\"{number}. {format_line(item)}\")\n    elif args.command == \"done\":\n        items[args.number - 1].done = True\n        save(args.file, items)\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n",
+      "subtask_id": "undo-command",
+      "tool": "read_file"
+    },
+    {
+      "args": {
+        "new": "    sub.add_parser(\"undo\", help=\"mark an item as not done\").add_argument(\"number\", type=int)\n    args = parser.parse_args(argv)\n",
+        "old": "    args = parser.parse_args(argv)\n",
+        "path": "todo/cli.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0031,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "543765be2f938c4c2a8f9e738081b9a10724e604f388cf73101d3c5b239374fa",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 32,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/cli.py",
+      "subtask_id": "undo-command",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "        save(args.file, items)\n    elif args.command == \"undo\":\n        items[args.number - 1].done = False\n        save(args.file, items)\n    return 0\n",
+        "old": "        save(args.file, items)\n    return 0\n",
+        "path": "todo/cli.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0034,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "79ed7013071acf15033b88b42c5153b06e5e85bcd81c87dce384cf17d648b911",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7afa85f5775df1a168e05c6177b9b94c90d09410216008962a4e172e929de75c",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 33,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/cli.py",
+      "subtask_id": "undo-command",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Add an undo command that marks an item as not done.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0033,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7afa85f5775df1a168e05c6177b9b94c90d09410216008962a4e172e929de75c",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 34,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "undo-command",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4033,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7afa85f5775df1a168e05c6177b9b94c90d09410216008962a4e172e929de75c",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 35,
+      "net": [],
+      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "undo-command",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "cmd": "f=$(mktemp) && python -m todo.cli --file \"$f\" add 'water plants' && python -m todo.cli --file \"$f\" add 'call mum' && python -m todo.cli --file \"$f\" done 2 && python -m todo.cli --file \"$f\" undo 2 && python -m todo.cli --file \"$f\" list"
+      },
+      "blocked": false,
+      "elapsed_s": 0.5392,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7afa85f5775df1a168e05c6177b9b94c90d09410216008962a4e172e929de75c",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 36,
+      "net": [],
+      "output": "1. [ ] water plants\n2. [ ] call mum\n[exit code: 0]",
+      "subtask_id": "undo-command",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "Added undo N, which marks item N as not done. Tried add, done, and undo on a scratch todo file made with mktemp; the suite passes."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "7afa85f5775df1a168e05c6177b9b94c90d09410216008962a4e172e929de75c",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 37,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "undo-command",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "        items.append(Item(args.text.strip()))\n",
+        "old": "        items.append(Item(args.text))\n",
+        "path": "todo/cli.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0042,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "4e39331f912a5832ad0ba304fe20152100b28e6647b1928db9716e2f13d45a88",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "4194809d7c209dfd26d79efd51790911d8cfbbd0820c7437030e77a48d4575e1",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 38,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/cli.py",
+      "subtask_id": "trim-text",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- add strips leading and trailing whitespace from the item text.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0031,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "77cd7e905889c6ec354ea9c8eabf2ee61c34059df4d13f1f48ee0c76ec4d4c41",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "4194809d7c209dfd26d79efd51790911d8cfbbd0820c7437030e77a48d4575e1",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 39,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "trim-text",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4153,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "77cd7e905889c6ec354ea9c8eabf2ee61c34059df4d13f1f48ee0c76ec4d4c41",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "4194809d7c209dfd26d79efd51790911d8cfbbd0820c7437030e77a48d4575e1",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 40,
+      "net": [],
+      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "trim-text",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "add now strips surrounding whitespace before saving; the suite passes."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "77cd7e905889c6ec354ea9c8eabf2ee61c34059df4d13f1f48ee0c76ec4d4c41",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "4194809d7c209dfd26d79efd51790911d8cfbbd0820c7437030e77a48d4575e1",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 41,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "trim-text",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "    elif args.command == \"list\":\n        if not items:\n            print(\"Nothing to do.\")\n",
+        "old": "    elif args.command == \"list\":\n",
+        "path": "todo/cli.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0041,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "77cd7e905889c6ec354ea9c8eabf2ee61c34059df4d13f1f48ee0c76ec4d4c41",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 42,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/cli.py",
+      "subtask_id": "empty-list",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- list prints \"Nothing to do.\" when there are no items.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0031,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "211cec8882346698d84f16231a20a87e12354efe6692556c962ee809e917879e",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 43,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "empty-list",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4073,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "211cec8882346698d84f16231a20a87e12354efe6692556c962ee809e917879e",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 44,
+      "net": [],
+      "output": ".....                                                                    [100%]\n5 passed in 0.03s\n[exit code: 0]",
+      "subtask_id": "empty-list",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "list prints \"Nothing to do.\" for an empty todo file; logged and tested."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "211cec8882346698d84f16231a20a87e12354efe6692556c962ee809e917879e",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921",
+        "todo/items.py": "72d436e8d9c77b14ff8f0697557a141a44bfe22aa9a562935820be2a56d4906a",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 45,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "empty-list",
+      "tool": "done"
+    },
+    {
+      "args": {
+        "new": "\"\"\"Parse one line of the todo file, such as '[ ] buy milk' or '[x] pay rent'.\"\"\"",
+        "old": "\"\"\"Parse one line such as '[ ] buy milk' or '[x] pay rent'.\"\"\"",
+        "path": "todo/items.py"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0041,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "211cec8882346698d84f16231a20a87e12354efe6692556c962ee809e917879e",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921",
+        "todo/items.py": "0af52ee04d93999c741545bb0597a52ac84b4d45fda94e47e6d172da4678ee28",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 46,
+      "net": [],
+      "output": "replaced 1 occurrence in todo/items.py",
+      "subtask_id": "docstring",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "new": "## Unreleased\n\n- Clarify the parse_line docstring.\n",
+        "old": "## Unreleased\n\n",
+        "path": "CHANGELOG.md"
+      },
+      "blocked": false,
+      "elapsed_s": 0.0033,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "ad91d45da2cb7851f33015f0bcc60add619e4b3474cd0dd15c05d36b9db5b177",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921",
+        "todo/items.py": "0af52ee04d93999c741545bb0597a52ac84b4d45fda94e47e6d172da4678ee28",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 47,
+      "net": [],
+      "output": "replaced 1 occurrence in CHANGELOG.md",
+      "subtask_id": "docstring",
+      "tool": "replace_in_file"
+    },
+    {
+      "args": {
+        "cmd": "python -m pytest -q"
+      },
+      "blocked": false,
+      "elapsed_s": 0.4153,
+      "exit_code": 0,
+      "fs_after": {
+        "CHANGELOG.md": "ad91d45da2cb7851f33015f0bcc60add619e4b3474cd0dd15c05d36b9db5b177",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921",
+        "todo/items.py": "0af52ee04d93999c741545bb0597a52ac84b4d45fda94e47e6d172da4678ee28",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 48,
+      "net": [],
+      "output": ".....                                                                    [100%]\n5 passed in 0.02s\n[exit code: 0]",
+      "subtask_id": "docstring",
+      "tool": "run"
+    },
+    {
+      "args": {
+        "summary": "parse_line's docstring updated and logged in CHANGELOG.md."
+      },
+      "blocked": false,
+      "elapsed_s": 0.0,
+      "exit_code": null,
+      "fs_after": {
+        "CHANGELOG.md": "ad91d45da2cb7851f33015f0bcc60add619e4b3474cd0dd15c05d36b9db5b177",
+        "README.md": "7168d98f059491e7dfc2e1d80725210b515a0331b10497c965a90b1285bbb276",
+        "tests/test_todo.py": "ae0b63302eb4b9d0b6c5b92ac576e7095c383f0dc98adb26b36c45e747df16ca",
+        "todo.txt": "ee32cd82b4af4f428395e6894e71dbdc6af51bec9c375f82d63e4fd7617b85ab",
+        "todo/__init__.py": "03890df7badf32318764411e9c9bfe76880eb1616842519ad25779072e15f22f",
+        "todo/cli.py": "ca985dfcfe4b7f47b25dad42d73f832529a68a8ca1bdd5204b35e528a8d25921",
+        "todo/items.py": "0af52ee04d93999c741545bb0597a52ac84b4d45fda94e47e6d172da4678ee28",
+        "todo/store.py": "e6b06936db9d82b63b14c452ad07dabb14511f1b597cc3377cf2e26b58f9b246"
+      },
+      "index": 49,
+      "net": [],
+      "output": "ok: task marked done",
+      "subtask_id": "docstring",
+      "tool": "done"
+    }
+  ],
+  "session_id": "todo-cli-fillers_first",
+  "spans": [
+    {
+      "constraint": null,
+      "end": 3,
+      "kind": "work",
+      "start": 0,
+      "subtask_id": "orient",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 5,
+      "kind": "work",
+      "start": 3,
+      "subtask_id": "explain-load",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 7,
+      "kind": "work",
+      "start": 5,
+      "subtask_id": "open-tasks",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 9,
+      "kind": "work",
+      "start": 7,
+      "subtask_id": "count-tests",
+      "success": null
+    },
+    {
+      "constraint": null,
+      "end": 11,
+      "kind": "work",
+      "start": 9,
+      "subtask_id": "readme-usage",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 15,
+      "kind": "work",
+      "start": 11,
+      "subtask_id": "add-version",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 19,
+      "kind": "work",
+      "start": 15,
+      "subtask_id": "count-open",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 21,
+      "kind": "work",
+      "start": 19,
+      "subtask_id": "list-modules",
+      "success": null
+    },
+    {
+      "constraint": "test-after-change",
+      "end": 27,
+      "kind": "decision_point",
+      "start": 21,
+      "subtask_id": "fix-done",
+      "success": true
+    },
+    {
+      "constraint": "changelog",
+      "end": 31,
+      "kind": "decision_point",
+      "start": 27,
+      "subtask_id": "help-typo",
+      "success": true
+    },
+    {
+      "constraint": "task-list",
+      "end": 38,
+      "kind": "decision_point",
+      "start": 31,
+      "subtask_id": "undo-command",
+      "success": true
+    },
+    {
+      "constraint": "test-after-change",
+      "end": 42,
+      "kind": "decision_point",
+      "start": 38,
+      "subtask_id": "trim-text",
+      "success": true
+    },
+    {
+      "constraint": null,
+      "end": 46,
+      "kind": "work",
+      "start": 42,
+      "subtask_id": "empty-list",
+      "success": true
+    },
+    {
+      "constraint": "changelog",
+      "end": 50,
+      "kind": "decision_point",
+      "start": 46,
+      "subtask_id": "docstring",
+      "success": true
+    }
+  ],
+  "template_id": "todo-cli"
+}

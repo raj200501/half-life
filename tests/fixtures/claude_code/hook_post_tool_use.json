@@ -1,0 +1,19 @@
+{
+  "session_id": "0b9e6c1e-6d1f-4a8b-9a43-2f3c5b8e7d10",
+  "transcript_path": "/home/user/.claude/projects/-tmp-halflife-cc-fixture/0b9e6c1e-6d1f-4a8b-9a43-2f3c5b8e7d10.jsonl",
+  "cwd": "{ws}",
+  "permission_mode": "dontAsk",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "{ws}/calc/core.py",
+    "content": "def add(a, b):\n    return a + b\n"
+  },
+  "tool_response": {
+    "type": "update",
+    "filePath": "{ws}/calc/core.py",
+    "content": "def add(a, b):\n    return a + b\n"
+  },
+  "tool_use_id": "toolu_hook_01",
+  "duration_ms": 14
+}

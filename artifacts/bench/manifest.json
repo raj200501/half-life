@@ -1,0 +1,396 @@
+{
+  "coverage": {
+    "constraint_types": {
+      "invariant": 21,
+      "procedure": 15,
+      "prohibition": 25,
+      "resource_limit": 10
+    },
+    "decision_points_by_type": {
+      "invariant": 37,
+      "procedure": 29,
+      "prohibition": 39,
+      "resource_limit": 16
+    },
+    "detector_kinds": {
+      "changelog_procedure": 9,
+      "file_invariant": 4,
+      "forbidden_commands": 3,
+      "invariant_command": 9,
+      "max_file_lines": 4,
+      "max_new_files": 3,
+      "max_test_runs": 3,
+      "no_network": 5,
+      "no_new_dependencies": 6,
+      "protected_paths": 11,
+      "stable_api": 8,
+      "tests_before_done": 6
+    },
+    "splits": {
+      "heldout": 6,
+      "main": 21,
+      "pilot": 3
+    },
+    "templates": 30
+  },
+  "synthetic": true,
+  "templates": [
+    {
+      "compliant_route": "artifacts/bench/routes/bank-ledger.json",
+      "constraint_types": [
+        "invariant",
+        "procedure"
+      ],
+      "id": "bank-ledger",
+      "path": "src/halflife/bench/templates/bank-ledger.yaml",
+      "reference_run": "artifacts/bench/reference/bank-ledger.json",
+      "sha256": "d2b6a99dff3483a72a44c5715276d5672c05af3396aa249867745dfd8479398b",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/cache-store.json",
+      "constraint_types": [
+        "prohibition",
+        "resource_limit"
+      ],
+      "id": "cache-store",
+      "path": "src/halflife/bench/templates/cache-store.yaml",
+      "reference_run": "artifacts/bench/reference/cache-store.json",
+      "sha256": "6c0b11624b8161e213287ef9cb738c139c3ad713922ea4db973454ef2f7e6bde",
+      "split": "heldout"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/config-loader.json",
+      "constraint_types": [
+        "invariant",
+        "prohibition"
+      ],
+      "id": "config-loader",
+      "path": "src/halflife/bench/templates/config-loader.yaml",
+      "reference_run": "artifacts/bench/reference/config-loader.json",
+      "sha256": "86d827054d958a47d097a6d6197c71caf99265b729925e0d4280237406e13a33",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/csv-cleaner.json",
+      "constraint_types": [
+        "prohibition",
+        "resource_limit"
+      ],
+      "id": "csv-cleaner",
+      "path": "src/halflife/bench/templates/csv-cleaner.yaml",
+      "reference_run": "artifacts/bench/reference/csv-cleaner.json",
+      "sha256": "b264c053a3b5e28f16f7ee8b1a5062d20e73a0e69cb362e4f9d29f78377fb5f7",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/date-ranges.json",
+      "constraint_types": [
+        "invariant",
+        "procedure"
+      ],
+      "id": "date-ranges",
+      "path": "src/halflife/bench/templates/date-ranges.yaml",
+      "reference_run": "artifacts/bench/reference/date-ranges.json",
+      "sha256": "a31c2e127caaf11fe147a29d5afd32497929991b5d0e0553911a2bb0b602fdd9",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/event-bus.json",
+      "constraint_types": [
+        "invariant",
+        "procedure"
+      ],
+      "id": "event-bus",
+      "path": "src/halflife/bench/templates/event-bus.yaml",
+      "reference_run": "artifacts/bench/reference/event-bus.json",
+      "sha256": "74a31ea2c257a0dcd9a1a398ff74d1d004b75daccbad22ef2dd23bb7cc14e471",
+      "split": "heldout"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/geometry-kit.json",
+      "constraint_types": [
+        "invariant"
+      ],
+      "id": "geometry-kit",
+      "path": "src/halflife/bench/templates/geometry-kit.yaml",
+      "reference_run": "artifacts/bench/reference/geometry-kit.json",
+      "sha256": "80b02b9c68ca221f6f54089908e87d36ab40a685ea95db090318cb19166834cb",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/grade-book.json",
+      "constraint_types": [
+        "procedure",
+        "prohibition"
+      ],
+      "id": "grade-book",
+      "path": "src/halflife/bench/templates/grade-book.yaml",
+      "reference_run": "artifacts/bench/reference/grade-book.json",
+      "sha256": "eaf3d44bed34d76c66f6a153ea68085b50b129ac2b650912cfb1e7479e7e644d",
+      "split": "pilot"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/html-escape.json",
+      "constraint_types": [
+        "procedure",
+        "resource_limit"
+      ],
+      "id": "html-escape",
+      "path": "src/halflife/bench/templates/html-escape.yaml",
+      "reference_run": "artifacts/bench/reference/html-escape.json",
+      "sha256": "79416b3f9e28c3e867d74cf29ac551da31175968a65849bc075fa7231144ec6d",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/ini-merger.json",
+      "constraint_types": [
+        "invariant",
+        "prohibition"
+      ],
+      "id": "ini-merger",
+      "path": "src/halflife/bench/templates/ini-merger.yaml",
+      "reference_run": "artifacts/bench/reference/ini-merger.json",
+      "sha256": "619401200725de53a2dd1eba000659e46b13f2c978b7b0bd15261d30a572310d",
+      "split": "pilot"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/inventory-api.json",
+      "constraint_types": [
+        "invariant",
+        "prohibition"
+      ],
+      "id": "inventory-api",
+      "path": "src/halflife/bench/templates/inventory-api.yaml",
+      "reference_run": "artifacts/bench/reference/inventory-api.json",
+      "sha256": "fd8a3f289502bfec2466c5a3377b40c73a1633a004667dde4eab4f295a4aba5f",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/invoice-ledger.json",
+      "constraint_types": [
+        "procedure",
+        "prohibition"
+      ],
+      "id": "invoice-ledger",
+      "path": "src/halflife/bench/templates/invoice-ledger.yaml",
+      "reference_run": "artifacts/bench/reference/invoice-ledger.json",
+      "sha256": "3c68042d52f56c6f37405bdadfb223a04b988480e76b78450b1e6e4d9bf2c812",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/log-parser.json",
+      "constraint_types": [
+        "prohibition",
+        "resource_limit"
+      ],
+      "id": "log-parser",
+      "path": "src/halflife/bench/templates/log-parser.yaml",
+      "reference_run": "artifacts/bench/reference/log-parser.json",
+      "sha256": "7911f6076807051898b770d6a4a98e17132d7215e3217c0f00513bc7129477ac",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/markdown-toc.json",
+      "constraint_types": [
+        "prohibition",
+        "resource_limit"
+      ],
+      "id": "markdown-toc",
+      "path": "src/halflife/bench/templates/markdown-toc.yaml",
+      "reference_run": "artifacts/bench/reference/markdown-toc.json",
+      "sha256": "c53f77607b2e41f7fc0149c22955778df6e0a44680afc8de61d483ebf6de8882",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/matrix-lite.json",
+      "constraint_types": [
+        "invariant",
+        "resource_limit"
+      ],
+      "id": "matrix-lite",
+      "path": "src/halflife/bench/templates/matrix-lite.yaml",
+      "reference_run": "artifacts/bench/reference/matrix-lite.json",
+      "sha256": "0a2bf57c34cfea60bd1ade4d0a2df9be35b9a962a8c9a63694bffbd16c8d7ac5",
+      "split": "heldout"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/money-utils.json",
+      "constraint_types": [
+        "invariant"
+      ],
+      "id": "money-utils",
+      "path": "src/halflife/bench/templates/money-utils.yaml",
+      "reference_run": "artifacts/bench/reference/money-utils.json",
+      "sha256": "a2ba853afea5336548db60df1f8aa117c4f64993884c0111171ed94236ed7124",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/plugin-registry.json",
+      "constraint_types": [
+        "invariant"
+      ],
+      "id": "plugin-registry",
+      "path": "src/halflife/bench/templates/plugin-registry.yaml",
+      "reference_run": "artifacts/bench/reference/plugin-registry.json",
+      "sha256": "89121c69f984597f013300cafba3848e959462af38ad194a8eb4248ee046a4f9",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/queue-worker.json",
+      "constraint_types": [
+        "invariant",
+        "procedure",
+        "prohibition"
+      ],
+      "id": "queue-worker",
+      "path": "src/halflife/bench/templates/queue-worker.yaml",
+      "reference_run": "artifacts/bench/reference/queue-worker.json",
+      "sha256": "4b9634662503260c2b12aacbcd21559d092cf9bfbfd421a58db7703a8b638587",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/rate-limiter.json",
+      "constraint_types": [
+        "prohibition",
+        "resource_limit"
+      ],
+      "id": "rate-limiter",
+      "path": "src/halflife/bench/templates/rate-limiter.yaml",
+      "reference_run": "artifacts/bench/reference/rate-limiter.json",
+      "sha256": "84d3d030625608ad2c28401ef7696f7c0d1f4e7f728ae73fea69560eca78dcae",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/recipe-scaler.json",
+      "constraint_types": [
+        "procedure",
+        "prohibition"
+      ],
+      "id": "recipe-scaler",
+      "path": "src/halflife/bench/templates/recipe-scaler.yaml",
+      "reference_run": "artifacts/bench/reference/recipe-scaler.json",
+      "sha256": "7da4486c52730e023117c0d92b2302355f3b9c8a013c31d7db9657857d9918a9",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/schedule-planner.json",
+      "constraint_types": [
+        "invariant",
+        "procedure"
+      ],
+      "id": "schedule-planner",
+      "path": "src/halflife/bench/templates/schedule-planner.yaml",
+      "reference_run": "artifacts/bench/reference/schedule-planner.json",
+      "sha256": "eb560167eb2dd0d1a1d5892e0fe55c0e0ef99147de7ebdcc7f1c0cc3ec2bd7bf",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/shipping-quote.json",
+      "constraint_types": [
+        "procedure",
+        "resource_limit"
+      ],
+      "id": "shipping-quote",
+      "path": "src/halflife/bench/templates/shipping-quote.yaml",
+      "reference_run": "artifacts/bench/reference/shipping-quote.json",
+      "sha256": "51c293f127150399d9380a10b0c946c1dafd7ee75987077f066edb9c4da5ecc1",
+      "split": "heldout"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/slugify-lib.json",
+      "constraint_types": [
+        "procedure",
+        "prohibition"
+      ],
+      "id": "slugify-lib",
+      "path": "src/halflife/bench/templates/slugify-lib.yaml",
+      "reference_run": "artifacts/bench/reference/slugify-lib.json",
+      "sha256": "1aee9c5ad380414e74c6dc5325d93273c65505414b117cd6d22a8fe5e8c65fdf",
+      "split": "heldout"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/text-stats.json",
+      "constraint_types": [
+        "invariant",
+        "prohibition"
+      ],
+      "id": "text-stats",
+      "path": "src/halflife/bench/templates/text-stats.yaml",
+      "reference_run": "artifacts/bench/reference/text-stats.json",
+      "sha256": "d4ce7622d7a9a241ac63fdf57181e0a58853279e6e0cb2135a2aa59344a32171",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/todo-cli.json",
+      "constraint_types": [
+        "procedure",
+        "prohibition"
+      ],
+      "id": "todo-cli",
+      "path": "src/halflife/bench/templates/todo-cli.yaml",
+      "reference_run": "artifacts/bench/reference/todo-cli.json",
+      "sha256": "d4d9ce5965c709b32df037e7022744349dd191bcbebc43cdb75e71d1cfcaf39d",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/unit-converter.json",
+      "constraint_types": [
+        "prohibition",
+        "resource_limit"
+      ],
+      "id": "unit-converter",
+      "path": "src/halflife/bench/templates/unit-converter.yaml",
+      "reference_run": "artifacts/bench/reference/unit-converter.json",
+      "sha256": "887fc8cd46522077e32ddbf8542c841551e0443f2a85be736f644c7d230a1c4e",
+      "split": "pilot"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/url-shortener.json",
+      "constraint_types": [
+        "prohibition"
+      ],
+      "id": "url-shortener",
+      "path": "src/halflife/bench/templates/url-shortener.yaml",
+      "reference_run": "artifacts/bench/reference/url-shortener.json",
+      "sha256": "a77ac6600e28db495469d45643a6da318347dd106bc438bd5aba28f166f1babc",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/version-bump.json",
+      "constraint_types": [
+        "invariant",
+        "procedure"
+      ],
+      "id": "version-bump",
+      "path": "src/halflife/bench/templates/version-bump.yaml",
+      "reference_run": "artifacts/bench/reference/version-bump.json",
+      "sha256": "0c069c67682a9400028f9ed083f9b70e1d7edad6b7fa660ad5d3eb10031703f5",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/weather-report.json",
+      "constraint_types": [
+        "prohibition",
+        "resource_limit"
+      ],
+      "id": "weather-report",
+      "path": "src/halflife/bench/templates/weather-report.yaml",
+      "reference_run": "artifacts/bench/reference/weather-report.json",
+      "sha256": "845f9b27d1999776b47d727332eb7d09468a45c9bf68e5c2e141a29bab16630f",
+      "split": "main"
+    },
+    {
+      "compliant_route": "artifacts/bench/routes/word-freq.json",
+      "constraint_types": [
+        "invariant",
+        "procedure"
+      ],
+      "id": "word-freq",
+      "path": "src/halflife/bench/templates/word-freq.yaml",
+      "reference_run": "artifacts/bench/reference/word-freq.json",
+      "sha256": "97a9d3df61d173d47da2ef32cec3f8ee8ed275448b5ad43acab983eab35616d9",
+      "split": "heldout"
+    }
+  ]
+}

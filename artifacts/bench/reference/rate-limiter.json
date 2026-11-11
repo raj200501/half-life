@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/rate-limiter.log.json",
+  "action_log_sha256": "61b3044b3569da84428a2af2e47aa7e08ddf36e69ad4e75e928d03cd1adca4be",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 12,
+  "n_tool_calls": 35,
+  "provenance": {
+    "command": "python -m halflife.bench verify --all --bank",
+    "git_sha": "265d526abee502f29398c82e1dfdc241d6941bb4",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T03:28:16Z"
+  },
+  "synthetic": true,
+  "template_id": "rate-limiter",
+  "template_sha256": "84d3d030625608ad2c28401ef7696f7c0d1f4e7f728ae73fea69560eca78dcae",
+  "violations": 0
+}

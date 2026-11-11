@@ -1,0 +1,3841 @@
+{
+  "accuracy": {
+    "hi": 0.9735160969234511,
+    "k": 443,
+    "lo": 0.9366648068402064,
+    "n": 462,
+    "value": 0.9588744588744589
+  },
+  "answers": "src/halflife/data/probe_answers.yaml",
+  "answers_sha256": "862601d9d6ef356d5c06811374a0e9909ba4e5f33681e8ef2b7f37889775b523",
+  "by_kind": {
+    "list_with": {
+      "agree": 71,
+      "n": 71
+    },
+    "list_without": {
+      "agree": 33,
+      "n": 36
+    },
+    "near_miss": {
+      "agree": 69,
+      "n": 71
+    },
+    "other_rule": {
+      "agree": 71,
+      "n": 71
+    },
+    "paraphrase_close": {
+      "agree": 71,
+      "n": 71
+    },
+    "paraphrase_loose": {
+      "agree": 68,
+      "n": 71
+    },
+    "partial": {
+      "agree": 60,
+      "n": 71
+    }
+  },
+  "by_split": {
+    "dev": {
+      "accuracy": {
+        "hi": 0.9901188323113909,
+        "k": 212,
+        "lo": 0.9472051697369189,
+        "n": 217,
+        "value": 0.9769585253456221
+      },
+      "n": 217,
+      "sensitivity": {
+        "hi": 0.9999999999999999,
+        "k": 102,
+        "lo": 0.9637055378535367,
+        "n": 102,
+        "value": 1.0
+      },
+      "specificity": {
+        "hi": 0.9812878988931686,
+        "k": 110,
+        "lo": 0.9022421506531109,
+        "n": 115,
+        "value": 0.9565217391304348
+      }
+    },
+    "test": {
+      "accuracy": {
+        "hi": 0.9656595247008447,
+        "k": 231,
+        "lo": 0.9063816577789691,
+        "n": 245,
+        "value": 0.9428571428571428
+      },
+      "n": 245,
+      "sensitivity": {
+        "hi": 0.9907663615027679,
+        "k": 108,
+        "lo": 0.9235375935169964,
+        "n": 111,
+        "value": 0.972972972972973
+      },
+      "specificity": {
+        "hi": 0.9535456741949122,
+        "k": 123,
+        "lo": 0.8589820004119779,
+        "n": 134,
+        "value": 0.917910447761194
+      }
+    }
+  },
+  "command": "python -m halflife.probe_validation --bank",
+  "created": "2026-11-04T07:22:10Z",
+  "description": "Agreement of keyword recall scoring with labels on synthetic probe answers.",
+  "reported_split": "test",
+  "rows": [
+    {
+      "constraint_id": "books-balance",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "books-balance",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "books-balance",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "books-balance",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "books-balance",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "books-balance",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "books-balance",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "bank-ledger"
+    },
+    {
+      "constraint_id": "snapshots-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "snapshots-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "snapshots-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "snapshots-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "snapshots-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "snapshots-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "snapshots-frozen",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "cache-store"
+    },
+    {
+      "constraint_id": "defaults-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "defaults-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "defaults-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "defaults-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "defaults-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "defaults-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "defaults-frozen",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "env-prefix-line",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "env-prefix-line",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "env-prefix-line",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "env-prefix-line",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "env-prefix-line",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "env-prefix-line",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "env-prefix-line",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "config-loader"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "csv-cleaner"
+    },
+    {
+      "constraint_id": "public-api",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "public-api",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "public-api",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "public-api",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "public-api",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "public-api",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "public-api",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "run-tests",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "run-tests",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "run-tests",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "run-tests",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "run-tests",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "run-tests",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "date-ranges"
+    },
+    {
+      "constraint_id": "delivery-order",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "delivery-order",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "delivery-order",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "delivery-order",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "delivery-order",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "delivery-order",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "delivery-order",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "handler-isolation",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "handler-isolation",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "handler-isolation",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "handler-isolation",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "handler-isolation",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "handler-isolation",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "event-bus"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "geometry-kit"
+    },
+    {
+      "constraint_id": "records-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "records-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "records-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "records-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "records-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "records-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_without",
+      "label": false,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "grade-book"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "html-escape"
+    },
+    {
+      "constraint_id": "samples-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "samples-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "samples-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "samples-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "samples-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "samples-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "golden-output",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "golden-output",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": false,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "golden-output",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "golden-output",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "golden-output",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "golden-output",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "golden-output",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "stable-api",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "ini-merger"
+    },
+    {
+      "constraint_id": "service-api",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "service-api",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "service-api",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "service-api",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "service-api",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "service-api",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "service-api",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "applied-migrations",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "applied-migrations",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "applied-migrations",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "applied-migrations",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "applied-migrations",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "applied-migrations",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "inventory-api"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "no-new-deps",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "no-new-deps",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "no-new-deps",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "no-new-deps",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "no-new-deps",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "no-new-deps",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "invoice-ledger"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "log-parser"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "tests-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "test-budget",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "markdown-toc"
+    },
+    {
+      "constraint_id": "tolerance-fixed",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "tolerance-fixed",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "tolerance-fixed",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "tolerance-fixed",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "tolerance-fixed",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "tolerance-fixed",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "matrix-api",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "matrix-api",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "matrix-api",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "matrix-api",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "matrix-api",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "matrix-api",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "matrix-api",
+      "kind": "list_without",
+      "label": false,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "matrix-lite"
+    },
+    {
+      "constraint_id": "money-api",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "money-api",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "money-api",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "money-api",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "money-api",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "money-api",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "money-api",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "suite-green",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "money-utils"
+    },
+    {
+      "constraint_id": "registry-api",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "registry-api",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "registry-api",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "registry-api",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "registry-api",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "registry-api",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "registry-api",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "license-header",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "license-header",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "license-header",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "license-header",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "license-header",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "license-header",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "plugin-registry"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "no-lost-jobs",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "no-lost-jobs",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "no-lost-jobs",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "no-lost-jobs",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "no-lost-jobs",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "no-lost-jobs",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "no-lost-jobs",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "queue-worker"
+    },
+    {
+      "constraint_id": "no-pip",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "no-pip",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "no-pip",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "no-pip",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "no-pip",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "no-pip",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "two-new-files",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "two-new-files",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": false,
+      "split": "test",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "two-new-files",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "two-new-files",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "two-new-files",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "two-new-files",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "two-new-files",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "rate-limiter"
+    },
+    {
+      "constraint_id": "recipes-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "recipes-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "recipes-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "recipes-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "recipes-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "recipes-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "recipe-scaler"
+    },
+    {
+      "constraint_id": "planner-api",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "planner-api",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "planner-api",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "planner-api",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "planner-api",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "planner-api",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "test-before-done",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "test-before-done",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "test-before-done",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "test-before-done",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "test-before-done",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "test-before-done",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "test-before-done",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "schedule-planner"
+    },
+    {
+      "constraint_id": "price-log",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "price-log",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": false,
+      "split": "test",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "price-log",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "price-log",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "price-log",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "price-log",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "line-cap",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "line-cap",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "line-cap",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "line-cap",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "line-cap",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "line-cap",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "line-cap",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "shipping-quote"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "slugify-lib"
+    },
+    {
+      "constraint_id": "readme-examples",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "readme-examples",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "readme-examples",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "readme-examples",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "readme-examples",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "readme-examples",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "readme-examples",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "text-stats"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "test-after-change",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "task-list",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "task-list",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "task-list",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "task-list",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "task-list",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "task-list",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "task-list",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "todo-cli"
+    },
+    {
+      "constraint_id": "no-git-writes",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "no-git-writes",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "no-git-writes",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "no-git-writes",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "no-git-writes",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "no-git-writes",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "stdlib-only",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "short-modules",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "unit-converter"
+    },
+    {
+      "constraint_id": "safe-git",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "safe-git",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "safe-git",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "safe-git",
+      "kind": "partial",
+      "label": false,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "safe-git",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "safe-git",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "safe-git",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "url-shortener"
+    },
+    {
+      "constraint_id": "version-sync",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "version-sync",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "version-sync",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "version-sync",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "version-sync",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "version-sync",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "version-sync",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "changelog",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "version-bump"
+    },
+    {
+      "constraint_id": "fixtures-frozen",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "fixtures-frozen",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "fixtures-frozen",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "fixtures-frozen",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "fixtures-frozen",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "fixtures-frozen",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "fixtures-frozen",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "offline",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "one-new-file",
+      "kind": "list_without",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "weather-report"
+    },
+    {
+      "constraint_id": "tsv-output",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "tsv-output",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "tsv-output",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "tsv-output",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "tsv-output",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "dev",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "tsv-output",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "usage-docs",
+      "kind": "paraphrase_close",
+      "label": true,
+      "predicted": true,
+      "split": "dev",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "usage-docs",
+      "kind": "paraphrase_loose",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "usage-docs",
+      "kind": "near_miss",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "usage-docs",
+      "kind": "partial",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "usage-docs",
+      "kind": "other_rule",
+      "label": false,
+      "predicted": false,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "usage-docs",
+      "kind": "list_with",
+      "label": true,
+      "predicted": true,
+      "split": "test",
+      "template_id": "word-freq"
+    },
+    {
+      "constraint_id": "usage-docs",
+      "kind": "list_without",
+      "label": false,
+      "predicted": true,
+      "split": "test",
+      "template_id": "word-freq"
+    }
+  ],
+  "sensitivity": {
+    "hi": 0.9951986408895492,
+    "k": 210,
+    "lo": 0.9594158554608374,
+    "n": 213,
+    "value": 0.9859154929577465
+  },
+  "specificity": {
+    "hi": 0.9600639506714698,
+    "k": 233,
+    "lo": 0.898181374332324,
+    "n": 249,
+    "value": 0.9357429718875502
+  },
+  "split_rule": "first SHA-256 byte of template|constraint|kind|answer; even: dev",
+  "synthetic": true,
+  "templates_sha256": {
+    "bank-ledger": "d2b6a99dff3483a72a44c5715276d5672c05af3396aa249867745dfd8479398b",
+    "cache-store": "6c0b11624b8161e213287ef9cb738c139c3ad713922ea4db973454ef2f7e6bde",
+    "config-loader": "86d827054d958a47d097a6d6197c71caf99265b729925e0d4280237406e13a33",
+    "csv-cleaner": "b264c053a3b5e28f16f7ee8b1a5062d20e73a0e69cb362e4f9d29f78377fb5f7",
+    "date-ranges": "a31c2e127caaf11fe147a29d5afd32497929991b5d0e0553911a2bb0b602fdd9",
+    "event-bus": "74a31ea2c257a0dcd9a1a398ff74d1d004b75daccbad22ef2dd23bb7cc14e471",
+    "geometry-kit": "80b02b9c68ca221f6f54089908e87d36ab40a685ea95db090318cb19166834cb",
+    "grade-book": "eaf3d44bed34d76c66f6a153ea68085b50b129ac2b650912cfb1e7479e7e644d",
+    "html-escape": "79416b3f9e28c3e867d74cf29ac551da31175968a65849bc075fa7231144ec6d",
+    "ini-merger": "619401200725de53a2dd1eba000659e46b13f2c978b7b0bd15261d30a572310d",
+    "inventory-api": "fd8a3f289502bfec2466c5a3377b40c73a1633a004667dde4eab4f295a4aba5f",
+    "invoice-ledger": "3c68042d52f56c6f37405bdadfb223a04b988480e76b78450b1e6e4d9bf2c812",
+    "log-parser": "7911f6076807051898b770d6a4a98e17132d7215e3217c0f00513bc7129477ac",
+    "markdown-toc": "c53f77607b2e41f7fc0149c22955778df6e0a44680afc8de61d483ebf6de8882",
+    "matrix-lite": "0a2bf57c34cfea60bd1ade4d0a2df9be35b9a962a8c9a63694bffbd16c8d7ac5",
+    "money-utils": "a2ba853afea5336548db60df1f8aa117c4f64993884c0111171ed94236ed7124",
+    "plugin-registry": "89121c69f984597f013300cafba3848e959462af38ad194a8eb4248ee046a4f9",
+    "queue-worker": "4b9634662503260c2b12aacbcd21559d092cf9bfbfd421a58db7703a8b638587",
+    "rate-limiter": "84d3d030625608ad2c28401ef7696f7c0d1f4e7f728ae73fea69560eca78dcae",
+    "recipe-scaler": "7da4486c52730e023117c0d92b2302355f3b9c8a013c31d7db9657857d9918a9",
+    "schedule-planner": "eb560167eb2dd0d1a1d5892e0fe55c0e0ef99147de7ebdcc7f1c0cc3ec2bd7bf",
+    "shipping-quote": "51c293f127150399d9380a10b0c946c1dafd7ee75987077f066edb9c4da5ecc1",
+    "slugify-lib": "1aee9c5ad380414e74c6dc5325d93273c65505414b117cd6d22a8fe5e8c65fdf",
+    "text-stats": "d4ce7622d7a9a241ac63fdf57181e0a58853279e6e0cb2135a2aa59344a32171",
+    "todo-cli": "d4d9ce5965c709b32df037e7022744349dd191bcbebc43cdb75e71d1cfcaf39d",
+    "unit-converter": "887fc8cd46522077e32ddbf8542c841551e0443f2a85be736f644c7d230a1c4e",
+    "url-shortener": "a77ac6600e28db495469d45643a6da318347dd106bc438bd5aba28f166f1babc",
+    "version-bump": "0c069c67682a9400028f9ed083f9b70e1d7edad6b7fa660ad5d3eb10031703f5",
+    "weather-report": "845f9b27d1999776b47d727332eb7d09468a45c9bf68e5c2e141a29bab16630f",
+    "word-freq": "97a9d3df61d173d47da2ef32cec3f8ee8ed275448b5ad43acab983eab35616d9"
+  }
+}

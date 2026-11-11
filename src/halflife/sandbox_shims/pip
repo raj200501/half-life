@@ -1,0 +1,11 @@
+#!/bin/sh
+# half-life sandbox shim for pip: offline subcommands pass through; anything
+# that may download (install, download, wheel, index, search, ...) is logged
+# and fails without network.
+case "$0" in */*) hl_here=${0%/*} ;; *) hl_here=. ;; esac
+. "$hl_here/_halflife_common.sh"
+case "$(hl_subcommand "$@")" in
+    "" | list | show | freeze | check | help | inspect | debug | cache | config)
+        hl_passthrough pip "$@" ;;
+esac
+hl_refuse pip "$*" 1

@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/version-bump.log.json",
+  "action_log_sha256": "588a6ad203df5a02f1a1328ef2ced492e7c698892644e20fa39380bcd9a75d05",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 41,
+  "provenance": {
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T04:02:20Z"
+  },
+  "synthetic": true,
+  "template_id": "version-bump",
+  "template_sha256": "0c069c67682a9400028f9ed083f9b70e1d7edad6b7fa660ad5d3eb10031703f5",
+  "violations": 0
+}

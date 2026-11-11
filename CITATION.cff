@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use half-life or half-life-bench, please cite it as below."
+title: "half-life: survival analysis of constraint adherence in long agent sessions"
+type: software
+authors:
+  - given-names: "Raj"
+    family-names: "Kashikar"
+    alias: "raj200501"
+repository-code: "https://github.com/raj200501/half-life"
+license: MIT
+version: "0.0.1"
+keywords:
+  - AI agents
+  - evaluation
+  - constraint adherence
+  - context compaction
+  - survival analysis

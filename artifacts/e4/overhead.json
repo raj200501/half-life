@@ -1,0 +1,343 @@
+{
+  "guard_detail": {
+    "decide": {
+      "max_ms": 0.9429,
+      "mean_ms": 0.1325,
+      "median_ms": 0.1067,
+      "min_ms": 0.0063,
+      "n": 390,
+      "p90_ms": 0.2278
+    },
+    "deny_reason_tokens_mean": 38.0,
+    "fixtures": [
+      {
+        "allow": false,
+        "constraint_id": "offline",
+        "fixture": "pretooluse_bash_curl",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 37,
+        "tool_name": "Bash"
+      },
+      {
+        "allow": false,
+        "constraint_id": "offline",
+        "fixture": "pretooluse_bash_git_push",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 38,
+        "tool_name": "Bash"
+      },
+      {
+        "allow": true,
+        "constraint_id": null,
+        "fixture": "pretooluse_bash_grep_tests",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 0,
+        "tool_name": "Bash"
+      },
+      {
+        "allow": false,
+        "constraint_id": "offline",
+        "fixture": "pretooluse_bash_pip_install",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 39,
+        "tool_name": "Bash"
+      },
+      {
+        "allow": true,
+        "constraint_id": null,
+        "fixture": "pretooluse_bash_pytest",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 0,
+        "tool_name": "Bash"
+      },
+      {
+        "allow": false,
+        "constraint_id": "tests-frozen",
+        "fixture": "pretooluse_bash_sed_protected",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 35,
+        "tool_name": "Bash"
+      },
+      {
+        "allow": false,
+        "constraint_id": "stdlib-only",
+        "fixture": "pretooluse_edit_requirements",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 45,
+        "tool_name": "Edit"
+      },
+      {
+        "allow": true,
+        "constraint_id": null,
+        "fixture": "pretooluse_edit_source",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 0,
+        "tool_name": "Edit"
+      },
+      {
+        "allow": false,
+        "constraint_id": "tests-frozen",
+        "fixture": "pretooluse_multiedit_protected",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 37,
+        "tool_name": "MultiEdit"
+      },
+      {
+        "allow": false,
+        "constraint_id": "tests-frozen",
+        "fixture": "pretooluse_notebookedit_protected",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 36,
+        "tool_name": "NotebookEdit"
+      },
+      {
+        "allow": true,
+        "constraint_id": null,
+        "fixture": "pretooluse_read_protected",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 0,
+        "tool_name": "Read"
+      },
+      {
+        "allow": true,
+        "constraint_id": null,
+        "fixture": "pretooluse_write_helpers",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 0,
+        "tool_name": "Write"
+      },
+      {
+        "allow": false,
+        "constraint_id": "tests-frozen",
+        "fixture": "pretooluse_write_protected",
+        "hook_exit_codes": [
+          0
+        ],
+        "hook_matches_decide": true,
+        "reason_tokens": 37,
+        "tool_name": "Write"
+      }
+    ],
+    "hook_subprocess": {
+      "max_ms": 242.4832,
+      "mean_ms": 145.313,
+      "median_ms": 140.4478,
+      "min_ms": 104.254,
+      "n": 390,
+      "p90_ms": 180.9557
+    },
+    "platform": "Linux-6.18.44-fc-v233-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "repeats": 30,
+    "subprocess_repeats": 30,
+    "token_method": "chars/4"
+  },
+  "halflife-guard": {
+    "decide_median_ms": 0.1067,
+    "latency_definition": "median wall time of one hook run as a subprocess",
+    "latency_ms": 140.4478,
+    "token_method": "chars/4",
+    "tokens": 38.0,
+    "tokens_definition": "mean tokens of a refusal reason; allowed calls add none"
+  },
+  "halflife-pin": {
+    "chars": 563,
+    "latency_definition": "median wall time to render and apply the block",
+    "latency_ms": 0.0294,
+    "template_id": "slugify-lib",
+    "token_method": "chars/4",
+    "tokens": 141,
+    "tokens_definition": "tokens of the pinned block, in context for the whole session"
+  },
+  "pin_by_template": [
+    {
+      "latency": {
+        "max_ms": 0.0687,
+        "mean_ms": 0.0356,
+        "median_ms": 0.0307,
+        "min_ms": 0.0274,
+        "n": 30,
+        "p90_ms": 0.0491
+      },
+      "template_id": "cache-store",
+      "tokens": {
+        "chars": 382,
+        "compact_instructions": false,
+        "format": "claude",
+        "rules": 2,
+        "token_method": "chars/4",
+        "tokens": 96,
+        "with_reasons": false
+      }
+    },
+    {
+      "latency": {
+        "max_ms": 0.0998,
+        "mean_ms": 0.0357,
+        "median_ms": 0.0291,
+        "min_ms": 0.0277,
+        "n": 30,
+        "p90_ms": 0.0544
+      },
+      "template_id": "shipping-quote",
+      "tokens": {
+        "chars": 445,
+        "compact_instructions": false,
+        "format": "claude",
+        "rules": 2,
+        "token_method": "chars/4",
+        "tokens": 112,
+        "with_reasons": false
+      }
+    },
+    {
+      "latency": {
+        "max_ms": 0.0599,
+        "mean_ms": 0.0311,
+        "median_ms": 0.0292,
+        "min_ms": 0.0282,
+        "n": 30,
+        "p90_ms": 0.0328
+      },
+      "template_id": "matrix-lite",
+      "tokens": {
+        "chars": 488,
+        "compact_instructions": false,
+        "format": "claude",
+        "rules": 3,
+        "token_method": "chars/4",
+        "tokens": 122,
+        "with_reasons": false
+      }
+    },
+    {
+      "latency": {
+        "max_ms": 0.0671,
+        "mean_ms": 0.0318,
+        "median_ms": 0.0294,
+        "min_ms": 0.0281,
+        "n": 30,
+        "p90_ms": 0.0362
+      },
+      "template_id": "slugify-lib",
+      "tokens": {
+        "chars": 563,
+        "compact_instructions": false,
+        "format": "claude",
+        "rules": 3,
+        "token_method": "chars/4",
+        "tokens": 141,
+        "with_reasons": false
+      }
+    },
+    {
+      "latency": {
+        "max_ms": 0.069,
+        "mean_ms": 0.0316,
+        "median_ms": 0.029,
+        "min_ms": 0.0276,
+        "n": 30,
+        "p90_ms": 0.0356
+      },
+      "template_id": "word-freq",
+      "tokens": {
+        "chars": 583,
+        "compact_instructions": false,
+        "format": "claude",
+        "rules": 2,
+        "token_method": "chars/4",
+        "tokens": 146,
+        "with_reasons": false
+      }
+    },
+    {
+      "latency": {
+        "max_ms": 0.0656,
+        "mean_ms": 0.0339,
+        "median_ms": 0.0299,
+        "min_ms": 0.0279,
+        "n": 30,
+        "p90_ms": 0.0443
+      },
+      "template_id": "event-bus",
+      "tokens": {
+        "chars": 596,
+        "compact_instructions": false,
+        "format": "claude",
+        "rules": 3,
+        "token_method": "chars/4",
+        "tokens": 149,
+        "with_reasons": false
+      }
+    }
+  ],
+  "provenance": {
+    "command": "python tools/bank_overhead.py --repeats 30",
+    "cpu_count": 4,
+    "created": "2026-11-04T16:33:46Z",
+    "fixtures": [
+      "tests/fixtures/claude_hooks/pretooluse_bash_curl.json",
+      "tests/fixtures/claude_hooks/pretooluse_bash_git_push.json",
+      "tests/fixtures/claude_hooks/pretooluse_bash_grep_tests.json",
+      "tests/fixtures/claude_hooks/pretooluse_bash_pip_install.json",
+      "tests/fixtures/claude_hooks/pretooluse_bash_pytest.json",
+      "tests/fixtures/claude_hooks/pretooluse_bash_sed_protected.json",
+      "tests/fixtures/claude_hooks/pretooluse_edit_requirements.json",
+      "tests/fixtures/claude_hooks/pretooluse_edit_source.json",
+      "tests/fixtures/claude_hooks/pretooluse_multiedit_protected.json",
+      "tests/fixtures/claude_hooks/pretooluse_notebookedit_protected.json",
+      "tests/fixtures/claude_hooks/pretooluse_read_protected.json",
+      "tests/fixtures/claude_hooks/pretooluse_write_helpers.json",
+      "tests/fixtures/claude_hooks/pretooluse_write_protected.json"
+    ],
+    "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+    "load_average_after": [
+      0.7,
+      0.73,
+      0.7
+    ],
+    "load_average_before": [
+      0.17,
+      0.67,
+      0.68
+    ],
+    "repeats": 30,
+    "spec": "examples/halflife.yaml"
+  }
+}

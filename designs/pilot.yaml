@@ -1,0 +1,19 @@
+# Family pilot (exploratory, section 5 E1): which local model families reach the
+# first decision point in at least 80% of sessions. Uses only the pilot-split
+# templates, which E1 never uses, and seeds disjoint from every confirmatory
+# design (seed_base 900000). The same plans run for every candidate family.
+experiment: pilot
+split: pilot
+n_sessions: 3
+seed_base: 900000
+confirmatory: false
+conditions:
+  - {placement: first_user, phrasing: bare, strategy: full_summary, mitigation: none}
+settings:
+  max_tool_calls: 150
+  max_calls_per_subtask: 12
+  max_fillers_per_gap: 3
+  compactions: [1, 3]
+  compaction_window: [8, 120]
+  min_compaction_gap: 15
+  budget_tokens: 3000

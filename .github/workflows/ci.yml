@@ -1,0 +1,37 @@
+name: ci
+
+# Runs for main, for pull requests into main, and on demand (DECISIONS.md D-022).
+# Working branches are checked locally with `make ci` on a fresh clone before
+# every push (tools/prepush_ci.sh).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: make setup
+      - run: make secrets-scan
+      - run: make ci

@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/schedule-planner.log.json",
+  "action_log_sha256": "36933ee7dfff970b3af56c2e80f148fbfa599bc82956658a6678b128d68f3884",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 12,
+  "n_tool_calls": 35,
+  "provenance": {
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T04:02:20Z"
+  },
+  "synthetic": true,
+  "template_id": "schedule-planner",
+  "template_sha256": "eb560167eb2dd0d1a1d5892e0fe55c0e0ef99147de7ebdcc7f1c0cc3ec2bd7bf",
+  "violations": 0
+}

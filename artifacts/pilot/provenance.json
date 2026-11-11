@@ -1,0 +1,792 @@
+{
+  "command": "/home/user/half-life/src/halflife/experiment.py bank --experiment pilot --runs runs/pilot-smollm2-1.7b-instruct-q4km runs/pilot-granite-3.3-2b-instruct-q4km runs/pilot-qwen2.5-3b-instruct-q4km runs/pilot-phi-3.5-mini-instruct-q4km --out artifacts/pilot --design designs/pilot.yaml",
+  "confirmatory": false,
+  "design": "designs/pilot.yaml",
+  "design_sha256": "fd89a529df2271d0068ad75bb69fa1a5838e92c35a7e3050baa5deb4d8a84437",
+  "experiment": "pilot",
+  "git_sha": "e8903353d21defbf35d9f21fbab2807bbe941beb",
+  "models": [
+    {
+      "family": "smollm",
+      "filename": "SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+      "key": "smollm2-1.7b-instruct-q4km",
+      "license": "apache-2.0",
+      "quantization": "Q4_K_M",
+      "repo": "bartowski/SmolLM2-1.7B-Instruct-GGUF",
+      "revision": "1f03464768bfcc0319fc50da8ff5fb20b6417ba2",
+      "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+      "sha256": "77665ea4815999596525c636fbeb56ba8b080b46ae85efef4f0d986a139834d7"
+    },
+    {
+      "family": "granite",
+      "filename": "ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf",
+      "key": "granite-3.3-2b-instruct-q4km",
+      "license": "apache-2.0",
+      "quantization": "Q4_K_M",
+      "repo": "bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF",
+      "revision": "4e06dce39d4c5fcf65ca1cc69b92962e411d38e1",
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "sha256": "555b91485955bc96eb445b57dd4bbf8809aa7d8cce7c313f4f8bc5b2340896b4"
+    },
+    {
+      "family": "qwen",
+      "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+      "key": "qwen2.5-3b-instruct-q4km",
+      "license": "qwen-research",
+      "quantization": "Q4_K_M",
+      "repo": "bartowski/Qwen2.5-3B-Instruct-GGUF",
+      "revision": "f302c64a2269a69fb27b2f9473b362f5bb8e78d8",
+      "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+      "sha256": "9c9f56a391a3abbd5b89d0245bf6106081bcc3173119d4229235dd9d23253f94"
+    },
+    {
+      "family": "phi",
+      "filename": "Phi-3.5-mini-instruct-Q4_K_M.gguf",
+      "key": "phi-3.5-mini-instruct-q4km",
+      "license": "mit",
+      "quantization": "Q4_K_M",
+      "repo": "bartowski/Phi-3.5-mini-instruct-GGUF",
+      "revision": "6d70da17e749a471ccb62ade694486011a75cda3",
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "sha256": "e4165e3a71af97f1b4820da61079826d8752a2088e313af0c7d346796c38eff5"
+    }
+  ],
+  "n_opportunities": 40,
+  "n_sessions": 10,
+  "prereg": null,
+  "run_records": {
+    "pilot-granite-3.3-2b-instruct-q4km": {
+      "invocations": [
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-granite-3.3-2b-instruct-q4km --model granite-3.3-2b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "67d92962b3ef745c3cd9f9db7fcb86d8bdecffb7",
+          "model": {
+            "architecture": "granite",
+            "chat_notes": "<|start_of_role|>role<|end_of_role|> ... <|end_of_text|> turns; native system role; the template calls strftime_now only when no system message is given (the backend fixes it to a constant date).",
+            "context_length": 131072,
+            "family": "granite",
+            "filename": "ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf",
+            "key": "granite-3.3-2b-instruct-q4km",
+            "license": "apache-2.0",
+            "license_url": "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct",
+            "params_b": 2.53,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF",
+            "revision": "4e06dce39d4c5fcf65ca1cc69b92962e411d38e1",
+            "sha256": "555b91485955bc96eb445b57dd4bbf8809aa7d8cce7c313f4f8bc5b2340896b4",
+            "size_bytes": 1545303616,
+            "system_mode": "native",
+            "upstream": "ibm-granite/granite-3.3-2b-instruct",
+            "url": "https://huggingface.co/bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF/resolve/4e06dce39d4c5fcf65ca1cc69b92962e411d38e1/ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "6e7948154446f0396fb54cfe0b416b57765f56e8c3d40f3672e853e64db7738a",
+          "prereg": null,
+          "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T02:57:10Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-granite-3.3-2b-instruct-q4km --model granite-3.3-2b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+          "model": {
+            "architecture": "granite",
+            "chat_notes": "<|start_of_role|>role<|end_of_role|> ... <|end_of_text|> turns; native system role; the template calls strftime_now only when no system message is given (the backend fixes it to a constant date).",
+            "context_length": 131072,
+            "family": "granite",
+            "filename": "ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf",
+            "key": "granite-3.3-2b-instruct-q4km",
+            "license": "apache-2.0",
+            "license_url": "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct",
+            "params_b": 2.53,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF",
+            "revision": "4e06dce39d4c5fcf65ca1cc69b92962e411d38e1",
+            "sha256": "555b91485955bc96eb445b57dd4bbf8809aa7d8cce7c313f4f8bc5b2340896b4",
+            "size_bytes": 1545303616,
+            "system_mode": "native",
+            "upstream": "ibm-granite/granite-3.3-2b-instruct",
+            "url": "https://huggingface.co/bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF/resolve/4e06dce39d4c5fcf65ca1cc69b92962e411d38e1/ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T07:13:43Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 2 --run-id pilot-granite-3.3-2b-instruct-q4km --model granite-3.3-2b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+          "kit": {
+            "guard": "halflife.kit.guard.minimal_agent_guard",
+            "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+            "reinject": "halflife.kit.reinject.reinject_text",
+            "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+          },
+          "model": {
+            "architecture": "granite",
+            "chat_notes": "<|start_of_role|>role<|end_of_role|> ... <|end_of_text|> turns; native system role; the template calls strftime_now only when no system message is given (the backend fixes it to a constant date).",
+            "context_length": 131072,
+            "family": "granite",
+            "filename": "ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf",
+            "key": "granite-3.3-2b-instruct-q4km",
+            "license": "apache-2.0",
+            "license_url": "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct",
+            "params_b": 2.53,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF",
+            "revision": "4e06dce39d4c5fcf65ca1cc69b92962e411d38e1",
+            "sha256": "555b91485955bc96eb445b57dd4bbf8809aa7d8cce7c313f4f8bc5b2340896b4",
+            "size_bytes": 1545303616,
+            "system_mode": "native",
+            "upstream": "ibm-granite/granite-3.3-2b-instruct",
+            "url": "https://huggingface.co/bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF/resolve/4e06dce39d4c5fcf65ca1cc69b92962e411d38e1/ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T09:40:37Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 1 --run-id pilot-granite-3.3-2b-instruct-q4km --model granite-3.3-2b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+          "kit": {
+            "guard": "halflife.kit.guard.minimal_agent_guard",
+            "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+            "reinject": "halflife.kit.reinject.reinject_text",
+            "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+          },
+          "model": {
+            "architecture": "granite",
+            "chat_notes": "<|start_of_role|>role<|end_of_role|> ... <|end_of_text|> turns; native system role; the template calls strftime_now only when no system message is given (the backend fixes it to a constant date).",
+            "context_length": 131072,
+            "family": "granite",
+            "filename": "ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf",
+            "key": "granite-3.3-2b-instruct-q4km",
+            "license": "apache-2.0",
+            "license_url": "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct",
+            "params_b": 2.53,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF",
+            "revision": "4e06dce39d4c5fcf65ca1cc69b92962e411d38e1",
+            "sha256": "555b91485955bc96eb445b57dd4bbf8809aa7d8cce7c313f4f8bc5b2340896b4",
+            "size_bytes": 1545303616,
+            "system_mode": "native",
+            "upstream": "ibm-granite/granite-3.3-2b-instruct",
+            "url": "https://huggingface.co/bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF/resolve/4e06dce39d4c5fcf65ca1cc69b92962e411d38e1/ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T10:29:58Z",
+          "subject_python": "3.12.3"
+        }
+      ],
+      "run": {
+        "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 1 --run-id pilot-granite-3.3-2b-instruct-q4km --model granite-3.3-2b-instruct-q4km --n-ctx 8192",
+        "cpu_count": 4,
+        "finished": "2026-11-04T10:35:31Z",
+        "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+        "kit": {
+          "guard": "halflife.kit.guard.minimal_agent_guard",
+          "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+          "reinject": "halflife.kit.reinject.reinject_text",
+          "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+        },
+        "model": {
+          "architecture": "granite",
+          "chat_notes": "<|start_of_role|>role<|end_of_role|> ... <|end_of_text|> turns; native system role; the template calls strftime_now only when no system message is given (the backend fixes it to a constant date).",
+          "context_length": 131072,
+          "family": "granite",
+          "filename": "ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf",
+          "key": "granite-3.3-2b-instruct-q4km",
+          "license": "apache-2.0",
+          "license_url": "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct",
+          "params_b": 2.53,
+          "quantization": "Q4_K_M",
+          "repo": "bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF",
+          "revision": "4e06dce39d4c5fcf65ca1cc69b92962e411d38e1",
+          "sha256": "555b91485955bc96eb445b57dd4bbf8809aa7d8cce7c313f4f8bc5b2340896b4",
+          "size_bytes": 1545303616,
+          "system_mode": "native",
+          "upstream": "ibm-granite/granite-3.3-2b-instruct",
+          "url": "https://huggingface.co/bartowski/ibm-granite_granite-3.3-2b-instruct-GGUF/resolve/4e06dce39d4c5fcf65ca1cc69b92962e411d38e1/ibm-granite_granite-3.3-2b-instruct-Q4_K_M.gguf"
+        },
+        "n_ctx": 8192,
+        "plans": "artifacts/pilot/plans.jsonl",
+        "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+        "prereg": null,
+        "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+        "sandbox_method": "unshare-mount",
+        "settings": {
+          "max_step_tokens": 384,
+          "temperature": 0.7
+        },
+        "started": "2026-11-04T10:29:58Z",
+        "status": 0,
+        "subject_python": "3.12.3"
+      }
+    },
+    "pilot-phi-3.5-mini-instruct-q4km": {
+      "invocations": [
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-phi-3.5-mini-instruct-q4km --model phi-3.5-mini-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+          "model": {
+            "architecture": "phi3",
+            "chat_notes": "<|system|>, <|user|>, <|assistant|> turns ending in <|end|>; native system role (skipped by the template when empty); no BOS token (the GGUF sets add_bos_token false and the template renders none).",
+            "context_length": 131072,
+            "family": "phi",
+            "filename": "Phi-3.5-mini-instruct-Q4_K_M.gguf",
+            "key": "phi-3.5-mini-instruct-q4km",
+            "license": "mit",
+            "license_url": "https://huggingface.co/microsoft/Phi-3.5-mini-instruct/blob/main/LICENSE",
+            "params_b": 3.82,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/Phi-3.5-mini-instruct-GGUF",
+            "revision": "6d70da17e749a471ccb62ade694486011a75cda3",
+            "sha256": "e4165e3a71af97f1b4820da61079826d8752a2088e313af0c7d346796c38eff5",
+            "size_bytes": 2393232672,
+            "system_mode": "native",
+            "upstream": "microsoft/Phi-3.5-mini-instruct",
+            "url": "https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/6d70da17e749a471ccb62ade694486011a75cda3/Phi-3.5-mini-instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T03:49:06Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-phi-3.5-mini-instruct-q4km --model phi-3.5-mini-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+          "model": {
+            "architecture": "phi3",
+            "chat_notes": "<|system|>, <|user|>, <|assistant|> turns ending in <|end|>; native system role (skipped by the template when empty); no BOS token (the GGUF sets add_bos_token false and the template renders none).",
+            "context_length": 131072,
+            "family": "phi",
+            "filename": "Phi-3.5-mini-instruct-Q4_K_M.gguf",
+            "key": "phi-3.5-mini-instruct-q4km",
+            "license": "mit",
+            "license_url": "https://huggingface.co/microsoft/Phi-3.5-mini-instruct/blob/main/LICENSE",
+            "params_b": 3.82,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/Phi-3.5-mini-instruct-GGUF",
+            "revision": "6d70da17e749a471ccb62ade694486011a75cda3",
+            "sha256": "e4165e3a71af97f1b4820da61079826d8752a2088e313af0c7d346796c38eff5",
+            "size_bytes": 2393232672,
+            "system_mode": "native",
+            "upstream": "microsoft/Phi-3.5-mini-instruct",
+            "url": "https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/6d70da17e749a471ccb62ade694486011a75cda3/Phi-3.5-mini-instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T07:19:36Z",
+          "subject_python": "3.12.3"
+        }
+      ],
+      "run": {
+        "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-phi-3.5-mini-instruct-q4km --model phi-3.5-mini-instruct-q4km --n-ctx 8192",
+        "cpu_count": 4,
+        "finished": "2026-11-04T09:25:09Z",
+        "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+        "model": {
+          "architecture": "phi3",
+          "chat_notes": "<|system|>, <|user|>, <|assistant|> turns ending in <|end|>; native system role (skipped by the template when empty); no BOS token (the GGUF sets add_bos_token false and the template renders none).",
+          "context_length": 131072,
+          "family": "phi",
+          "filename": "Phi-3.5-mini-instruct-Q4_K_M.gguf",
+          "key": "phi-3.5-mini-instruct-q4km",
+          "license": "mit",
+          "license_url": "https://huggingface.co/microsoft/Phi-3.5-mini-instruct/blob/main/LICENSE",
+          "params_b": 3.82,
+          "quantization": "Q4_K_M",
+          "repo": "bartowski/Phi-3.5-mini-instruct-GGUF",
+          "revision": "6d70da17e749a471ccb62ade694486011a75cda3",
+          "sha256": "e4165e3a71af97f1b4820da61079826d8752a2088e313af0c7d346796c38eff5",
+          "size_bytes": 2393232672,
+          "system_mode": "native",
+          "upstream": "microsoft/Phi-3.5-mini-instruct",
+          "url": "https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/6d70da17e749a471ccb62ade694486011a75cda3/Phi-3.5-mini-instruct-Q4_K_M.gguf"
+        },
+        "n_ctx": 8192,
+        "plans": "artifacts/pilot/plans.jsonl",
+        "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+        "prereg": null,
+        "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+        "sandbox_method": "unshare-mount",
+        "settings": {
+          "max_step_tokens": 384,
+          "temperature": 0.7
+        },
+        "started": "2026-11-04T07:19:36Z",
+        "status": 0,
+        "subject_python": "3.12.3"
+      }
+    },
+    "pilot-qwen2.5-3b-instruct-q4km": {
+      "invocations": [
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-qwen2.5-3b-instruct-q4km --model qwen2.5-3b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "e085141e26b758d30ebc19e4b86d7b839d18d181",
+          "model": {
+            "architecture": "qwen2",
+            "chat_notes": "ChatML turns (<|im_start|>role ... <|im_end|>); native system role; the template adds a default Qwen system prompt only when no system message is given; the tokenizer adds no BOS token.",
+            "context_length": 32768,
+            "family": "qwen",
+            "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+            "key": "qwen2.5-3b-instruct-q4km",
+            "license": "qwen-research",
+            "license_url": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE",
+            "params_b": 3.09,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/Qwen2.5-3B-Instruct-GGUF",
+            "revision": "f302c64a2269a69fb27b2f9473b362f5bb8e78d8",
+            "sha256": "9c9f56a391a3abbd5b89d0245bf6106081bcc3173119d4229235dd9d23253f94",
+            "size_bytes": 1929903264,
+            "system_mode": "native",
+            "upstream": "Qwen/Qwen2.5-3B-Instruct",
+            "url": "https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/f302c64a2269a69fb27b2f9473b362f5bb8e78d8/Qwen2.5-3B-Instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T03:23:25Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-qwen2.5-3b-instruct-q4km --model qwen2.5-3b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+          "model": {
+            "architecture": "qwen2",
+            "chat_notes": "ChatML turns (<|im_start|>role ... <|im_end|>); native system role; the template adds a default Qwen system prompt only when no system message is given; the tokenizer adds no BOS token.",
+            "context_length": 32768,
+            "family": "qwen",
+            "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+            "key": "qwen2.5-3b-instruct-q4km",
+            "license": "qwen-research",
+            "license_url": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE",
+            "params_b": 3.09,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/Qwen2.5-3B-Instruct-GGUF",
+            "revision": "f302c64a2269a69fb27b2f9473b362f5bb8e78d8",
+            "sha256": "9c9f56a391a3abbd5b89d0245bf6106081bcc3173119d4229235dd9d23253f94",
+            "size_bytes": 1929903264,
+            "system_mode": "native",
+            "upstream": "Qwen/Qwen2.5-3B-Instruct",
+            "url": "https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/f302c64a2269a69fb27b2f9473b362f5bb8e78d8/Qwen2.5-3B-Instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T07:16:23Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 2 --run-id pilot-qwen2.5-3b-instruct-q4km --model qwen2.5-3b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+          "kit": {
+            "guard": "halflife.kit.guard.minimal_agent_guard",
+            "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+            "reinject": "halflife.kit.reinject.reinject_text",
+            "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+          },
+          "model": {
+            "architecture": "qwen2",
+            "chat_notes": "ChatML turns (<|im_start|>role ... <|im_end|>); native system role; the template adds a default Qwen system prompt only when no system message is given; the tokenizer adds no BOS token.",
+            "context_length": 32768,
+            "family": "qwen",
+            "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+            "key": "qwen2.5-3b-instruct-q4km",
+            "license": "qwen-research",
+            "license_url": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE",
+            "params_b": 3.09,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/Qwen2.5-3B-Instruct-GGUF",
+            "revision": "f302c64a2269a69fb27b2f9473b362f5bb8e78d8",
+            "sha256": "9c9f56a391a3abbd5b89d0245bf6106081bcc3173119d4229235dd9d23253f94",
+            "size_bytes": 1929903264,
+            "system_mode": "native",
+            "upstream": "Qwen/Qwen2.5-3B-Instruct",
+            "url": "https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/f302c64a2269a69fb27b2f9473b362f5bb8e78d8/Qwen2.5-3B-Instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T10:13:07Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 1 --run-id pilot-qwen2.5-3b-instruct-q4km --model qwen2.5-3b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+          "kit": {
+            "guard": "halflife.kit.guard.minimal_agent_guard",
+            "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+            "reinject": "halflife.kit.reinject.reinject_text",
+            "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+          },
+          "model": {
+            "architecture": "qwen2",
+            "chat_notes": "ChatML turns (<|im_start|>role ... <|im_end|>); native system role; the template adds a default Qwen system prompt only when no system message is given; the tokenizer adds no BOS token.",
+            "context_length": 32768,
+            "family": "qwen",
+            "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+            "key": "qwen2.5-3b-instruct-q4km",
+            "license": "qwen-research",
+            "license_url": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE",
+            "params_b": 3.09,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/Qwen2.5-3B-Instruct-GGUF",
+            "revision": "f302c64a2269a69fb27b2f9473b362f5bb8e78d8",
+            "sha256": "9c9f56a391a3abbd5b89d0245bf6106081bcc3173119d4229235dd9d23253f94",
+            "size_bytes": 1929903264,
+            "system_mode": "native",
+            "upstream": "Qwen/Qwen2.5-3B-Instruct",
+            "url": "https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/f302c64a2269a69fb27b2f9473b362f5bb8e78d8/Qwen2.5-3B-Instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T10:35:32Z",
+          "subject_python": "3.12.3"
+        }
+      ],
+      "run": {
+        "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 1 --run-id pilot-qwen2.5-3b-instruct-q4km --model qwen2.5-3b-instruct-q4km --n-ctx 8192",
+        "cpu_count": 4,
+        "finished": "2026-11-04T10:42:36Z",
+        "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+        "kit": {
+          "guard": "halflife.kit.guard.minimal_agent_guard",
+          "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+          "reinject": "halflife.kit.reinject.reinject_text",
+          "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+        },
+        "model": {
+          "architecture": "qwen2",
+          "chat_notes": "ChatML turns (<|im_start|>role ... <|im_end|>); native system role; the template adds a default Qwen system prompt only when no system message is given; the tokenizer adds no BOS token.",
+          "context_length": 32768,
+          "family": "qwen",
+          "filename": "Qwen2.5-3B-Instruct-Q4_K_M.gguf",
+          "key": "qwen2.5-3b-instruct-q4km",
+          "license": "qwen-research",
+          "license_url": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/LICENSE",
+          "params_b": 3.09,
+          "quantization": "Q4_K_M",
+          "repo": "bartowski/Qwen2.5-3B-Instruct-GGUF",
+          "revision": "f302c64a2269a69fb27b2f9473b362f5bb8e78d8",
+          "sha256": "9c9f56a391a3abbd5b89d0245bf6106081bcc3173119d4229235dd9d23253f94",
+          "size_bytes": 1929903264,
+          "system_mode": "native",
+          "upstream": "Qwen/Qwen2.5-3B-Instruct",
+          "url": "https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/f302c64a2269a69fb27b2f9473b362f5bb8e78d8/Qwen2.5-3B-Instruct-Q4_K_M.gguf"
+        },
+        "n_ctx": 8192,
+        "plans": "artifacts/pilot/plans.jsonl",
+        "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+        "prereg": null,
+        "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+        "sandbox_method": "unshare-mount",
+        "settings": {
+          "max_step_tokens": 384,
+          "temperature": 0.7
+        },
+        "started": "2026-11-04T10:35:32Z",
+        "status": 0,
+        "subject_python": "3.12.3"
+      }
+    },
+    "pilot-smollm2-1.7b-instruct-q4km": {
+      "invocations": [
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-smollm2-1.7b-instruct-q4km --model smollm2-1.7b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "67d92962b3ef745c3cd9f9db7fcb86d8bdecffb7",
+          "model": {
+            "architecture": "llama",
+            "chat_notes": "ChatML turns; native system role; the template adds a default SmolLM system prompt only when no system message is given; <|im_start|> doubles as the BOS token and comes from the template; trained context is 8192 tokens.",
+            "context_length": 8192,
+            "family": "smollm",
+            "filename": "SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+            "key": "smollm2-1.7b-instruct-q4km",
+            "license": "apache-2.0",
+            "license_url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "params_b": 1.71,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/SmolLM2-1.7B-Instruct-GGUF",
+            "revision": "1f03464768bfcc0319fc50da8ff5fb20b6417ba2",
+            "sha256": "77665ea4815999596525c636fbeb56ba8b080b46ae85efef4f0d986a139834d7",
+            "size_bytes": 1055609824,
+            "system_mode": "native",
+            "upstream": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "url": "https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/1f03464768bfcc0319fc50da8ff5fb20b6417ba2/SmolLM2-1.7B-Instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "6e7948154446f0396fb54cfe0b416b57765f56e8c3d40f3672e853e64db7738a",
+          "prereg": null,
+          "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T02:50:59Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 0 --run-id pilot-smollm2-1.7b-instruct-q4km --model smollm2-1.7b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+          "model": {
+            "architecture": "llama",
+            "chat_notes": "ChatML turns; native system role; the template adds a default SmolLM system prompt only when no system message is given; <|im_start|> doubles as the BOS token and comes from the template; trained context is 8192 tokens.",
+            "context_length": 8192,
+            "family": "smollm",
+            "filename": "SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+            "key": "smollm2-1.7b-instruct-q4km",
+            "license": "apache-2.0",
+            "license_url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "params_b": 1.71,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/SmolLM2-1.7B-Instruct-GGUF",
+            "revision": "1f03464768bfcc0319fc50da8ff5fb20b6417ba2",
+            "sha256": "77665ea4815999596525c636fbeb56ba8b080b46ae85efef4f0d986a139834d7",
+            "size_bytes": 1055609824,
+            "system_mode": "native",
+            "upstream": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "url": "https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/1f03464768bfcc0319fc50da8ff5fb20b6417ba2/SmolLM2-1.7B-Instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T07:11:40Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 2 --run-id pilot-smollm2-1.7b-instruct-q4km --model smollm2-1.7b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "8d15166d33383850baab6ce1578e88624ca2b32c",
+          "kit": {
+            "guard": "halflife.kit.guard.minimal_agent_guard",
+            "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+            "reinject": "halflife.kit.reinject.reinject_text",
+            "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+          },
+          "model": {
+            "architecture": "llama",
+            "chat_notes": "ChatML turns; native system role; the template adds a default SmolLM system prompt only when no system message is given; <|im_start|> doubles as the BOS token and comes from the template; trained context is 8192 tokens.",
+            "context_length": 8192,
+            "family": "smollm",
+            "filename": "SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+            "key": "smollm2-1.7b-instruct-q4km",
+            "license": "apache-2.0",
+            "license_url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "params_b": 1.71,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/SmolLM2-1.7B-Instruct-GGUF",
+            "revision": "1f03464768bfcc0319fc50da8ff5fb20b6417ba2",
+            "sha256": "77665ea4815999596525c636fbeb56ba8b080b46ae85efef4f0d986a139834d7",
+            "size_bytes": 1055609824,
+            "system_mode": "native",
+            "upstream": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "url": "https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/1f03464768bfcc0319fc50da8ff5fb20b6417ba2/SmolLM2-1.7B-Instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T09:25:21Z",
+          "subject_python": "3.12.3"
+        },
+        {
+          "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 1 --run-id pilot-smollm2-1.7b-instruct-q4km --model smollm2-1.7b-instruct-q4km --n-ctx 8192",
+          "cpu_count": 4,
+          "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+          "kit": {
+            "guard": "halflife.kit.guard.minimal_agent_guard",
+            "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+            "reinject": "halflife.kit.reinject.reinject_text",
+            "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+          },
+          "model": {
+            "architecture": "llama",
+            "chat_notes": "ChatML turns; native system role; the template adds a default SmolLM system prompt only when no system message is given; <|im_start|> doubles as the BOS token and comes from the template; trained context is 8192 tokens.",
+            "context_length": 8192,
+            "family": "smollm",
+            "filename": "SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+            "key": "smollm2-1.7b-instruct-q4km",
+            "license": "apache-2.0",
+            "license_url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "params_b": 1.71,
+            "quantization": "Q4_K_M",
+            "repo": "bartowski/SmolLM2-1.7B-Instruct-GGUF",
+            "revision": "1f03464768bfcc0319fc50da8ff5fb20b6417ba2",
+            "sha256": "77665ea4815999596525c636fbeb56ba8b080b46ae85efef4f0d986a139834d7",
+            "size_bytes": 1055609824,
+            "system_mode": "native",
+            "upstream": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+            "url": "https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/1f03464768bfcc0319fc50da8ff5fb20b6417ba2/SmolLM2-1.7B-Instruct-Q4_K_M.gguf"
+          },
+          "n_ctx": 8192,
+          "plans": "artifacts/pilot/plans.jsonl",
+          "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+          "prereg": null,
+          "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+          "sandbox_method": "unshare-mount",
+          "settings": {
+            "max_step_tokens": 384,
+            "temperature": 0.7
+          },
+          "started": "2026-11-04T10:24:53Z",
+          "subject_python": "3.12.3"
+        }
+      ],
+      "run": {
+        "command": "/home/user/half-life/src/halflife/experiment.py run --plans artifacts/pilot/plans.jsonl --index 1 --run-id pilot-smollm2-1.7b-instruct-q4km --model smollm2-1.7b-instruct-q4km --n-ctx 8192",
+        "cpu_count": 4,
+        "finished": "2026-11-04T10:29:56Z",
+        "git_sha": "c0c211d9db70b87fb8c801c999ac810b36378c0a",
+        "kit": {
+          "guard": "halflife.kit.guard.minimal_agent_guard",
+          "preserve_prompt_sha256": "80ee8a13cab3f0735b68fd665e5359e3aaa279e3414e68d656b544206eed5075",
+          "reinject": "halflife.kit.reinject.reinject_text",
+          "reinject_example_sha256": "11bcf7d1a36c60c738152de4e712f988ae30a1a6da241714ae761824705010e6"
+        },
+        "model": {
+          "architecture": "llama",
+          "chat_notes": "ChatML turns; native system role; the template adds a default SmolLM system prompt only when no system message is given; <|im_start|> doubles as the BOS token and comes from the template; trained context is 8192 tokens.",
+          "context_length": 8192,
+          "family": "smollm",
+          "filename": "SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+          "key": "smollm2-1.7b-instruct-q4km",
+          "license": "apache-2.0",
+          "license_url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct",
+          "params_b": 1.71,
+          "quantization": "Q4_K_M",
+          "repo": "bartowski/SmolLM2-1.7B-Instruct-GGUF",
+          "revision": "1f03464768bfcc0319fc50da8ff5fb20b6417ba2",
+          "sha256": "77665ea4815999596525c636fbeb56ba8b080b46ae85efef4f0d986a139834d7",
+          "size_bytes": 1055609824,
+          "system_mode": "native",
+          "upstream": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+          "url": "https://huggingface.co/bartowski/SmolLM2-1.7B-Instruct-GGUF/resolve/1f03464768bfcc0319fc50da8ff5fb20b6417ba2/SmolLM2-1.7B-Instruct-Q4_K_M.gguf"
+        },
+        "n_ctx": 8192,
+        "plans": "artifacts/pilot/plans.jsonl",
+        "plans_sha256": "39f565efbcff0d2590f355e705810f0ffe821e614dde0cd0ddcfee3459c43f3e",
+        "prereg": null,
+        "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+        "sandbox_method": "unshare-mount",
+        "settings": {
+          "max_step_tokens": 384,
+          "temperature": 0.7
+        },
+        "started": "2026-11-04T10:24:53Z",
+        "status": 0,
+        "subject_python": "3.12.3"
+      }
+    }
+  },
+  "runs": [
+    "pilot-granite-3.3-2b-instruct-q4km",
+    "pilot-phi-3.5-mini-instruct-q4km",
+    "pilot-qwen2.5-3b-instruct-q4km",
+    "pilot-smollm2-1.7b-instruct-q4km"
+  ],
+  "timestamp": "2026-11-04T17:10:19Z"
+}

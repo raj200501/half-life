@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="321" viewBox="0 0 760 321" role="img" aria-labelledby="hl-e0-instrument-validity-title hl-e0-instrument-validity-desc" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<title id="hl-e0-instrument-validity-title">E0: instrument validity</title>
+<desc id="hl-e0-instrument-validity-desc">Synthetic data. Forest plot. Proportion for 5 rows of Measure (Detector precision, Detector recall, Probe scorer sensitivity (test), Probe scorer specificity (test), Probe scorer accuracy (test)). Dashed reference line at 0.95.</desc>
+<rect width="760" height="321" fill="#fcfcfb"/>
+<defs><clipPath id="hl-e0-instrument-validity-plot"><rect x="192.36" y="109.00" width="420.20" height="142.00"/></clipPath></defs>
+<text x="16.00" y="32.00" font-size="16" fill="#0b0b0b" font-weight="600" class="title">E0: instrument validity</text>
+<text x="16.00" y="51.00" font-size="12" fill="#0b0b0b" font-weight="600" class="synthetic">Synthetic data: not model results or real-world results</text>
+<g class="legend">
+<path d="M24.95 67.95 L33.05 67.95 L33.05 76.05 L24.95 76.05 Z" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2" class="marker"/>
+<text x="50.00" y="76.00" font-size="12" fill="#52514e">Estimate</text>
+<line x1="119.32" y1="72.00" x2="141.32" y2="72.00" stroke="#2a78d6" stroke-width="2"/>
+<line x1="119.32" y1="68.00" x2="119.32" y2="76.00" stroke="#2a78d6" stroke-width="2"/>
+<line x1="141.32" y1="68.00" x2="141.32" y2="76.00" stroke="#2a78d6" stroke-width="2"/>
+<text x="151.32" y="76.00" font-size="12" fill="#52514e">Wilson interval</text>
+<line x1="249.60" y1="72.00" x2="275.60" y2="72.00" stroke="#52514e" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="283.60" y="76.00" font-size="12" fill="#52514e">G5 threshold for the detectors</text>
+</g>
+<g class="grid">
+<line x1="198.36" y1="115.00" x2="198.36" y2="245.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="334.43" y1="115.00" x2="334.43" y2="245.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="470.49" y1="115.00" x2="470.49" y2="245.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="606.56" y1="115.00" x2="606.56" y2="245.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="198.36" y1="245.00" x2="606.56" y2="245.00" stroke="#c3c2b7" stroke-width="1" class="axis"/>
+<line x1="198.36" y1="245.00" x2="198.36" y2="249.00" stroke="#c3c2b7" stroke-width="1"/>
+<line x1="334.43" y1="245.00" x2="334.43" y2="249.00" stroke="#c3c2b7" stroke-width="1"/>
+<line x1="470.49" y1="245.00" x2="470.49" y2="249.00" stroke="#c3c2b7" stroke-width="1"/>
+<line x1="606.56" y1="245.00" x2="606.56" y2="249.00" stroke="#c3c2b7" stroke-width="1"/>
+</g>
+<text x="16.00" y="107.00" font-size="12" fill="#0b0b0b" font-weight="600" class="column-header">Measure</text>
+<text x="622.56" y="107.00" font-size="12" fill="#0b0b0b" font-weight="600" class="column-header">Estimate [interval]</text>
+<g class="data" clip-path="url(#hl-e0-instrument-validity-plot)">
+<line x1="470.49" y1="115.00" x2="470.49" y2="245.00" stroke="#52514e" stroke-width="1" stroke-dasharray="4 3" class="reference"/>
+<line x1="547.45" y1="128.00" x2="606.56" y2="128.00" stroke="#2a78d6" stroke-width="2" class="interval"/>
+<line x1="547.45" y1="124.00" x2="547.45" y2="132.00" stroke="#2a78d6" stroke-width="2"/>
+<line x1="606.56" y1="124.00" x2="606.56" y2="132.00" stroke="#2a78d6" stroke-width="2"/>
+<path d="M602.51 123.95 L610.61 123.95 L610.61 132.05 L602.51 132.05 Z" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2" class="marker"><title>Detector precision: 1.000 [0.978, 1.000]</title></path>
+<line x1="547.45" y1="154.00" x2="606.56" y2="154.00" stroke="#2a78d6" stroke-width="2" class="interval"/>
+<line x1="547.45" y1="150.00" x2="547.45" y2="158.00" stroke="#2a78d6" stroke-width="2"/>
+<line x1="606.56" y1="150.00" x2="606.56" y2="158.00" stroke="#2a78d6" stroke-width="2"/>
+<path d="M602.51 149.95 L610.61 149.95 L610.61 158.05 L602.51 158.05 Z" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2" class="marker"><title>Detector recall: 1.000 [0.978, 1.000]</title></path>
+<line x1="398.48" y1="180.00" x2="581.43" y2="180.00" stroke="#2a78d6" stroke-width="2" class="interval"/>
+<line x1="398.48" y1="176.00" x2="398.48" y2="184.00" stroke="#2a78d6" stroke-width="2"/>
+<line x1="581.43" y1="176.00" x2="581.43" y2="184.00" stroke="#2a78d6" stroke-width="2"/>
+<path d="M528.96 175.95 L537.06 175.95 L537.06 184.05 L528.96 184.05 Z" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2" class="marker"><title>Probe scorer sensitivity (test): 0.973 [0.924, 0.991]</title></path>
+<line x1="222.80" y1="206.00" x2="480.14" y2="206.00" stroke="#2a78d6" stroke-width="2" class="interval"/>
+<line x1="222.80" y1="202.00" x2="222.80" y2="210.00" stroke="#2a78d6" stroke-width="2"/>
+<line x1="480.14" y1="202.00" x2="480.14" y2="210.00" stroke="#2a78d6" stroke-width="2"/>
+<path d="M379.12 201.95 L387.22 201.95 L387.22 210.05 L379.12 210.05 Z" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2" class="marker"><title>Probe scorer specificity (test): 0.918 [0.859, 0.954]</title></path>
+<line x1="351.79" y1="232.00" x2="513.11" y2="232.00" stroke="#2a78d6" stroke-width="2" class="interval"/>
+<line x1="351.79" y1="228.00" x2="351.79" y2="236.00" stroke="#2a78d6" stroke-width="2"/>
+<line x1="513.11" y1="228.00" x2="513.11" y2="236.00" stroke="#2a78d6" stroke-width="2"/>
+<path d="M447.01 227.95 L455.11 227.95 L455.11 236.05 L447.01 236.05 Z" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2" class="marker"><title>Probe scorer accuracy (test): 0.943 [0.906, 0.966]</title></path>
+</g>
+<g class="ticks">
+<text x="16.00" y="132.00" font-size="12" fill="#0b0b0b" class="row-label">Detector precision</text>
+<text x="622.56" y="132.00" font-size="12" fill="#52514e" class="row-text">1.000 [0.978, 1.000]</text>
+<text x="16.00" y="158.00" font-size="12" fill="#0b0b0b" class="row-label">Detector recall</text>
+<text x="622.56" y="158.00" font-size="12" fill="#52514e" class="row-text">1.000 [0.978, 1.000]</text>
+<text x="16.00" y="184.00" font-size="12" fill="#0b0b0b" class="row-label">Probe scorer sensitivity (test)</text>
+<text x="622.56" y="184.00" font-size="12" fill="#52514e" class="row-text">0.973 [0.924, 0.991]</text>
+<text x="16.00" y="210.00" font-size="12" fill="#0b0b0b" class="row-label">Probe scorer specificity (test)</text>
+<text x="622.56" y="210.00" font-size="12" fill="#52514e" class="row-text">0.918 [0.859, 0.954]</text>
+<text x="16.00" y="236.00" font-size="12" fill="#0b0b0b" class="row-label">Probe scorer accuracy (test)</text>
+<text x="622.56" y="236.00" font-size="12" fill="#52514e" class="row-text">0.943 [0.906, 0.966]</text>
+<text x="198.36" y="263.00" font-size="12" fill="#52514e" text-anchor="middle">0.85</text>
+<text x="334.43" y="263.00" font-size="12" fill="#52514e" text-anchor="middle">0.90</text>
+<text x="470.49" y="263.00" font-size="12" fill="#52514e" text-anchor="middle">0.95</text>
+<text x="606.56" y="263.00" font-size="12" fill="#52514e" text-anchor="middle">1.00</text>
+<text x="402.46" y="284.00" font-size="13" fill="#52514e" text-anchor="middle" class="axis-label">Proportion</text>
+</g>
+<text x="16.00" y="307.00" font-size="11" fill="#52514e" class="note">Seeded action logs and probe answers are synthetic. Detectors: every seeded case. Probe scorer: test split only.</text>
+</svg>

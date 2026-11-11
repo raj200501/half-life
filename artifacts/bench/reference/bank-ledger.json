@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/bank-ledger.log.json",
+  "action_log_sha256": "89f33e2848cf609ff223fbddb2dbbeacc0a7f0b57edc599313a50d036d33c572",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 13,
+  "n_tool_calls": 46,
+  "provenance": {
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T04:02:20Z"
+  },
+  "synthetic": true,
+  "template_id": "bank-ledger",
+  "template_sha256": "d2b6a99dff3483a72a44c5715276d5672c05af3396aa249867745dfd8479398b",
+  "violations": 0
+}

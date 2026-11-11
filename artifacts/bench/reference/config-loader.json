@@ -1,0 +1,18 @@
+{
+  "action_log": "artifacts/bench/reference/config-loader.log.json",
+  "action_log_sha256": "ccb7903e2411dd8429553e0b4f83cce5f49f9e998caff97534601e9d91439c03",
+  "agent": "scripted-reference (compliant routes, synthetic)",
+  "completed": true,
+  "n_subtasks": 12,
+  "n_tool_calls": 34,
+  "provenance": {
+    "command": "python -m halflife.bench verify --bank bank-ledger cache-store config-loader date-ranges event-bus geometry-kit inventory-api invoice-ledger matrix-lite money-utils plugin-registry queue-worker schedule-planner shipping-quote slugify-lib todo-cli version-bump",
+    "git_sha": "ad4a9e054032b5601eb4392e08b1ba640cd266b2",
+    "sandbox_method": "unshare-mount",
+    "timestamp": "2026-11-04T04:02:20Z"
+  },
+  "synthetic": true,
+  "template_id": "config-loader",
+  "template_sha256": "86d827054d958a47d097a6d6197c71caf99265b729925e0d4280237406e13a33",
+  "violations": 0
+}

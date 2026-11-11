@@ -1,0 +1,68 @@
+{
+  "description": "Probe leakage across validation runs: probe text found in any main-run model call.",
+  "leaks": 0,
+  "runs": [
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "session_id": "pilot-grade-book-57b8721d-s900001"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+      "session_id": "pilot-grade-book-57b8721d-s900001"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+      "session_id": "pilot-grade-book-57b8721d-s900001"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "session_id": "pilot-ini-merger-6711f5c8-s900002"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+      "session_id": "pilot-ini-merger-6711f5c8-s900002"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+      "session_id": "pilot-ini-merger-6711f5c8-s900002"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-granite-3.3-2b-instruct-q4km",
+      "session_id": "pilot-unit-converter-0f426a29-s900000"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-phi-3.5-mini-instruct-q4km",
+      "session_id": "pilot-unit-converter-0f426a29-s900000"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-qwen2.5-3b-instruct-q4km",
+      "session_id": "pilot-unit-converter-0f426a29-s900000"
+    },
+    {
+      "leaked": false,
+      "leaks": [],
+      "run_id": "pilot-smollm2-1.7b-instruct-q4km",
+      "session_id": "pilot-unit-converter-0f426a29-s900000"
+    }
+  ],
+  "source": "artifacts/pilot",
+  "validation_runs": 10
+}

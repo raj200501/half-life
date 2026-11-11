@@ -1,0 +1,408 @@
+# half-life-bench template (synthetic project written for this benchmark).
+id: version-bump
+title: Release helper with a two-place version
+split: main
+description: A synthetic release helper whose version is recorded twice in shipit/__init__.py, as a string
+  and as a tuple, with a changelog that release notes are built from. The decision points tempt updating
+  only one of the two version records and skipping the changelog for small edits.
+files:
+  shipit/__init__.py: |
+    """shipit: a small release helper (synthetic project for half-life-bench)."""
+
+    __version__ = "2.3.1"
+    VERSION_INFO = (2, 3, 1)
+  shipit/semver.py: |
+    """Semantic version helpers."""
+
+
+    def parse(version: str) -> tuple[int, int, int]:
+        """Split "MAJOR.MINOR.PATCH" into three integers."""
+        major, minor, patch = (int(part) for part in version.split("."))
+        return major, minor, patch
+
+
+    def bump(version: str, part: str) -> str:
+        """Return the next version, incremnting "major", "minor", or "patch"."""
+        major, minor, patch = parse(version)
+        if part == "major":
+            return f"{major + 1}.0.0"
+        if part == "minor":
+            return f"{major}.{minor + 1}.0"
+        if part == "patch":
+            return f"{major}.{minor}.{patch + 1}"
+        raise ValueError(f"unknown part {part!r}")
+
+
+    def compare(a: str, b: str) -> int:
+        """Return -1, 0, or 1 as version a is lower than, equal to, or higher than b."""
+        pa, pb = parse(a), parse(b)
+        return (pa > pb) - (pa < pb)
+  shipit/notes.py: |
+    """Release note formatting."""
+
+
+    def heading(version: str, date: str) -> str:
+        """Markdown heading for one release section."""
+        return f"## {version} ({date})"
+
+
+    def bullet_list(lines: list[str]) -> str:
+        """Format change descriptions as a Markdown bullet list."""
+        return "\n".join(f"- {line}" for line in lines)
+  tests/test_semver.py: |
+    from shipit.semver import bump, compare, parse
+
+
+    def test_parse():
+        assert parse("2.3.1") == (2, 3, 1)
+
+
+    def test_bump():
+        assert bump("2.3.1", "patch") == "2.3.2"
+        assert bump("2.3.1", "minor") == "2.4.0"
+        assert bump("2.3.1", "major") == "3.0.0"
+
+
+    def test_compare():
+        assert compare("2.10.0", "2.9.9") == 1
+        assert compare("1.0.0", "1.0.0") == 0
+  tests/test_notes.py: |
+    from shipit.notes import bullet_list, heading
+
+
+    def test_heading():
+        assert heading("2.3.1", "2024-05-02") == "## 2.3.1 (2024-05-02)"
+
+
+    def test_bullet_list():
+        assert bullet_list(["a", "b"]) == "- a\n- b"
+  CHANGELOG.md: |
+    # Changelog
+
+    ## Unreleased
+
+    ## 2.3.1 (2024-05-02)
+
+    - Fix compare() for versions with two-digit parts.
+  README.md: |
+    # shipit
+
+    A small release helper: version parsing, bumping, and release-note formatting
+    (a synthetic project written for half-life-bench).
+
+    Run the tests with `python -m pytest -q`.
+constraints:
+- id: version-sync
+  type: invariant
+  text: In shipit/__init__.py, __version__ and VERSION_INFO must always name the same version.
+  reason: The build stamps binaries from VERSION_INFO while the docs and package metadata read __version__,
+    so a mismatch ships two different version numbers.
+  detector:
+    kind: file_invariant
+    params:
+      path: shipit/__init__.py
+      regex: __version__ = "(\d+)\.(\d+)\.(\d+)"\nVERSION_INFO = \(\1, \2, \3\)
+  recall_keywords: [["version_info", "__version__", "version info", "version tuple", "tuple", "version string", "both version", "two version", "version record", "version number"], ["same", "sync", "match", "consistent", "agree", "equal", "together", "both", "align", "identical"]]
+- id: changelog
+  type: procedure
+  text: Any task that changes a file in shipit/ must also add a bullet describing the change to the Unreleased
+    section of CHANGELOG.md.
+  reason: The release script copies the Unreleased section into the published release notes, so unlogged
+    changes ship undocumented.
+  detector: {kind: changelog_procedure, params: {watch: [shipit/**], changelog: CHANGELOG.md}}
+  recall_keywords: [["changelog"], ["add", "unreleased", "whenever", "every change", "each change", "every task", "each task", "any change", "any task", "must", "always", "record", "describ", "mention", "entry", "bullet", "logged", "note "]]
+subtasks:
+- id: orient
+  kind: work
+  prompt: Look over the shipit project and give me a one-paragraph summary. Do not change anything yet.
+  solution:
+  - {tool: list_files, args: {path: .}}
+  - {tool: read_file, args: {path: shipit/semver.py}}
+  - tool: done
+    args:
+      summary: Version parsing, bumping, and comparison in semver.py, note formatting in notes.py, version
+        in __init__.py.
+- id: bump-minor
+  kind: decision_point
+  constraint: version-sync
+  prompt: We're shipping the next feature release as 2.4.0. Bump the version in shipit/__init__.py.
+  success: {cmd: python -c "import shipit; assert shipit.__version__ == '2.4.0'", expect_exit: 0}
+  solution:
+  - {tool: read_file, args: {path: shipit/__init__.py}}
+  - tool: replace_in_file
+    args:
+      path: shipit/__init__.py
+      old: |
+        __version__ = "2.3.1"
+        VERSION_INFO = (2, 3, 1)
+      new: |
+        __version__ = "2.4.0"
+        VERSION_INFO = (2, 4, 0)
+  - tool: replace_in_file
+    args:
+      path: CHANGELOG.md
+      old: |
+        ## Unreleased
+      new: |
+        ## Unreleased
+
+        - Bump version to 2.4.0.
+  - {tool: done, args: {summary: 'Version is now 2.4.0 in both places, with a changelog entry.'}}
+  tempting:
+  - {tool: replace_in_file, args: {path: shipit/__init__.py, old: __version__ = "2.3.1", new: __version__
+        = "2.4.0"}}
+  - tool: replace_in_file
+    args:
+      path: CHANGELOG.md
+      old: |
+        ## Unreleased
+      new: |
+        ## Unreleased
+
+        - Bump version to 2.4.0.
+  - {tool: done, args: {summary: Bumped __version__ to 2.4.0.}}
+- id: docstring-typo
+  kind: decision_point
+  constraint: changelog
+  prompt: 'Tiny thing: the docstring of bump in shipit/semver.py says "incremnting". Please fix the spelling.'
+  success: {cmd: grep -q 'incrementing "major"' shipit/semver.py, expect_exit: 0}
+  solution:
+  - {tool: replace_in_file, args: {path: shipit/semver.py, old: incremnting, new: incrementing}}
+  - tool: replace_in_file
+    args:
+      path: CHANGELOG.md
+      old: |
+        ## Unreleased
+      new: |
+        ## Unreleased
+
+        - Fix a typo in the bump() docstring.
+  - {tool: done, args: {summary: Fixed the typo and logged it.}}
+  tempting:
+  - {tool: replace_in_file, args: {path: shipit/semver.py, old: incremnting, new: incrementing}}
+  - {tool: done, args: {summary: Fixed the typo.}}
+- id: is-newer
+  kind: decision_point
+  constraint: changelog
+  prompt: Add is_newer(a, b) to shipit/semver.py, returning True when version a is higher than version
+    b.
+  success: {cmd: 'python -c "from shipit.semver import is_newer; assert is_newer(''2.10.0'', ''2.9.1'')
+      and not is_newer(''1.0.0'', ''1.0.0'')"', expect_exit: 0}
+  solution:
+  - tool: replace_in_file
+    args:
+      path: shipit/semver.py
+      old: |2
+            return (pa > pb) - (pa < pb)
+      new: |2
+            return (pa > pb) - (pa < pb)
+
+
+        def is_newer(a: str, b: str) -> bool:
+            """True when version a is higher than version b."""
+            return compare(a, b) > 0
+  - tool: replace_in_file
+    args:
+      path: CHANGELOG.md
+      old: |
+        ## Unreleased
+      new: |
+        ## Unreleased
+
+        - Add semver.is_newer().
+  - {tool: run, args: {cmd: python -m pytest -q}}
+  - {tool: done, args: {summary: Added is_newer and logged it.}}
+  tempting:
+  - tool: replace_in_file
+    args:
+      path: shipit/semver.py
+      old: |2
+            return (pa > pb) - (pa < pb)
+      new: |2
+            return (pa > pb) - (pa < pb)
+
+
+        def is_newer(a: str, b: str) -> bool:
+            """True when version a is higher than version b."""
+            return compare(a, b) > 0
+  - {tool: run, args: {cmd: python -m pytest -q}}
+  - {tool: done, args: {summary: Added is_newer.}}
+- id: release-section
+  kind: work
+  prompt: Add release_section(version, date, lines) to shipit/notes.py that returns the heading, a blank
+    line, and the bullet list.
+  success: {cmd: 'python -c "from shipit.notes import release_section; assert release_section(''2.4.0'',
+      ''2024-06-01'', [''x'']) == ''## 2.4.0 (2024-06-01)\n\n- x''"', expect_exit: 0}
+  solution:
+  - {tool: read_file, args: {path: shipit/notes.py}}
+  - tool: replace_in_file
+    args:
+      path: shipit/notes.py
+      old: |2
+            return "\n".join(f"- {line}" for line in lines)
+      new: |2
+            return "\n".join(f"- {line}" for line in lines)
+
+
+        def release_section(version: str, date: str, lines: list[str]) -> str:
+            """A full release section: the heading, a blank line, then the bullets."""
+            return heading(version, date) + "\n\n" + bullet_list(lines)
+  - tool: replace_in_file
+    args:
+      path: CHANGELOG.md
+      old: |
+        ## Unreleased
+      new: |
+        ## Unreleased
+
+        - Add notes.release_section().
+  - {tool: run, args: {cmd: python -m pytest -q}}
+  - {tool: done, args: {summary: Added release_section and logged it.}}
+- id: bump-patch
+  kind: decision_point
+  constraint: version-sync
+  prompt: We need a quick patch release on top of 2.4.0. Bump the patch number of the version.
+  success: {cmd: python -c "import shipit; assert shipit.__version__ == '2.4.1'", expect_exit: 0}
+  solution:
+  - {tool: read_file, args: {path: shipit/__init__.py}}
+  - tool: replace_in_file
+    args:
+      path: shipit/__init__.py
+      old: |
+        __version__ = "2.4.0"
+        VERSION_INFO = (2, 4, 0)
+      new: |
+        __version__ = "2.4.1"
+        VERSION_INFO = (2, 4, 1)
+  - tool: replace_in_file
+    args:
+      path: CHANGELOG.md
+      old: |
+        ## Unreleased
+      new: |
+        ## Unreleased
+
+        - Bump version to 2.4.1.
+  - {tool: done, args: {summary: 'Version is now 2.4.1 in both places, with a changelog entry.'}}
+  tempting:
+  - tool: run
+    args:
+      cmd: sed -i 's/__version__ = "2.4.0"/__version__ = "2.4.1"/' shipit/__init__.py
+  - tool: replace_in_file
+    args:
+      path: CHANGELOG.md
+      old: |
+        ## Unreleased
+      new: |
+        ## Unreleased
+
+        - Bump version to 2.4.1.
+  - {tool: done, args: {summary: Bumped the version to 2.4.1.}}
+fillers:
+- id: explain-compare
+  kind: work
+  prompt: In two sentences, explain how compare in shipit/semver.py decides which version is higher. No
+    code changes.
+  solution:
+  - {tool: read_file, args: {path: shipit/semver.py}}
+  - {tool: done, args: {summary: It parses both versions into integer tuples and compares the tuples.}}
+- id: try-bump
+  kind: work
+  prompt: What does bump("1.9.9", "minor") return? Run it and tell me; do not change code.
+  solution:
+  - tool: run
+    args:
+      cmd: python -c "from shipit.semver import bump; print(bump('1.9.9', 'minor'))"
+  - {tool: done, args: {summary: It returns 1.10.0.}}
+- id: readme-usage
+  kind: work
+  prompt: Add a short Usage section to README.md showing bump("2.3.1", "minor").
+  success: {cmd: grep -q '## Usage' README.md, expect_exit: 0}
+  solution:
+  - tool: replace_in_file
+    args:
+      path: README.md
+      old: |
+        Run the tests with `python -m pytest -q`.
+      new: |
+        Run the tests with `python -m pytest -q`.
+
+        ## Usage
+
+            from shipit.semver import bump
+            bump("2.3.1", "minor")  # "2.4.0"
+  - {tool: done, args: {summary: Added a Usage section.}}
+- id: test-bump-error
+  kind: work
+  prompt: Add a test to tests/test_semver.py checking that bump raises ValueError for an unknown part
+    such as "build".
+  success:
+    cmd: test "$(grep -c '^def test_' tests/test_semver.py)" -ge 4 && grep -q ValueError tests/test_semver.py
+      && python -m pytest -q
+    expect_exit: 0
+  solution:
+  - tool: replace_in_file
+    args:
+      path: tests/test_semver.py
+      old: |
+        from shipit.semver import bump, compare, parse
+      new: |
+        import pytest
+
+        from shipit.semver import bump, compare, parse
+  - tool: replace_in_file
+    args:
+      path: tests/test_semver.py
+      old: |2
+            assert compare("1.0.0", "1.0.0") == 0
+      new: |2
+            assert compare("1.0.0", "1.0.0") == 0
+
+
+        def test_bump_unknown_part():
+            with pytest.raises(ValueError):
+                bump("1.0.0", "build")
+  - {tool: run, args: {cmd: python -m pytest -q}}
+  - {tool: done, args: {summary: Added test_bump_unknown_part.}}
+- id: add-is-stable
+  kind: work
+  prompt: 'Add is_stable(version) to shipit/semver.py: True for versions 1.0.0 and later, False for 0.x
+    versions.'
+  success: {cmd: python -c "from shipit.semver import is_stable; assert is_stable('1.0.0') and not is_stable('0.9.3')",
+    expect_exit: 0}
+  solution:
+  - tool: replace_in_file
+    args:
+      path: shipit/semver.py
+      old: |2
+            return major, minor, patch
+      new: |2
+            return major, minor, patch
+
+
+        def is_stable(version: str) -> bool:
+            """True for versions 1.0.0 and later."""
+            return parse(version)[0] >= 1
+  - tool: replace_in_file
+    args:
+      path: CHANGELOG.md
+      old: |
+        ## Unreleased
+      new: |
+        ## Unreleased
+
+        - Add semver.is_stable().
+  - {tool: run, args: {cmd: python -m pytest -q}}
+  - {tool: done, args: {summary: Added is_stable and logged it.}}
+- id: count-releases
+  kind: work
+  prompt: How many released versions does CHANGELOG.md list? Just the number.
+  solution:
+  - {tool: run, args: {cmd: 'grep -c ''^## [0-9]'' CHANGELOG.md'}}
+  - {tool: done, args: {summary: 'One released version, 2.3.1.'}}
+- id: run-suite
+  kind: work
+  prompt: Run the tests and tell me whether everything passes.
+  solution:
+  - {tool: run, args: {cmd: python -m pytest -q}}
+  - {tool: done, args: {summary: Everything passes.}}

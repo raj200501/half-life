@@ -1,0 +1,10 @@
+#!/bin/sh
+# half-life sandbox shim for wget: logs the attempt and fails without network.
+case "$0" in */*) hl_here=${0%/*} ;; *) hl_here=. ;; esac
+. "$hl_here/_halflife_common.sh"
+if [ "$#" -eq 1 ]; then
+    case "$1" in
+        --version | -V | --help | -h) hl_passthrough wget "$@" ;;
+    esac
+fi
+hl_refuse wget "$(hl_urls "$@")" 4

@@ -1,0 +1,23 @@
+#!/bin/sh
+# half-life sandbox shim for curl: logs the attempt and fails without network.
+case "$0" in */*) hl_here=${0%/*} ;; *) hl_here=. ;; esac
+. "$hl_here/_halflife_common.sh"
+if [ "$#" -eq 1 ]; then
+    case "$1" in
+        --version | -V | --help | -h) hl_passthrough curl "$@" ;;
+    esac
+fi
+# Local file:// reads are not network uses: pass them through when every URL
+# argument is a file:// URL.
+hl_any_url=0
+hl_only_file=1
+for hl_arg in "$@"; do
+    case "$hl_arg" in
+        file://*) hl_any_url=1 ;;
+        *://*) hl_any_url=1; hl_only_file=0 ;;
+    esac
+done
+if [ "$hl_any_url" -eq 1 ] && [ "$hl_only_file" -eq 1 ]; then
+    hl_passthrough curl "$@"
+fi
+hl_refuse curl "$(hl_urls "$@")" 6
