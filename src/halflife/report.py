@@ -2199,9 +2199,37 @@ def headline(b: Build) -> str:
             span(led, "e0.recall", at, "/recall", PROP),
         ],
     ]
+    if b.store.exists(PROBE_SCORING):
+        probe, test = At(PROBE_SCORING), "/by_split/test"
+        for name in ("sensitivity", "specificity"):
+            rows.append(
+                [
+                    f"Recall-probe scorer {name} (test split, LLM-labeled synthetic answers)",
+                    led.num(f"e0.probe.{name}", probe, f"{test}/{name}/value", PROP),
+                    span(led, f"e0.probe.{name}", probe, f"{test}/{name}", PROP),
+                ]
+            )
+    notes = []
+    if b.store.exists(PROBE_LEAKAGE):
+        leak = At(PROBE_LEAKAGE)
+        leaks = led.num("e0.leak.leaks", leak, "/leaks", COUNT)
+        runs = led.num("e0.leak.runs", leak, "/validation_runs", COUNT)
+        notes.append(
+            f"Recall probes leaked into the main run in {leaks} of {runs} validation runs."
+        )
+    opportunities = f"{PILOT}/opportunities.jsonl"
+    if b.store.exists(opportunities):
+        notes.append(
+            "In an exploratory pilot of small open-weight models, agents broke a stated rule at "
+            + led.count("pilot.violated_total", opportunities, {"violated": True})
+            + " of "
+            + led.count("pilot.dps_total", opportunities)
+            + " decision points they reached."
+        )
     figure = "![E0 instrument-validity measures with their intervals](docs/figures/e0-validity.svg)"
-    header = ["Measure (synthetic seeded logs)", "Estimate", level[0].upper() + level[1:]]
-    return "\n".join([finding, "", figure, "", *table(header, rows)])
+    header = ["Measure (synthetic, before any model run)", "Estimate", level[0].upper() + level[1:]]
+    tail = ["", " ".join(notes)] if notes else []
+    return "\n".join([finding, "", figure, "", *table(header, rows), *tail])
 
 
 def not_run_sentence(names: Sequence[str]) -> str:

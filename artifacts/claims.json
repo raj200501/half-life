@@ -6,6 +6,11 @@
       "value": "95"
     },
     {
+      "context": "95% confidence interval",
+      "reason": "interval level of the Wilson intervals in halflife.e0 and halflife.probe_validation (design parameter) [make report]",
+      "value": "95"
+    },
+    {
       "context": "at least 0.95",
       "reason": "G5 threshold for detector precision and recall (section 6) [make report]",
       "value": "0.95"
