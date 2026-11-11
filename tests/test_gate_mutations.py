@@ -2540,6 +2540,25 @@ G8_CASES = params(
             "E3 n_sessions 9 != 8 banked session rows",
             lambda r: edit_json(r, E3, lambda d: d.update(n_sessions=9)),
         ),
+        # D-050 gate pass: the not-run sentences of halflife.report mention the arms by
+        # name, so a report not regenerated after the runs passed the mention check.
+        g8(
+            "report-still-says-e2-has-not-run",
+            "docs/REPORT.md still says E2 has not run",
+            report(
+                REPORT_ARMS + "\nStatus: not run. E2, the ecological arm with Claude Code, "
+                "has not run: it needs a machine where the billing guard lets the Claude "
+                "backend start.\n"
+            ),
+        ),
+        g8(
+            "report-still-says-e3-has-not-run",
+            "docs/REPORT.md still says E3 has not run",
+            report(
+                REPORT_ARMS + "\nStatus: not run. E3 has not run, so this report has no "
+                "placement or phrasing results.\n"
+            ),
+        ),
     ]
 )
 

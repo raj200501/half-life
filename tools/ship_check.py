@@ -1511,6 +1511,18 @@ def report_mentions(clone: Path, *needles: str) -> list[str]:
     ]
 
 
+# The sentence halflife.report writes for an arm with no banked results names the arm
+# (for example "E3 has not run, so ..."), so mentioning the arm is not reporting it.
+NOT_RUN_SENTENCE = r"\b{arm}\b[^.\n]*\bhas not run\b"
+
+
+def report_says_not_run(clone: Path, *arms: str) -> list[str]:
+    """Arms that docs/REPORT.md still describes with a "has not run" sentence."""
+    path = clone / "docs" / "REPORT.md"
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    return [arm for arm in arms if re.search(NOT_RUN_SENTENCE.format(arm=arm), text)]
+
+
 def gate_g8(ctx: Context) -> GateResult:
     e2, why = arm_summary(ctx.clone, "E2")
     if e2 is None:
@@ -1540,6 +1552,9 @@ def gate_g8(ctx: Context) -> GateResult:
     absent = report_mentions(ctx.clone, "E2", "E3", "ecological")
     if absent:
         return fail(f"docs/REPORT.md does not report {', '.join(absent)}")
+    stale = report_says_not_run(ctx.clone, "E2", "E3")
+    if stale:
+        return fail(f"docs/REPORT.md still says {' and '.join(stale)} has not run (stale report)")
     return GateResult(
         True,
         f"E2 n={e2['n_sessions']} (ecological), E3 n={e3['n_sessions']}, rows banked, reported",

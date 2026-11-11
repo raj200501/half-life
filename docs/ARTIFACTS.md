@@ -67,6 +67,7 @@ Rules that hold for every layout below:
 - `artifacts/e3/summary.json`: `{arm: "E3", ran: true, n_sessions}` with `n_sessions` a positive integer.
 - `artifacts/e3/sessions.jsonl`: one row per E3 session with a non-empty `session_id`; rows unique by `(session_id, model)`, and the row count equals `n_sessions`.
 - `docs/REPORT.md` mentions `E2`, `E3`, and `ecological` as whole tokens: not inside a longer word, number, or hyphenated compound (`E20`, `E3-like`, and `non-ecological` do not count; `E2's` and `**E3**` do).
+- `docs/REPORT.md` has no sentence saying `E2` or `E3` "has not run": the sentence `make report` writes for an arm with no banked results names the arm, so a report not regenerated after the runs would otherwise pass the mention check (D-050 gate pass).
 
 ## G9 mitigations
 
