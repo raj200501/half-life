@@ -913,6 +913,35 @@ def test_h3_readings_follow_the_preregistered_holm_decision(tmp_path: Path) -> N
     assert figure.text == "Holm p not computed"
 
 
+def test_holm_reading_takes_its_direction_from_the_score_not_the_difference(
+    tmp_path: Path,
+) -> None:
+    """D-059 item 2 (statistics audit B1): under family stratification the pooled rate
+    difference can point against the stratified score (Simpson's paradox), so a supported
+    pair reads its direction from ``direction``; without one it gives no direction."""
+    sessions, opportunities = synthetic_e1()
+    outputs = e1_analysis.analyze(sessions, opportunities, e1_analysis.Settings(n_boot=5, seed=1))
+    contrasts = outputs["contrasts"]
+    first = contrasts["h3_pairs"][0]
+    first.update(verdict="supported", direction="positive", p_holm=1e-5, not_tested=None)
+    first["difference"].update(difference=-0.1, lo=-0.2, hi=-0.02)
+    write_json(tmp_path, "artifacts/e1/contrasts.json", contrasts)
+    store = report.Store(tmp_path)
+    b = report.Build(store, report.Ledger(store))
+    at = report.At("artifacts/e1/contrasts.json", "/h3_pairs", {"pair": first["pair"]})
+    reading = report.holm_reading(b.led, at, at.artifact)
+    assert reading == (
+        "differs at the 0.05 level after Holm adjustment: more violations than the reference"
+    )
+    first["direction"] = None
+    write_json(tmp_path, "artifacts/e1/contrasts.json", contrasts)
+    store = report.Store(tmp_path)
+    b = report.Build(store, report.Ledger(store))
+    assert report.holm_reading(b.led, at, at.artifact) == (
+        "differs at the 0.05 level after Holm adjustment"
+    )
+
+
 def test_a_pair_whose_interval_excludes_zero_without_holm_support_does_not_differ(
     tmp_path: Path,
 ) -> None:

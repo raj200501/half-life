@@ -341,3 +341,15 @@ Implemented test-first before any confirmatory data. Interpretations made while 
 6. **`direction`** of a decision is the sign of the score.
 7. **No per-rule-type half-lives** are produced (item 4 makes them exploratory).
 8. **Item 6, in part.** The power simulation now decides by the same score tests as the analysis. The plan-based session process (the E1 compaction process at the pilot's and the padded shape) is not built: the power analysis keeps its uniform session process, and its shape caveat (`halflife.power.SHAPE_NOTE`) stays in the report. This is a known gap against D-050 item 6, not a silent change.
+
+## D-059 2026-11-11: fixes from the statistics audit of round two, before the E1 preregistration (recorded before acting)
+
+An adversarial audit of 206234d (no data involved; synthetic simulation of the 48 E1 plans with two families) found two blocking and seven non-blocking issues. The fixes below land before prereg/0001-e1.md freezes the analysis code.
+
+1. **H1 adjusts for compaction flexibly (audit B2).** H1's null model entered compaction as a straight-line count. Token-budget compactions tie the count to position, and a step at the first compaction (the shape the design makes most plausible, since `full_summary` replaces the rules message there) leaked into the position score: pooled H1 rejected 7.8% to 10.7% of true nulls, outside D-050's 3% to 7% band. H1's model now enters compaction as a factor of the compaction level (0, 1, 2 or more) crossed with the compaction arm, in place of the count and the arm factor. H2b keeps the linear count term, which is its hypothesis. The calibration adds step-effect nulls (steps at the first compaction in both arms and in `full_summary` only) and larger shared decision-point effects, and judges per-family and pooled fits separately as well as together; `min_events` is recalibrated.
+2. **Holm readings take their direction from the score (audit B1).** The report read "more" or "fewer" from the sign of the pooled descriptive difference, which can point the other way under family stratification (Simpson's paradox); it now reads `direction`, as D-058 item 6 defines it, and a zero or missing direction gives no direction.
+3. **No analysis crash and no silent omissions (audit N6).** A descriptive fit that cannot run (a covariate constant within a family's risk set) gives not-estimable records with the reason instead of aborting the analysis, and a contrast whose arm is absent gives a not-tested record with the reason instead of no entry.
+4. **Calibration provenance (audit N5).** The calibration hashes every input that shapes its simulated plans (the plan generator, the bench templates, and `designs/e1.yaml`) beside its modules, and is re-banked from a clean commit.
+5. **Stale report sentences (audit N4)** about unstable H3 pairs and a fixed compaction count are corrected.
+
+Not changed, and stated in the report instead: H2a is conservative under unmodeled rate differences (N3, a power cost); the calibration's nulls carry no persistent session or plan effect, by design (N7, D-058 item 2).

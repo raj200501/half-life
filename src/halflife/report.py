@@ -1241,8 +1241,9 @@ def holm_reading(led: Ledger, at: At, rel: str) -> str | None:
     """The preregistered Holm decision in words, or None when the artifact records none.
 
     A contrast differs when its Holm-adjusted p-value is below alpha (H3, H4a, H4b, H5);
-    only then does the reading give a direction (from the sign of the difference). The
-    unadjusted interval stays a descriptive column and never sets the reading.
+    only then does the reading give a direction, from the sign of the score (``direction``,
+    D-058 item 6). The descriptive difference never sets it: under family stratification
+    it can point the other way (Simpson's paradox; D-059 item 2).
     """
     verdict = led.peek(at, "/verdict")
     if verdict == e1_analysis.NOT_TESTED:
@@ -1253,9 +1254,10 @@ def holm_reading(led: Ledger, at: At, rel: str) -> str | None:
     level = f"{alpha_phrase(led, rel)} after Holm adjustment"
     if verdict == e1_analysis.NOT_SUPPORTED:
         return f"does not differ at {level}"
-    difference = led.peek(at, "/difference/difference")
-    more = isinstance(difference, int | float) and difference > 0
-    side = "more" if more else "fewer"
+    direction = led.peek(at, "/direction")
+    if direction not in ("positive", "negative"):
+        return f"differs at {level}"
+    side = "more" if direction == "positive" else "fewer"
     return f"differs at {level}: {side} violations than the reference"
 
 
@@ -1404,9 +1406,10 @@ def h3_tables(b: Build, contrasts: str) -> list[str]:
         f"Holm-adjusted p-value is below {alpha_phrase(b.led, contrasts)}, and only then does "
         "the reading give a direction; the interval is descriptive. The score test stays valid "
         "when one type has no violations (which separates the logistic model, so its odds "
-        "ratio is not estimable). A pair with no valid test (no violation in either type) or "
-        "an unstable one is not tested and stays in the Holm family as a p-value of one, so it "
-        "is never rejected and the other pairs keep the full family size.",
+        "ratio is not estimable). A pair with no valid test (no violation in either type) "
+        "is not tested and stays in the Holm family as a p-value of one, so it is never "
+        "rejected and the other pairs keep the full family size; an unstable interval is "
+        "labeled and decides nothing.",
         "",
         *table(["Rule type", "Violations", "Decision points", "Rate"], rate_rows),
         "",
@@ -1611,10 +1614,10 @@ def hazard_figure(b: Build, status: Status) -> list[str]:
         band_label=f"{pct(settings.level)} pointwise session-bootstrap band",
         reference_y=0.5,
         reference_label="Hazard of one half (the half-life)",
-        note="Half-life model fit to the banked E1 rows at the preregistered compaction count, "
-        "drawn from each family's first decision point; bands are pointwise, computed by make "
-        "report with the banked bootstrap settings. A family whose fit is separated has no "
-        "curve.",
+        note="Half-life model (`log1p(position)` only, marginal over compaction) fit to the "
+        "banked E1 rows, drawn from each family's first decision point; bands are "
+        "pointwise, computed by make report with the banked bootstrap settings. A family "
+        "whose fit is separated has no curve.",
         synthetic=status.synthetic,
     )
     number = b.figure(FIG_HAZARD, svg)
