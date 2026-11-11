@@ -1,0 +1,25 @@
+# E1 reserve plans (confirmatory; preregistered in prereg/0001-e1.md with designs/e1.yaml).
+# They run, in index order and on both families, only while a family has fewer than 40
+# sessions that reached their first decision point after the 48 plans of designs/e1.yaml,
+# in blocks of 8 and at most 16 plans; the rule looks at reach only, never at violations.
+# Seeds continue after the main plans, so no session id repeats; the conditions and
+# session settings are those of designs/e1.yaml.
+experiment: e1
+split: main
+n_sessions: 16
+seed_base: 100048
+confirmatory: true
+conditions:
+  - {placement: first_user, phrasing: bare, strategy: full_summary, mitigation: none}
+  - {placement: first_user, phrasing: bare, strategy: sham, mitigation: none}
+settings:
+  max_tool_calls: 150
+  max_calls_per_subtask: 12
+  max_fillers_per_gap: 3
+  min_subtasks: 20
+  compactions: [1, 2]
+  compaction_window: [8, 70]
+  min_compaction_gap: 15
+  budget_tokens: 3000
+  probe_before_dp: true
+  probe_after_compaction: true
