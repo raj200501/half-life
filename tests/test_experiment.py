@@ -280,6 +280,28 @@ def test_bank_runs_refuses_sessions_that_did_not_run_as_banked(tmp_path: Path) -
     assert _bank(root, [tagged], "ok", PREREG)["n_sessions"] == 1
 
 
+def test_cmd_bank_records_the_command_without_the_script_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import argparse
+
+    root = tmp_path
+    _git_repo(root)
+    run_dir = _fake_run(root, "r1", [_plan("s1")], prereg=PREREG)
+    record = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
+    _dump(run_dir / "run.json", record | {"model": {"key": "m", "family": "f"}})
+    # Run as ``python -m``, sys.argv[0] is the module's absolute path (a home directory).
+    flags = ["--experiment", "e1", "--runs", "runs/r1", "--out", "artifacts/e1"]
+    monkeypatch.setattr("sys.argv", ["/home/someone/src/halflife/experiment.py", "bank", *flags])
+    args = argparse.Namespace(
+        experiment="e1", runs=["runs/r1"], out="artifacts/e1", prereg=PREREG, design=None
+    )
+    assert experiment.cmd_bank(args, root) == 0
+    prov = json.loads((root / "artifacts" / "e1" / "provenance.json").read_text(encoding="utf-8"))
+    assert prov["command"] == "python -m halflife.experiment bank " + " ".join(flags)
+    assert "/home/someone" not in (root / "artifacts" / "e1" / "provenance.json").read_text()
+
+
 def _run_args(plans: Path, **over: Any) -> Any:
     import argparse
 

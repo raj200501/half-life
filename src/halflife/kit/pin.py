@@ -217,7 +217,11 @@ def _parser() -> argparse.ArgumentParser:
         prog="halflife-pin",
         description="Write the rules of a halflife.yaml spec into CLAUDE.md or AGENTS.md.",
     )
-    parser.add_argument("--spec", help="spec file (default: $HALFLIFE_SPEC or ./halflife.yaml)")
+    parser.add_argument(
+        "--spec",
+        help="spec file (default: $HALFLIFE_SPEC, ./halflife.yaml, or "
+        "$CLAUDE_PROJECT_DIR/halflife.yaml)",
+    )
     parser.add_argument(
         "--format",
         choices=FORMATS,

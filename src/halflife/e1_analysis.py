@@ -1,4 +1,5 @@
-"""E1 analysis, fixed before any confirmatory data exists (prereg/0001-e1.md cites it).
+"""E1 analysis, fixed before any confirmatory data exists (prereg/0001-e1.md will cite
+it; not committed yet).
 
 Input: ``sessions.jsonl`` and ``opportunities.jsonl`` written by
 :func:`halflife.experiment.bank_runs`. Output: ``hazard.json``, ``half_life.json``,
@@ -13,9 +14,10 @@ is the session, and in pooled analyses a draw keeps both families' sessions of e
 drawn plan together, since the plan is the unit of randomization. Risk sets are cut per
 family-session before resampling, so every draw holds whole per-family risk sets.
 
-Analysis set (preregistration section 7): confirmatory sessions without a probe leak
-that reached their first decision point, and their opportunities with at least one tool
-call in the decision-point span. Every exclusion is counted, in total and per family.
+Analysis set (to be fixed in the E1 preregistration): confirmatory sessions without a
+probe leak that reached their first decision point, and their opportunities with at
+least one tool call in the decision-point span. Every exclusion is counted, in total
+and per family.
 
 Models (DECISIONS.md D-029 for the estimation details):
 
@@ -36,7 +38,7 @@ Models (DECISIONS.md D-029 for the estimation details):
   first decision point.
 * Kaplan-Meier curves of time to first violation, descriptive only.
 
-Every hypothesis estimate carries the preregistered verdict (:data:`VERDICT_NOTE`):
+Every hypothesis estimate carries the verdict of its rule (:data:`VERDICT_NOTE`):
 ``supported``, ``not supported``, or ``not tested`` with the reason (not estimable,
 unstable bootstrap, too few violations, or no valid p-value), using the constants of
 :class:`Settings`.
@@ -88,7 +90,7 @@ HOLM_NOTE = (
 
 @dataclass(frozen=True)
 class Settings:
-    """Analysis constants the preregistration fixes.
+    """Analysis constants the E1 preregistration will fix (not committed yet).
 
     Attributes:
         n_boot: Bootstrap draws.
@@ -99,7 +101,7 @@ class Settings:
             :mod:`halflife.arms_analysis`), Holm-adjusted.
         max_failed_share: An estimate whose bootstrap had a larger share of failed draws
             (``n_failed / n_boot``) is unstable and its hypothesis is not tested
-            (preregistration section 5).
+            (to be fixed in the E1 preregistration).
         min_events: A hazard fit (per family, or pooled) with fewer violations in its risk
             set leaves H1 and H2b not tested. In a synthetic null calibration on the E1
             plans (before any data) fits below this count were where the interval rule
@@ -126,7 +128,7 @@ ANALYSIS_MODULES = (
 )
 """Every module ``python -m halflife.e1_analysis`` loads (paths under ``src/``): the
 statistics run in :mod:`halflife.stats`, so freezing this file alone would not freeze the
-analysis; the preregistration pins all of them (:func:`analysis_code_sha256`)."""
+analysis; the preregistration will pin all of them (:func:`analysis_code_sha256`)."""
 
 
 def analysis_code_sha256() -> dict[str, str]:
@@ -138,7 +140,7 @@ def analysis_code_sha256() -> dict[str, str]:
 
 
 HYPOTHESIS_TERMS: Mapping[str, str] = {POSITION_TERM: "H1", "compaction_count": "H2b"}
-"""Hazard terms that carry a preregistered hypothesis."""
+"""Hazard terms that carry a hypothesis (to be fixed in the E1 preregistration)."""
 SUPPORTED, NOT_SUPPORTED, NOT_TESTED = "supported", "not supported", "not tested"
 """Verdicts of an interval rule (H1, H2a, H2b) or a Holm rule (H3, H4a, H4b, H5)."""
 VERDICT_NOTE = (
@@ -176,7 +178,7 @@ def analysis_set(
     *,
     key: Sequence[str] = SESSION,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Opportunities in the analysis set, and the exclusion counts (section 7).
+    """Opportunities in the analysis set, and the exclusion counts (module docstring).
 
     Sessions and opportunities are matched by ``key``, ``(family, session_id)``: the
     families run the same plans, so ``session_id`` alone would let one family's session
@@ -240,7 +242,7 @@ def _interval(interval: stats.Interval) -> dict[str, Any]:
 
 
 def is_unstable(interval: stats.Interval, settings: Settings) -> bool:
-    """More than ``max_failed_share`` of the draws failed (section 5: unstable, not tested)."""
+    """More than ``max_failed_share`` of the draws failed (unstable, so not tested)."""
     return interval.not_estimable is None and interval.failed_share > settings.max_failed_share
 
 
@@ -253,7 +255,7 @@ def excludes_zero(interval: stats.Interval) -> bool:
 
 
 def interval_verdict(not_tested: str | None, interval: stats.Interval) -> str:
-    """The section 5 interval rule: supported when the interval excludes zero."""
+    """The interval rule: supported when the interval excludes zero."""
     if not_tested is not None:
         return NOT_TESTED
     return SUPPORTED if excludes_zero(interval) else NOT_SUPPORTED
@@ -325,8 +327,8 @@ def hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, A
     """H1 and H2b: bootstrap intervals for every term, per family and pooled.
 
     Each fit's full-data diagnostics go under ``fits``; a term the data cannot estimate is
-    written without a number (``not_estimable``), and the H1 and H2b terms carry the
-    preregistered verdict (:data:`VERDICT_NOTE`).
+    written without a number (``not_estimable``), and the H1 and H2b terms carry their
+    verdict (:data:`VERDICT_NOTE`).
     """
     estimates: list[dict[str, Any]] = []
     fits: list[dict[str, Any]] = []
@@ -373,7 +375,7 @@ def half_lives(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[st
     decision-point position (:func:`halflife.stats.half_life`).
 
     A separated fit with violations gives no number (``not_estimable``); an estimate with
-    more than ``max_failed_share`` failed draws is ``unstable`` (section 5).
+    more than ``max_failed_share`` failed draws is ``unstable``.
     """
     estimates = []
     for family in families(rows):
@@ -464,7 +466,7 @@ def holm_verdicts(
 ) -> None:
     """Holm-adjust ``entries`` (named ``names``) over every test in ``family``, in place.
 
-    A test with no p-value, an unstable one, and a preregistered test with no rows stay in
+    A test with no p-value, an unstable one, and a planned test with no rows stay in
     the family as p = 1 (:data:`HOLM_NOTE`). Each entry gets ``p_holm``,
     ``holm_family_size``, and its verdict: supported when ``p_holm`` is below
     ``settings.alpha``, not supported otherwise, and not tested (with ``not_tested``
@@ -552,8 +554,9 @@ def contrasts(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str
         )
     pairs: list[dict[str, Any]] = []
     keys: list[str] = []
-    # The Holm family is every pair of the schema's rule types (preregistration: "all
-    # pairs"), so a type without rows leaves its pairs in the family as p = 1.
+    # The Holm family is every pair of the schema's rule types (to be fixed in the E1
+    # preregistration: "all pairs"), so a type without rows leaves its pairs in the family
+    # as p = 1.
     every_type = sorted({*CONSTRAINT_TYPES, *types})
     holm_family = [f"{a} vs {b}" for a, b in itertools.combinations(every_type, 2)]
     for a, b in itertools.combinations(types, 2):
@@ -632,7 +635,9 @@ def analyze(
 
 def main(argv: Sequence[str] | None = None) -> int:
     """``python -m halflife.e1_analysis --dir artifacts/e1``: write the E1 outputs."""
-    parser = argparse.ArgumentParser(description="E1 analysis (preregistered).")
+    parser = argparse.ArgumentParser(
+        description="E1 analysis (to be cited by prereg/0001-e1.md; not committed yet)."
+    )
     parser.add_argument("--dir", type=Path, help="banked E1 directory")
     parser.add_argument("--n-boot", type=int, default=Settings.n_boot)
     parser.add_argument("--seed", type=int, default=Settings.seed)

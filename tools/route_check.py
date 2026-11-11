@@ -28,6 +28,10 @@ from pathlib import Path
 from halflife.schema import Action, Subtask, Template, load_template
 
 SUBJECT_BIN = Path.home() / ".cache" / "halflife" / "subject-venv" / "bin"
+USAGE = (
+    "usage: uv run --frozen python tools/route_check.py "
+    "src/halflife/bench/templates/<id>.yaml [...]"
+)
 
 
 def _env() -> dict[str, str]:
@@ -160,12 +164,16 @@ def check_template(template: Template) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
-    """Check each template file given on the command line."""
+    """Check each template file given on the command line (usage and exit 2 without one)."""
+    names = argv[1:]
+    if not names or any(name in ("-h", "--help") for name in names):
+        print(USAGE)
+        return 2
     if not SUBJECT_BIN.is_dir():
         print(f"missing subject Python at {SUBJECT_BIN}")
         return 2
     failed = 0
-    for name in argv[1:]:
+    for name in names:
         template = load_template(Path(name))
         problems = check_template(template)
         status = "OK" if not problems else f"{len(problems)} problem(s)"

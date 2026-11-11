@@ -1,6 +1,4 @@
 # half-life developer commands (section 10.1 step 7 of docs/BUILD_BRIEF.md).
-# Every target exists from day one. Targets whose feature is not built yet call
-# tools/not_ready.py, which exits non-zero, so no gate can pass on a placeholder.
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help

@@ -275,3 +275,9 @@ def test_pin_runs_as_a_module(tmp_path: Path) -> None:
     )
     assert result.returncode == 0, result.stderr
     assert target.read_text(encoding="utf-8") == render_block(RULES)
+
+
+def test_spec_help_names_every_default_location() -> None:
+    # The same order as halflife.kit.spec.find_spec (and halflife-guard's --spec help).
+    text = " ".join(pin._parser().format_help().split())
+    assert "$HALFLIFE_SPEC, ./halflife.yaml, or $CLAUDE_PROJECT_DIR/halflife.yaml" in text

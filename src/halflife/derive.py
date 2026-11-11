@@ -8,8 +8,8 @@ content without writing anything. The functions below call the same committed co
 wrote the banked artifacts (:mod:`halflife.e1_analysis`, :mod:`halflife.arms_analysis`,
 :mod:`halflife.power`, :mod:`halflife.probe_validation`, :mod:`halflife.bench`, and the E0
 validation rules of :mod:`halflife.experiment`), so a banked artifact that no longer
-matches what that code derives from its inputs fails freshness. Those modules are cited by
-preregistrations and are not changed here; where one of them only exists as a command
+matches what that code derives from its inputs fails freshness. Those modules will be cited
+by the preregistrations and are not changed here; where one of them only exists as a command
 that writes files, the derivation repeats its computation without the writes, and the
 tests check the two against each other.
 
@@ -73,6 +73,7 @@ RUNNER_FILES = ("sessions.jsonl", "opportunities.jsonl", "probes.jsonl", "compac
 MANIFEST = "artifacts/bench/manifest.json"
 ROUTES = "artifacts/bench/routes/"
 DETECTORS = "artifacts/e0/detector_validation.json"
+DETECTORS_INITIAL = "artifacts/e0/detector_validation_initial.json"
 PROBE_SCORING = "artifacts/e0/probe_scoring.json"
 PROBE_LEAKAGE = "artifacts/e0/probe_leakage.json"
 E0_LOGS = "artifacts/e0/compaction_logs.json"
@@ -101,6 +102,12 @@ RAW_REASONS = {
         "E0 runner output: blind seeded cases executed for real in sandboxes and scored by "
         "the detectors (python -m halflife.e0 --bank); re-running them needs sandboxed "
         "processes, so the file is primary data"
+    ),
+    "detectors_initial": (
+        "first E0 scoring of the same frozen cases (python -m halflife.e0 --bank), banked "
+        "before the curl sandbox shim was fixed (D-018) and kept as the record of that scoring; "
+        "re-running it needs sandboxed processes and the code before the fix, so the file is "
+        "primary data"
     ),
     "routes": (
         "compliant-route records of every template, executed in sandboxes by "
@@ -486,6 +493,8 @@ def declare(rel: str, root: Path = ROOT, module: str = DERIVE_MODULE) -> Declara
     parent, stem = str(path.parent), path.stem
     if rel == DETECTORS:
         out.raw[rel] = RAW_REASONS["detectors"]
+    elif rel == DETECTORS_INITIAL:
+        out.raw[rel] = RAW_REASONS["detectors_initial"]
     elif rel == OVERHEAD:
         out.raw[rel] = RAW_REASONS["overhead"]
     elif rel == ROUTES:

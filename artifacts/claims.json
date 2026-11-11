@@ -501,6 +501,18 @@
         "label": true
       }
     },
+    "e0.initial.fp": {
+      "artifact": "artifacts/e0/detector_validation_initial.json",
+      "field": "/confusion/fp",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.initial.precision": {
+      "artifact": "artifacts/e0/detector_validation_initial.json",
+      "field": "/precision/value",
+      "format": ".3f",
+      "note": "make report"
+    },
     "e0.leak.leaks": {
       "artifact": "artifacts/e0/probe_leakage.json",
       "field": "/leaks",
@@ -965,6 +977,7 @@
   "raw": {
     "artifacts/bench/routes/": "compliant-route records of every template, executed in sandboxes by python -m halflife.bench verify --bank [make report]",
     "artifacts/e0/detector_validation.json": "E0 runner output: blind seeded cases executed for real in sandboxes and scored by the detectors (python -m halflife.e0 --bank); re-running them needs sandboxed processes, so the file is primary data [make report]",
+    "artifacts/e0/detector_validation_initial.json": "first E0 scoring of the same frozen cases (python -m halflife.e0 --bank), banked before the curl sandbox shim was fixed (D-018) and kept as the record of that scoring; re-running it needs sandboxed processes and the code before the fix, so the file is primary data [make report]",
     "artifacts/e4/overhead.json": "wall-time and size measurements of halflife-guard and halflife-pin (halflife.kit.overhead), which cannot be re-derived offline [make report]",
     "artifacts/pilot/compaction_logs.json": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
     "artifacts/pilot/compactions/": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",

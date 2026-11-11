@@ -107,6 +107,7 @@ def base_repo(root: Path, *, readme: str = README_TEXT) -> None:
 def copy_real_e0_and_bench(root: Path) -> None:
     for rel in (
         "artifacts/e0/detector_validation.json",
+        "artifacts/e0/detector_validation_initial.json",
         "artifacts/e0/probe_scoring.json",
         "artifacts/bench/manifest.json",
     ):
@@ -315,6 +316,21 @@ def test_real_e0_and_bench_report(tmp_path: Path) -> None:
     assert "removed docs/figures/stale.svg (its artifacts are gone)" in log
     text, readme = generated(tmp_path)
     assert "Gate G5 requires both to be at least 0.95" in text
+    # D-018: the first scoring's false positive is stated, its numbers cited as claims.
+    plain_text = claimcheck.strip_markers(text)
+    assert (
+        "The first scoring of the same cases had 1 false positive (precision 0.994): it flagged "
+        "a compliant case, a `curl` read of a `file://` URL that opens no network connection, "
+        "as a network attempt."
+    ) in plain_text
+    assert "so the `curl` sandbox shim was fixed rather than the label (D-018)" in plain_text
+    assert "so the fix was not tested on fresh cases." in plain_text
+    assert "<!-- claim:e0.initial.fp -->1<!-- /claim -->" in text
+    assert "<!-- claim:e0.initial.precision -->0.994<!-- /claim -->" in text
+    manifest = json.loads((tmp_path / report.MANIFEST).read_text())
+    initial = "artifacts/e0/detector_validation_initial.json"
+    assert manifest["claims"]["e0.initial.fp"]["artifact"] == initial
+    assert manifest["raw"][initial].endswith(report.TAG)
     assert "only the test split is reported" in text
     assert "**Finding so far.**" in readme and "95% confidence interval" in readme
     checked = claimcheck.check(tmp_path)
@@ -649,6 +665,24 @@ def test_reproduce_notes_an_allowed_nonzero_exit(
 
 def plain(lines: list[str]) -> str:
     return claimcheck.strip_markers("\n".join(lines))
+
+
+def test_first_scoring_text_needs_the_banked_false_positive(tmp_path: Path) -> None:
+    """Synthetic first scorings: none banked, and one whose false positive is another case."""
+    store = report.Store(tmp_path)
+    assert report.first_scoring_text(report.Build(store, report.Ledger(store))) == ""
+    case = {"case_id": "other-case", "label": False, "predicted": True}
+    initial = {"cases": [case], "confusion": {"fp": 1}, "precision": {"value": 0.5}}
+    write_json(tmp_path, report.DETECTORS_INITIAL, initial)
+    store = report.Store(tmp_path)
+    with pytest.raises(report.ReportError, match="describes one false positive"):
+        report.first_scoring_text(report.Build(store, report.Ledger(store)))
+    case["case_id"] = report.FIRST_SCORING_FALSE_POSITIVE
+    initial["confusion"] = {"fp": 2}
+    write_json(tmp_path, report.DETECTORS_INITIAL, initial)
+    store = report.Store(tmp_path)
+    with pytest.raises(report.ReportError, match="describes one false positive"):
+        report.first_scoring_text(report.Build(store, report.Ledger(store)))
 
 
 def test_edge_cases_render_plainly(tmp_path: Path) -> None:

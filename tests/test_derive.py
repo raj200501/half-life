@@ -505,11 +505,14 @@ def test_declare_names_every_input_down_to_raw_data(tmp_path: Path) -> None:
         assert derive.declare(rel, tmp_path).derivations[rel]["derive"].endswith(function)
     for rel in (
         "artifacts/e0/detector_validation.json",
+        "artifacts/e0/detector_validation_initial.json",
         "artifacts/e4/overhead.json",
         "artifacts/e2/sessions.jsonl",
         "artifacts/pilot/compactions/",
     ):
         assert set(derive.declare(rel, tmp_path).raw) == {rel}
+    initial = derive.declare(derive.DETECTORS_INITIAL, tmp_path).raw[derive.DETECTORS_INITIAL]
+    assert initial == derive.RAW_REASONS["detectors_initial"] and "D-018" in initial
 
 
 def test_declare_refuses_unknown_or_underspecified_artifacts(tmp_path: Path) -> None:

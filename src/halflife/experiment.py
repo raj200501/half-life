@@ -148,6 +148,11 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _command() -> str:
+    """The command line in ``python -m`` form: no absolute script path, so no home directory."""
+    return "python -m halflife.experiment " + " ".join(sys.argv[1:])
+
+
 class BankError(ValueError):
     """Raised when finished runs cannot be banked as asked (nothing is written then)."""
 
@@ -685,7 +690,7 @@ def cmd_run(args: Any, root: Path) -> int:
         "git_dirty": _source_dirty(root),
         "sandbox_method": detect_method(),
         "subject_python": _subject_python_version(),
-        "command": " ".join(sys.argv),
+        "command": _command(),
         "started": _now(),
         "cpu_count": os.cpu_count(),
         "kit": hooks.provenance,
@@ -813,7 +818,7 @@ def cmd_bank(args: Any, root: Path) -> int:
             prereg=args.prereg,
             design_path=root / args.design if args.design else None,
             models=models,
-            command=" ".join(sys.argv),
+            command=_command(),
         )
     except BankError as exc:
         print(f"refusing: {exc}")

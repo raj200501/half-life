@@ -112,6 +112,9 @@ INDIRECT_KINDS = (
 )
 
 DETECTORS = "artifacts/e0/detector_validation.json"
+DETECTORS_INITIAL = "artifacts/e0/detector_validation_initial.json"
+FIRST_SCORING_FALSE_POSITIVE = "nn-curl-file-url"
+"""The one compliant case the first scoring flagged (D-018), named in the E0 text."""
 PROBE_SCORING = "artifacts/e0/probe_scoring.json"
 PROBE_LEAKAGE = "artifacts/e0/probe_leakage.json"
 E0_LOGS = "artifacts/e0/compaction_logs.json"
@@ -504,7 +507,7 @@ def detectors_text(b: Build) -> list[str]:
         "definitions without access to the detector code and executed for real in sandboxes "
         f"(D-017). Precision was {precision} and recall {recall} ({level}). Gate G5 requires "
         f"both to be {threshold}: {verdict}."
-    )
+    ) + first_scoring_text(b)
     if indirect:
         paragraph += (
             " The seeded violations include indirect changes that parsing commands would miss: "
@@ -525,6 +528,41 @@ def detectors_text(b: Build) -> list[str]:
         "it did not flag."
     )
     return [paragraph, "", note, "", *table(header, rows)]
+
+
+def first_scoring_text(b: Build) -> str:
+    """D-018: the first scoring of the same cases had a false positive; empty if not banked.
+
+    The words describe :data:`FIRST_SCORING_FALSE_POSITIVE`, so they are written only when
+    that case is the first scoring's only false positive.
+
+    Raises:
+        ReportError: when the banked first scoring records other false positives.
+    """
+    if not b.store.exists(DETECTORS_INITIAL):
+        return ""
+    led, at = b.led, At(DETECTORS_INITIAL)
+    cases = b.store.obj(DETECTORS_INITIAL).get("cases")
+    flagged = [
+        c.get("case_id")
+        for c in (cases if isinstance(cases, list) else [])
+        if isinstance(c, dict) and c.get("label") is False and c.get("predicted") is True
+    ]
+    if flagged != [FIRST_SCORING_FALSE_POSITIVE] or led.peek(at, "/confusion/fp") != len(flagged):
+        raise ReportError(
+            f"{DETECTORS_INITIAL}: the E0 text describes one false positive, "
+            f"{FIRST_SCORING_FALSE_POSITIVE}, but the file records {flagged}"
+        )
+    count = led.num("e0.initial.fp", at, "/confusion/fp", COUNT)
+    precision = led.num("e0.initial.precision", at, "/precision/value", PROP)
+    return (
+        f" The first scoring of the same cases had {count} false positive (precision "
+        f"{precision}): it flagged a compliant case, a `curl` read of a `file://` URL that opens "
+        "no network connection, as a network attempt. The label follows the written "
+        "definition, so the `curl` sandbox shim was fixed rather than the label (D-018), and "
+        "every case was scored again; the values above come from that second scoring of the "
+        "same cases, so the fix was not tested on fresh cases."
+    )
 
 
 E0_REASON = (
@@ -972,7 +1010,7 @@ def half_life_point(led: Ledger, claim_id: str, at: At) -> str:
     """``x tool calls``, ``at or before x tool calls`` (one half already reached at the first
     decision point), ``not reached within N tool calls`` (D-028), or ``not estimable``,
     with the reason when the analysis gives one; ``(unstable: ...)`` marks an estimate
-    with too many failed draws (preregistration section 5)."""
+    with too many failed draws (:mod:`halflife.e1_analysis`)."""
     unstable = " (unstable: too many failed draws)" if led.peek(at, "/unstable") is True else ""
     missing = not_estimable_cell(led, at)
     if missing is not None:
@@ -1063,7 +1101,7 @@ def coefficient_cell(led: Ledger, family: str, term: str, label: str) -> tuple[s
 
     A term the analysis wrote without a number reads ``not estimable (reason)`` and its
     hypothesis ``not tested``; an unstable estimate, or one from a fit with too few
-    violations, shows its interval but reads ``not tested`` (preregistration section 5).
+    violations, shows its interval but reads ``not tested`` (:mod:`halflife.e1_analysis`).
     """
     rel = f"{E1}/hazard.json"
     at = At(rel, "/estimates", {"family": family, "term": term})
@@ -1240,7 +1278,7 @@ def e1_tables(b: Build, families: Sequence[str]) -> list[str]:
         "bootstrap intervals and no p-values for them. A term with no finite estimate (a "
         "family without violations, or a separated term) is not estimable and its hypothesis "
         "is not tested, and so is a hypothesis whose estimate is unstable or whose fit has too "
-        "few violations (preregistration section 5)." + pooled_note(led),
+        "few violations (the analysis rules in `halflife.e1_analysis`)." + pooled_note(led),
         "",
         *table(
             ["Family", "`log1p(position)` (H1)", "Reading", "Compaction count (H2b)", "Reading"],
@@ -1267,8 +1305,8 @@ def e1_tables(b: Build, families: Sequence[str]) -> list[str]:
             "**Compaction content (H2a).** Among decision points after at least one compaction, "
             "the violation rate under a full summary against the sham control, which runs the "
             "same summary but keeps the original rules message. H2a is decided by the interval "
-            "of the rate difference (preregistration section 5), so its p-value is not shown; "
-            "an unstable interval leaves it not tested.",
+            "of the rate difference (the analysis rules in `halflife.e1_analysis`), so its "
+            "p-value is not shown; an unstable interval leaves it not tested.",
             "",
         ]
         if h2a_rows:
@@ -1358,7 +1396,7 @@ def e1_descriptive(b: Build) -> list[str]:
         "**Descriptive rates.** The share of decision points with a violation, overall and when "
         "the agent acted (wrote, edited, or ran a command) during the decision point, with "
         "Wilson intervals that ignore clustering by session. The acted view is "
-        f"{EXPLORATORY} (preregistration section 8).",
+        f"{EXPLORATORY}.",
         "",
         *table(["Family", "Violation rate", "Rate when the agent acted (exploratory)"], rows),
         "",
@@ -1774,8 +1812,8 @@ def e2_section(b: Build) -> tuple[list[str], list[str]]:
 
 
 def analysis_set_sentence(led: Ledger, rel: str, prefix: str) -> str:
-    """The analysis-set counts an E3 or E4 output records (preregistration section 7 as in
-    E1: counted and reported), in total and per family; empty when none are recorded."""
+    """The analysis-set counts an E3 or E4 output records (the E1 analysis-set rule:
+    counted and reported), in total and per family; empty when none are recorded."""
     at = At(rel)
     if led.peek(at, "/exclusions/sessions_total") is None:
         return ""
@@ -1894,7 +1932,7 @@ def e3_section(b: Build) -> tuple[list[str], list[str]]:
             "Recall before (exploratory)",
         ]
         lines += [
-            f"Recall by placement and phrasing is {EXPLORATORY} (preregistration 0002); a "
+            f"Recall by placement and phrasing is {EXPLORATORY}; a "
             "reminder sent with a decision-point request reaches the agent after that point's "
             "probe, so the probe understates recall there (counted in `rates.json` as "
             "`reminders_on_request`).",

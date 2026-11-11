@@ -1579,6 +1579,30 @@ def test_init_problems_flag_user_configuration() -> None:
     assert cc.init_summary({"model": "m", "secret": "x"}) == {"model": "m"}
 
 
+def test_init_summary_shows_plugin_paths_under_home_with_a_tilde(
+    tmp_path: Path, subject: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The fixture's user plugin lives in /home/user/.claude/plugins; make that the home.
+    monkeypatch.setenv("HOME", "/home/user")
+    events = fixture_events("stream_contaminated_init.jsonl", {"ws": "/w", "session_id": "s"})
+    summary = cc.init_summary(events[0])
+    assert [p["path"] for p in summary["plugins"]] == [
+        "~/.claude/plugins/team-tools",
+        "/opt/claude/builtin/core-skills",
+    ]
+    assert summary["plugins"][0]["name"] == "team-tools"
+    assert events[0]["plugins"][0]["path"] == "/home/user/.claude/plugins/team-tools"
+    assert cc.init_summary({"plugins": ["bare", {"name": "n"}]}) == {
+        "plugins": ["bare", {"name": "n"}]
+    }
+    launcher = FakeLauncher(smoke_scenario(tmp_path / "transcripts", contaminated=True))
+    cfg = make_cfg(tmp_path, launcher, run_id="claude-smoke")
+    report = cc.run_smoke(cfg, host_home=tmp_path / "home")
+    assert report["findings"]["inits"][0]["plugins"][0]["path"] == "~/.claude/plugins/team-tools"
+    written = (cfg.out_root / "claude-smoke" / "smoke.json").read_text(encoding="utf-8")
+    assert "~/.claude/plugins/team-tools" in written and "/home/user/.claude" not in written
+
+
 # --------------------------------------------------------------------------- whole sessions
 
 
@@ -2673,9 +2697,14 @@ def cli_env(tmp_path: Path) -> dict[str, str]:
     return env
 
 
-def test_cli_smoke_then_run_then_resume(tmp_path: Path, subject: str) -> None:
+def test_cli_smoke_then_run_then_resume(
+    tmp_path: Path, subject: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     root = cli_root(tmp_path)
     env = cli_env(tmp_path)
+    # Run as ``python -m``, sys.argv[0] is the module's absolute path (a home directory).
+    script_path = "/home/someone/half-life/src/halflife/drivers/claude_code.py"
+    monkeypatch.setattr(sys, "argv", [script_path, "run", "--plans", "plans.jsonl"])
     launcher = FakeLauncher(smoke_scenario(tmp_path / "transcripts"))
     common = {"root": root, "env": env, "guard": clean_guard, "claude_bin": FAKE_BIN}
     assert cc.main(["smoke"], launcher=launcher, **common) == cc.EXIT_OK
@@ -2689,6 +2718,7 @@ def test_cli_smoke_then_run_then_resume(tmp_path: Path, subject: str) -> None:
     assert (
         run["status"] == 0 and run["label"] == "ecological" and run["cli"]["version"] == "2.1.309"
     )
+    assert run["command"] == "python -m halflife.drivers.claude_code run --plans plans.jsonl"
     assert not (root / "runs" / "r1" / "pid").exists()
     progress = read_jsonl(root / "runs" / "r1" / "progress.jsonl")
     assert len(progress) == 1 and progress[0]["ended_reason"] == "completed"

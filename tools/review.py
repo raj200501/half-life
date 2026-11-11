@@ -6,8 +6,8 @@ Section 10.1 step 8 of the brief: the reviewer runs through headless
 ``reviewer`` subagent (.claude/agents/reviewer.md) runs and writes
 ``artifacts/review/latest.json`` itself; the main session never edits that file.
 
-The headless path needs the capped client wrapper, which is not built yet, so
-for now this script only validates and prints the subagent's file. Its last
+The headless path is refused while the billing guard trips (D-002), so this
+script only validates and prints the subagent's file. Its last
 line is the review's final line (``REVIEW: SHIP`` or ``REVIEW: BLOCK``), or
 ``REVIEW: STALE`` / ``REVIEW: INVALID`` / ``REVIEW: MISSING``.
 

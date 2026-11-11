@@ -1,4 +1,5 @@
-"""E3 and E4 analyses, fixed before any E3 or E4 data (prereg/0002-e3.md and 0003-e4.md cite it).
+"""E3 and E4 analyses, fixed before any E3 or E4 data (prereg/0002-e3.md and
+prereg/0003-e4.md will cite it; neither is committed yet).
 
 Input: ``sessions.jsonl`` and ``opportunities.jsonl`` written by
 :func:`halflife.experiment.bank_runs`. Output, in the same directory: ``rates.json``,
@@ -149,7 +150,7 @@ def contrasts_against(
 
     The decision p-value is the clustered score test at the null fit (:func:`halflife.
     e1_analysis.test_fields`), which stays valid when an arm has no violations. The Holm
-    family is every arm in ``arms``, as the preregistrations fix it (D-040: over the three
+    family is every arm in ``arms``, as the preregistrations will fix it (D-040: over the three
     placements, over the five mitigations). An arm without rows, an unstable contrast, and
     one whose p-value cannot be computed stay in it as p = 1 (:data:`HOLM_NOTE`), so they
     never make the other adjustments smaller; absent arms get no entry. Every entry

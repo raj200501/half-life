@@ -21,7 +21,8 @@ configuration.
 
 Before any launch, :func:`halflife.billing_guard.check` must be clean; if it is
 not, :class:`~halflife.client.BillingGuardRefused` names the variables and
-nothing else happens. Claude Code 2.1.309 has no ``--max-turns``, so the driver
+nothing else happens. ``claude --help`` does not list ``--max-turns`` (the CLI
+reference documents it for print mode), so the driver does not rely on it and
 counts assistant turns per subtask message in the stream and stops the child
 (SIGINT, then SIGTERM, then SIGKILL as a last resort) at
 ``claude_agent_max_turns``, after the last turn's tool results arrive. The
@@ -1599,7 +1600,17 @@ def init_summary(init: Mapping[str, Any]) -> dict[str, Any]:
         "slash_commands",
         "agents",
     )
-    return {k: init[k] for k in keep if k in init}
+    summary = {k: init[k] for k in keep if k in init}
+    if isinstance(summary.get("plugins"), list):
+        summary["plugins"] = [_masked_plugin(p) for p in summary["plugins"]]
+    return summary
+
+
+def _masked_plugin(plugin: Any) -> Any:
+    """A plugin entry of an ``init`` event with its ``path`` shown with ``~`` for home."""
+    if isinstance(plugin, Mapping) and isinstance(plugin.get("path"), str):
+        return {**plugin, "path": snapshot_hook.display_path(plugin["path"])}
+    return plugin
 
 
 # --------------------------------------------------------------------------- caps and ledger
@@ -3329,7 +3340,7 @@ def cmd_run(setup: Setup, args: argparse.Namespace, *, checker: Checker | None =
         "smoke": {"path": args.smoke, "sha256": file_sha256(smoke_path)},
         "contaminants": contaminants,
         "label": LABEL,
-        "command": " ".join(sys.argv),
+        "command": "python -m halflife.drivers.claude_code " + " ".join(sys.argv[1:]),
         "started": utc_stamp(),
     }
     _append_jsonl(run_dir / "invocations.jsonl", record)

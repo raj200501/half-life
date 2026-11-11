@@ -6,9 +6,10 @@ those sessions reach (D-042). E1 uses the two qualifying families with the lowes
 wall time per step call, read from the usage ledger. A family whose pilot did not cover
 every pilot template is reported as not fully piloted, never as failing the criterion.
 
-``python -m halflife.pilot --dir artifacts/pilot`` reads ``sessions.jsonl`` and
-``opportunities.jsonl`` there (written by :func:`halflife.experiment.bank_runs`) and the
-ledger, and writes ``family_choice.json`` beside them. The pilot is exploratory.
+``python -m halflife.pilot --dir artifacts/pilot --templates unit-converter grade-book
+ini-merger`` reads ``sessions.jsonl`` and ``opportunities.jsonl`` there (written by
+:func:`halflife.experiment.bank_runs`) and the ledger, and writes ``family_choice.json``
+beside them. The pilot is exploratory.
 """
 
 from __future__ import annotations
@@ -101,7 +102,8 @@ def _git_sha(root: Path) -> str:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """``python -m halflife.pilot --dir artifacts/pilot``: write ``family_choice.json``."""
+    """``python -m halflife.pilot --dir artifacts/pilot --templates unit-converter
+    grade-book ini-merger``: write ``family_choice.json``."""
     parser = argparse.ArgumentParser(description="E1 family choice from the banked pilot.")
     parser.add_argument("--dir", type=Path, required=True, help="banked pilot directory")
     parser.add_argument("--ledger", type=Path, default=Path("artifacts/usage/ledger.jsonl"))
