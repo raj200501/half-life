@@ -60,7 +60,9 @@ MIN_E2_MODELS = 2
 SEEDED_INDIRECT_KINDS = frozenset({"sed_inplace", "scripted_write", "git_checkout", "cp"})
 E1_RECOMPUTE_LIMIT_S = 1800.0
 REVIEW_EXEMPT_PREFIXES = ("artifacts/review/",)
-REVIEW_EXEMPT_FILES = frozenset({"STATUS.md", "docs/LOG.md"})
+# The reviewer appends its non-blocking items to docs/REVIEW_LOG.md after reviewing
+# (.claude/agents/reviewer.md), so the log may follow the reviewed commit (D-051).
+REVIEW_EXEMPT_FILES = frozenset({"STATUS.md", "docs/LOG.md", "docs/REVIEW_LOG.md"})
 REPORT_WORDS = (4000, 8000)
 HYPE_WORDS = ("revolutionary", "groundbreaking", "state of the art", "state-of-the-art")
 EM_DASH = "\u2014"

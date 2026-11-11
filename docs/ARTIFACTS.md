@@ -81,7 +81,7 @@ Rules that hold for every layout below:
 
 ## G12 review (`artifacts/review/latest.json`)
 
-`{reviewed_commit, reviewer, timestamp, verdict, blocking, non_blocking, final_line}` as described in `tools/review.py`. The ship check requires `verdict: SHIP`, `final_line: "REVIEW: SHIP"`, a `blocking` field that is a list and is empty (a missing field, null, or empty string fails), `docs/REVIEW_LOG.md`, and that `reviewed_commit` is HEAD or an ancestor that differs from HEAD only in `artifacts/review/`, `STATUS.md`, and `docs/LOG.md`.
+`{reviewed_commit, reviewer, timestamp, verdict, blocking, non_blocking, final_line}` as described in `tools/review.py`. The ship check requires `verdict: SHIP`, `final_line: "REVIEW: SHIP"`, a `blocking` field that is a list and is empty (a missing field, null, or empty string fails), `docs/REVIEW_LOG.md`, and that `reviewed_commit` is HEAD or an ancestor that differs from HEAD only in `artifacts/review/`, `STATUS.md`, `docs/LOG.md`, and `docs/REVIEW_LOG.md` (the reviewer appends its non-blocking items there after reviewing; D-051).
 
 ## G13 documents (`README.md`, `docs/REPORT.md`)
 

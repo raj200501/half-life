@@ -2951,7 +2951,11 @@ def test_g12_control_passes(tmp_path: Path) -> None:
 
 
 def test_g12_review_of_head_and_exempt_changes_pass(tmp_path: Path) -> None:
-    after = {"STATUS.md": "goal_turn: 2\n", "artifacts/review/notes.json": "{}"}
+    after = {
+        "STATUS.md": "goal_turn: 2\n",
+        "artifacts/review/notes.json": "{}",
+        "docs/REVIEW_LOG.md": "# Review log\n\n- a non-blocking item the reviewer appended\n",
+    }
     assert evaluate(12, build_g12(tmp_path / "a", after=after)).passed
     root = tmp_path / "b"
     root.mkdir()
