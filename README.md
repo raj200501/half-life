@@ -33,11 +33,11 @@ The demo needs no network, no model, and no GPU: it replays a recorded session t
 
 **It is** a measurement instrument for one question: once an agent has been told a rule, how long does the rule keep governing what it does, and what does compaction do to it?
 
-- **half-life-bench.** Thirty small synthetic Python projects, each with two to four rules of four types (prohibitions, invariants, procedures, resource limits) and later decision points where the fastest route breaks one rule. Every decision point has a reasonable compliant route, and every template ships a verified compliant route and a reference run.
+- **half-life-bench.** Thirty small synthetic Python projects, each with two or three rules drawn from four types (prohibitions, invariants, procedures, resource limits) and later decision points where the fastest route breaks one rule. Every decision point has a reasonable compliant route, and every template ships a verified compliant route and a reference run.
 - **A controlled harness.** A minimal agent with a fixed scaffold drives local open-weight models; the session generator randomizes where decision points fall and when compaction happens, and a sham compaction keeps the rule text verbatim so losing the text can be separated from the disruption of compaction itself.
 - **Deterministic detectors** that decide from file hashes after every tool call, commands, manifests, syntax trees, and sandbox network logs, never from parsing what the agent said it did.
 - **Leak-checked recall probes** that fork the exact context, ask the fork which rules apply, and never touch the main run.
-- **A preregistered survival analysis**: discrete-time hazard models, half-lives with plan-level bootstrap intervals, and calibrated score tests decided before any confirmatory data.
+- **A survival analysis written and audited before any confirmatory data**: discrete-time hazard models, half-lives with plan-level bootstrap intervals, and score tests calibrated on synthetic nulls, to be frozen by a preregistration before the main study runs.
 - **A mitigation kit** for Claude Code: `halflife-guard` (a PreToolUse policy hook), `halflife-pin` (rules in CLAUDE.md or AGENTS.md), re-injection after compaction, and a rule-preserving compaction prompt, each with measured overhead.
 
 **It is not** a leaderboard, a jailbreak or prompt-search tool (decision points never tell an agent to break a rule), or evidence about frontier models yet: the controlled subjects are small quantized models on a CPU, and the Claude Code arm (E2) needs a machine where its billing guard passes.
@@ -70,7 +70,7 @@ flowchart LR
   H --> R["artifacts/ + claims.json<br/>make report, claimcheck, freshness"]
 ```
 
-A **session template** is a small project plus an ordered list of requests. The generator interleaves filler requests so each decision point lands at a different tool-call position in every session, pads every study session to at least twenty requests with neutral read-only requests (D-043), and draws forced compactions independently of decision-point positions, with a small token budget as a backstop (D-047). The **agent** works one request at a time through six tools inside a sandbox (user, network, mount, and process namespaces; credentials removed). After every tool call the harness hashes every workspace file, so a protected file changed by any route shows up as a hash change on that path. **Detectors** turn the action log into violations; each reached decision point becomes an **opportunity** with its position, compaction count, outcome, and pre-decision recall. The **analysis** fits a discrete-time hazard model on each session's opportunities up to its first violation, decides hypotheses with score tests whose variance allows correlation within a plan, and resamples whole plans for intervals (D-049, D-050).
+A **session template** is a small project plus an ordered list of requests. The generator interleaves filler requests so each decision point lands at a different tool-call position in every session, pads every study session to at least twenty requests with neutral read-only requests (D-043), and draws forced compactions independently of decision-point positions, with a small token budget as a backstop (D-047). The **agent** works one request at a time through six tools inside a sandbox (user, network, mount, and process namespaces; credentials removed). After every tool call the harness hashes every workspace file, so a protected file changed by any route shows up as a hash change on that path. **Detectors** turn the action log into violations; each reached decision point becomes an **opportunity** with its position, compaction count, outcome, and pre-decision recall. The **analysis** fits a discrete-time hazard model on each session's opportunities up to its first violation, decides contrasts with score tests whose variance allows correlation within a plan (D-049; D-050 extends the same test to every preregistered hypothesis), and resamples whole plans for intervals.
 
 ## Use it on your own agent or benchmark
 
@@ -99,6 +99,20 @@ halflife-pin --spec halflife.yaml --out CLAUDE.md
 | `make ship-check` | the fourteen ship gates of docs/BUILD_BRIEF.md on a fresh clone, never running a model; the gate checks themselves have mutation tests |
 
 The gates that cannot pass yet (the main study, the ecological and placement arms, the mitigation study, the independent review) say so in [STATUS.md](STATUS.md); none is weakened to pass.
+
+## Where things are
+
+| Path | What it holds |
+|---|---|
+| [docs/REPORT.md](docs/REPORT.md) | the technical report: method, experiments, results with intervals, limitations |
+| [docs/MITIGATIONS.md](docs/MITIGATIONS.md) | installing and configuring halflife-guard, halflife-pin, and re-injection |
+| [docs/ARTIFACTS.md](docs/ARTIFACTS.md) | every banked artifact layout and what the ship check verifies about it |
+| [docs/CLAIMS.md](docs/CLAIMS.md) | claim markers, the claims manifest, freshness derivations, preregistration rules |
+| [docs/E2_RUNBOOK.md](docs/E2_RUNBOOK.md) | running the Claude Code arm on a machine where its billing guard passes |
+| [docs/DATA.md](docs/DATA.md) | model files, licenses, and retrieval dates |
+| [designs/](designs/) | experiment designs (templates, conditions, seeds, session settings) |
+| [src/halflife/](src/halflife/) | the package: `bench`, `sessions`, `agent`, `compaction`, `probe`, `detect`, `stats`, `kit`, `drivers` |
+| [tools/ship_check.py](tools/ship_check.py) | the fourteen gates, run on a fresh clone |
 
 ## How this repository was built
 
