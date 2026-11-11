@@ -1,0 +1,48 @@
+{
+  "reviewed_commit": "ae65bb10ff0982dd4ec6d4b52b49519518e7fc9b",
+  "reviewer": "subagent",
+  "timestamp": "2026-11-11T05:26:51Z",
+  "verdict": "BLOCK",
+  "blocking": [
+    {
+      "id": "B1",
+      "title": "G12 passes while make review ends with REVIEW: STALE",
+      "file": "tools/review.py:36 (vs tools/ship_check.py:65 and gate_g12 at tools/ship_check.py:1716-1744)",
+      "evidence": "D-051 (commit 75a095a) added docs/REVIEW_LOG.md to ship_check's REVIEW_EXEMPT_FILES but left tools/review.py at EXEMPT_FILES = {STATUS.md, docs/LOG.md}; tools/review.py has no tests. G12 never runs make review; it re-implements the staleness rule with a different exemption list. Reproduced in a scratch clone of ae65bb1: committing artifacts/review/latest.json (verdict SHIP, reviewed_commit ae65bb1) together with an appended docs/REVIEW_LOG.md, which is the workflow .claude/agents/reviewer.md and D-051 prescribe, made `python3 tools/review.py` print 'stale: 1 file(s) changed since review, e.g. docs/REVIEW_LOG.md' and 'REVIEW: STALE' (rc=1), while ship_check.gate_g12 on the same commit returned PASS 'REVIEW: SHIP for ae65bb10ff09, 0 blocking'. Section 6 defines G12 as 'The latest make review ends with REVIEW: SHIP for the current code', so the gate passes while its property is false."
+    },
+    {
+      "id": "B2",
+      "title": "G12 never checks that non-blocking issues are listed in docs/REVIEW_LOG.md",
+      "file": "tools/ship_check.py:1731-1732",
+      "evidence": "The only check for the clause 'Non-blocking issues are listed in docs/REVIEW_LOG.md' (section 6, G12) is that the file exists. Reproduced in a scratch clone: latest.json with non_blocking ['an item never logged anywhere'] and docs/REVIEW_LOG.md unchanged from HEAD (it says 'No reviews yet.') gave gate_g12 PASS. Because D-051 also exempts docs/REVIEW_LOG.md from staleness, items can be deleted from the log after a review and G12 still passes. The gate should require every non_blocking string of the banked review to appear in docs/REVIEW_LOG.md."
+    },
+    {
+      "id": "B3",
+      "title": "G10 passes with fabricated numbers in the figures embedded in README.md and docs/REPORT.md",
+      "file": "tools/ship_check.py:1702-1706; docs/figures/pilot.svg; docs/figures/e0-validity.svg",
+      "evidence": "Rule 1 covers figures and names claimcheck as its enforcement. G10 runs only make claimcheck and make freshness, neither reads SVG figures, and no gate runs `python -m halflife.report --check`, which does detect stale figures; G13 only checks that the figure file exists (tools/ship_check.py:1829-1831). Reproduced in a scratch clone: changing 'Rule broken, granite: 2' and 'Rule broken, qwen: 2' to 0 in docs/figures/pilot.svg and committing gave 'CLAIMCHECK: PASS 162 claim(s) in 2 document(s)' and 'FRESHNESS: PASS 4 derivation(s), 125 live claim(s)', while report --check printed 'REPORT: STALE (run make report): docs/figures/pilot.svg'. The committed figures are correct today: make report on a fresh clone of ae65bb1 regenerates both SVGs, README.md, docs/REPORT.md, and artifacts/claims.json byte for byte."
+    },
+    {
+      "id": "B4",
+      "title": "Pilot outcome counts hand-typed as words, invisible to claimcheck",
+      "file": "docs/REPORT.md:84; src/halflife/integrity/claimcheck.py:476",
+      "evidence": "REPORT section 4 says 'Five candidate families were considered and four ran pilot sessions; three ran every pilot template.' How many families ran, and how many completed every pilot template, are pilot outcomes; the same per-family session counts are rendered as claims in the generated pilot table (pilot.<family>.sessions from artifacts/pilot/sessions.jsonl: granite 3, phi 1, qwen 3, smollm 3), but this sentence types them by hand outside any claim marker. claimcheck's docstring states 'Numbers written as words are not digit sequences and are not seen', so G10 cannot catch them. The values are correct today (4 families in artifacts/pilot/sessions.jsonl, 3 with all 3 pilot templates); the defect is provenance under rule 1, plus a G10 blind spot that the 2026-11-11 CORRECTIONS.md entry ('two to four rules') shows has already let a wrong hand-typed count through once. Wrap the counts in claim markers or drop them."
+    }
+  ],
+  "non_blocking": [
+    "G11 trusts each artifact's self-declared 'confirmatory' flag (src/halflife/integrity/prereg.py:256-260), and G8/G9 (tools/ship_check.py:1476-1648) never require a preregistration link for E3/E4 even though designs/e3.yaml and designs/e4.yaml declare confirmatory: true. The run tool refuses confirmatory plans without --prereg (src/halflife/experiment.py:543-553), so this is defense in depth; consider deriving confirmatory status from the committed design.",
+    "Probes advance the main run's seed counter (src/halflife/agent.py:258-260, temperature 0.7), so main-run sampling depends on how many probes ran. Probe content never enters the main context, and probes run in every E1 condition, so there is no bias between arms, but 'never contaminate the main run' holds for content only; say so, or give probes their own seed stream.",
+    "G5 probe leakage is recomputed only from per-session leak flags the harness wrote (src/halflife/experiment.py:445). Main-run contexts are not banked, so leakage cannot be re-derived from artifacts/.",
+    "E0 detector validation (artifacts/e0/detector_validation.json, git_sha 26a388f, 2026-10-23) predates the subject-env sandbox change (f3db2ec) and the template test-run pattern change (D-036). The current instrument has not been re-validated by E0, and the new pytest pattern is covered only by bench verify; note it in the E1 preregistration or re-run E0.",
+    "README.md:49 says the detectors caught every seeded violation 'with no false alarms' without saying the 1.000 precision comes from re-scoring the same cases after the curl shim fix (D-018). docs/REPORT.md:100 discloses this; the README key result should too (rule 3).",
+    "docs/REPORT.md:75 reports a simulation result (the score test 'held its nominal level where a plain cluster-robust sandwich rejected too often') with no banked artifact cited. docs/REPORT.md:53 ('the forced indices first drawn fell after most sessions had ended') is a dry-run observation with no artifact. Bank and cite both, or mark them unbanked.",
+    "README.md:36 hand-types benchmark composition ('Thirty small synthetic Python projects', 'two or three rules', 'four types'), while docs/REPORT.md renders the template count as claim bench.templates. These are design facts, not results, but they can go stale unchecked, as the 2026-11-11 CORRECTIONS.md entry shows.",
+    "README.md:22 heads the quickstart 'about a minute, offline', but make setup (uv sync --frozen) needs network access on a machine without a uv cache. Only the demo step is offline.",
+    "Probe-scorer keyword groups were tuned on dev-split answers that cover the held-out E4 templates' rules too (src/halflife/data/probe_answers.yaml, D-038). This is not leakage into E4 outcomes, but the held-out templates are not unseen by instrument tuning; state it in the E4 preregistration.",
+    "RQ1 asks for half-life per agent, model, and constraint type. src/halflife/e1_analysis.py computes half-life per family only, and G7 checks it per family. Settle the per-type estimand (or its omission) in prereg/0001-e1.md.",
+    "make freshness accepts 'raw' primary artifacts on the strength of a self-reported provenance block (command and git_sha; src/halflife/integrity/freshness.py docstring). That is inherent offline, but docs/CLAIMS.md should say that raw-artifact authenticity is not verified.",
+    "artifacts/pilot/provenance.json records absolute build paths (/home/user/half-life/src/halflife/experiment.py ...). No secret is exposed; D-052 fixed this only for future runs.",
+    "Checked and found sound at ae65bb1: detector precision/recall and Wilson intervals (173 TP, 0 FP, 0 FN, 155 TN of 328) and probe-scorer test-split sensitivity 108/111, specificity 123/134, and accuracy 231/245 recomputed from the artifacts; pilot counts (10 sessions, 40 decision points, 6 violations) recomputed; pilot templates and seeds disjoint from E1 (split main, seed_base 100000); held-out templates referenced nowhere outside their files and the probe answer set; no secrets in tracked files or in the history of all 84 commits; no em dashes or hype words in tracked files; make report reproduces every generated file byte for byte; fast ship check 10/14 with G7, G8, G9, and G12 failing as STATUS.md states."
+  ],
+  "final_line": "REVIEW: BLOCK"
+}
