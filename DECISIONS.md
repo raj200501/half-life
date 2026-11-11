@@ -292,3 +292,13 @@ The first review blocked on four issues, each reproduced by the reviewer and eac
 4. **B4.** A hand-written report sentence typed pilot counts as words, which claimcheck cannot see (rule 1). It now points to the generated pilot table instead.
 
 Two non-blocking README points were fixed with them: the detector result now mentions the first scoring's false positive (D-018), and the quickstart says `make setup` downloads dependencies once while the demo runs offline. The remaining non-blocking items stay in docs/REVIEW_LOG.md.
+
+## D-054 2026-11-11: fixes for the second independent review (REVIEW: BLOCK at 15c4319)
+
+The second review confirmed the D-053 fixes and blocked on three remaining holes, each reproduced in a scratch clone and each fixed with a test:
+
+1. **B1.** G12 and `make review` listed changed files with `git diff --name-only`, which reports a rename by its new path only, so moving a reviewed file into `artifacts/review/` hid its removal. Both now pass `--no-renames`, as the integrity tools already do.
+2. **B2.** G12 re-implemented `make review` and could pass a record that `make review` rejects (for example a reviewer field other than subagent or headless). G12 now runs `tools/review.py` in the clone and requires `REVIEW: SHIP` as its last line, on top of its own checks.
+3. **B3.** `report --check` compared only SVGs directly under `docs/figures/`, so a hand-edited figure kept elsewhere and embedded in a document passed. It now fails on any image README.md or docs/REPORT.md embeds that the build does not generate, and on any file under `docs/figures/` the build does not write.
+
+Two non-blocking points were fixed with them: the README no longer says every kit part has measured overhead (only the guard and the pin do), and the report says Llama-3.2-3B ran no pilot session. The remaining non-blocking items stay in docs/REVIEW_LOG.md.

@@ -79,7 +79,7 @@ def staleness(reviewed: str) -> str | None:
         return None
     if git("merge-base", "--is-ancestor", reviewed, head).returncode != 0:
         return f"reviewed commit {reviewed[:12]} is not an ancestor of HEAD {head[:12]}"
-    changed = git("diff", "--name-only", reviewed, head).stdout.split()
+    changed = git("diff", "--name-only", "--no-renames", reviewed, head).stdout.split()
     outside = [p for p in changed if not p.startswith(EXEMPT_PREFIXES) and p not in EXEMPT_FILES]
     if outside:
         return f"{len(outside)} file(s) changed since review, e.g. {outside[0]}"

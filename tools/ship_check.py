@@ -1741,7 +1741,9 @@ def gate_g12(ctx: Context) -> GateResult:
     if reviewed != ctx.sha:
         if not strictly_predates(ctx.clone, reviewed, ctx.sha):
             return fail("reviewed commit is not an ancestor of HEAD")
-        changed = git(ctx.clone, "diff", "--name-only", reviewed, ctx.sha).splitlines()
+        changed = git(
+            ctx.clone, "diff", "--name-only", "--no-renames", reviewed, ctx.sha
+        ).splitlines()
         outside = [
             p
             for p in changed
@@ -1749,6 +1751,24 @@ def gate_g12(ctx: Context) -> GateResult:
         ]
         if outside:
             return fail(f"code changed since review: {', '.join(outside[:3])}")
+    tool = ctx.clone / "tools" / "review.py"
+    if not tool.is_file():
+        return fail("missing tools/review.py (make review)")
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-I", str(tool)],
+            cwd=ctx.clone,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return fail(f"make review did not run: {exc}")
+    lines = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+    last = lines[-1] if lines else ""
+    if proc.returncode != 0 or last != "REVIEW: SHIP":
+        return fail(f"make review ends with {last!r}")
     return GateResult(True, f"REVIEW: SHIP for {reviewed[:12]}, 0 blocking")
 
 

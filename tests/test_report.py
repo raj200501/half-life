@@ -278,6 +278,30 @@ def test_check_reports_a_report_written_before_its_artifacts_changed(
     assert report.stale_parts(root) == []
 
 
+def test_check_flags_images_the_build_does_not_generate(tmp_path: Path) -> None:
+    """A hand-made copy of a figure, embedded or left in docs/figures, is stale."""
+    root = tmp_path / "repo"
+    root.mkdir()
+    base_repo(root)
+    copy_real_e0_and_bench(root)
+    report.generate(root)
+    assert report.stale_parts(root) == []
+    figure = next(iter(sorted((root / "docs" / "figures").glob("*.svg"))))
+    copy = root / "docs" / "img" / "copy.svg"
+    copy.parent.mkdir(parents=True)
+    copy.write_text(figure.read_text(encoding="utf-8"), encoding="utf-8")
+    report_path = root / "docs" / "REPORT.md"
+    report_path.write_text(
+        report_path.read_text(encoding="utf-8") + "\n![copy](img/copy.svg)\n", encoding="utf-8"
+    )
+    (root / "docs" / "figures" / "extra.png").write_bytes(b"not generated")
+    stale = report.stale_parts(root)
+    assert (
+        "docs/REPORT.md embeds an image that make report does not generate: img/copy.svg" in stale
+    )
+    assert "docs/figures/extra.png" in stale
+
+
 def test_missing_experiments_render_one_plain_sentence_each(tmp_path: Path) -> None:
     base_repo(tmp_path, readme="# half-life\n")
     log = report.generate(tmp_path)

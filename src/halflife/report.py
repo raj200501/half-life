@@ -126,6 +126,8 @@ OVERHEAD = "artifacts/e4/overhead.json"
 
 FIG_E0 = f"{FIGURES_DIR}/e0-validity.svg"
 FIG_PILOT = f"{FIGURES_DIR}/pilot.svg"
+# Markdown image targets; every image README.md and docs/REPORT.md embed must be generated.
+IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)\)")
 FIG_HAZARD = f"{FIGURES_DIR}/e1-hazard.svg"
 FIG_KM = f"{FIGURES_DIR}/e1-km.svg"
 FIG_E3 = f"{FIGURES_DIR}/e3-contrasts.svg"
@@ -2562,9 +2564,22 @@ def stale_parts(root: Path, module: str = derive.DERIVE_MODULE) -> list[str]:
     if figures.is_dir():
         stale += [
             p.relative_to(root).as_posix()
-            for p in sorted(figures.glob("*.svg"))
-            if p.relative_to(root).as_posix() not in out.figures
+            for p in sorted(figures.rglob("*"))
+            if p.is_file() and p.relative_to(root).as_posix() not in out.figures
         ]
+    for doc, text in ((README_DOC, readme), (REPORT_DOC, report)):
+        base = (root / doc).parent
+        for target in IMAGE_RE.findall(text):
+            if "://" in target:
+                stale.append(f"{doc} embeds an image that make report does not generate: {target}")
+                continue
+            resolved = (base / target.split("#")[0]).resolve()
+            try:
+                rel = resolved.relative_to(root.resolve()).as_posix()
+            except ValueError:
+                rel = target
+            if rel not in out.figures:
+                stale.append(f"{doc} embeds an image that make report does not generate: {target}")
     manifest = root / MANIFEST
     if not manifest.is_file() or manifest.read_text(encoding="utf-8") != _dump(out.manifest):
         stale.append(MANIFEST)

@@ -2845,6 +2845,9 @@ def test_wheel_entry_points_split_across_sections(tmp_path: Path) -> None:
 REVIEW = "artifacts/review/latest.json"
 
 
+REVIEW_TOOL = (REPO_ROOT / "tools" / "review.py").read_text(encoding="utf-8")
+
+
 def build_g12(
     root: Path, review: dict[str, Any] | None = None, after: dict[str, Any] | None = None
 ) -> Any:
@@ -2853,11 +2856,12 @@ def build_g12(
     code = {
         "src/halflife/x.py": "X = 1\n",
         "docs/REVIEW_LOG.md": "# Review log\n\n- docs could be shorter\n",
+        "tools/review.py": REVIEW_TOOL,
     }
     reviewed = commit(root, code, "code")
     record = {
         "reviewed_commit": reviewed,
-        "reviewer": "reviewer-subagent",
+        "reviewer": "subagent",
         "timestamp": "2026-11-04T00:00:00Z",
         "verdict": "SHIP",
         "blocking": [],
@@ -2933,6 +2937,16 @@ G12_CASES = params(
             change=lambda r: (r / "docs/REVIEW_LOG.md").unlink(),
         ),
         g12(
+            "reviewer-field-make-review-rejects",
+            "make review ends with 'REVIEW: INVALID'",
+            review={"reviewer": "main-session"},
+        ),
+        g12(
+            "review-tool-missing",
+            "missing tools/review.py",
+            change=lambda r: (r / "tools" / "review.py").unlink(),
+        ),
+        g12(
             "non-blocking-item-not-in-the-log",
             "non-blocking issue not listed in docs/REVIEW_LOG.md: docs could be shorter",
             change=lambda r: (r / "docs/REVIEW_LOG.md").write_text("# Review log\n"),
@@ -2973,9 +2987,12 @@ def test_g12_review_of_head_and_exempt_changes_pass(tmp_path: Path) -> None:
     root = tmp_path / "b"
     root.mkdir()
     run_git(root, "init", "-q")
-    head = commit(root, {"docs/REVIEW_LOG.md": "# Review log\n"}, "base")
+    head = commit(
+        root, {"docs/REVIEW_LOG.md": "# Review log\n", "tools/review.py": REVIEW_TOOL}, "base"
+    )
     record = {
         "reviewed_commit": head,
+        "reviewer": "subagent",
         "verdict": "SHIP",
         "blocking": [],
         "final_line": "REVIEW: SHIP",
@@ -3329,3 +3346,13 @@ def test_g10_requires_the_generated_report_to_be_current(
     ctx = write_docs(tmp_path)
     assert sc.gate_g10(ctx).passed
     assert seen == [["claimcheck", "freshness", "report-check"]]
+
+
+def test_g12_sees_a_reviewed_file_renamed_into_an_exempt_path(tmp_path: Path) -> None:
+    ctx = build_g12(tmp_path / "repo")
+    root = ctx.clone
+    run_git(root, "mv", "src/halflife/x.py", "artifacts/review/x.py")
+    run_git(root, "-c", "user.name=t", "-c", "user.email=t@e.invalid", "commit", "-q", "-m", "mv")
+    head = run_git(root, "rev-parse", "HEAD").strip()
+    result = evaluate(12, context(root, head))
+    assert not result.passed and "code changed since review: src/halflife/x.py" in result.evidence

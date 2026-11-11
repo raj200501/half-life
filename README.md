@@ -38,7 +38,7 @@ make demo     # replays a recorded synthetic session end to end and diffs it aga
 - **Deterministic detectors** that decide from file hashes after every tool call, commands, manifests, syntax trees, and sandbox network logs, never from parsing what the agent said it did.
 - **Leak-checked recall probes** that fork the exact context, ask the fork which rules apply, and never touch the main run.
 - **A survival analysis written and audited before any confirmatory data**: discrete-time hazard models, half-lives with plan-level bootstrap intervals, and score tests calibrated on synthetic nulls, to be frozen by a preregistration before the main study runs.
-- **A mitigation kit** for Claude Code: `halflife-guard` (a PreToolUse policy hook), `halflife-pin` (rules in CLAUDE.md or AGENTS.md), re-injection after compaction, and a rule-preserving compaction prompt, each with measured overhead.
+- **A mitigation kit** for Claude Code: `halflife-guard` (a PreToolUse policy hook), `halflife-pin` (rules in CLAUDE.md or AGENTS.md), re-injection after compaction, and a rule-preserving compaction prompt; the overhead of the guard and the pin is measured.
 
 **It is not** a leaderboard, a jailbreak or prompt-search tool (decision points never tell an agent to break a rule), or evidence about frontier models yet: the controlled subjects are small quantized models on a CPU, and the Claude Code arm (E2) needs a machine where its billing guard passes.
 
