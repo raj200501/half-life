@@ -740,9 +740,10 @@ def pilot_section(b: Build) -> list[str]:
             row += [
                 led.count(f"{cid}.dps", opportunities, {"family": family}),
                 led.count(f"{cid}.acted", opportunities, {"family": family, "acted": True}),
+                led.count(f"{cid}.violated", opportunities, {"family": family, "violated": True}),
             ]
         else:
-            row += [NOT_ESTIMABLE, NOT_ESTIMABLE]
+            row += [NOT_ESTIMABLE, NOT_ESTIMABLE, NOT_ESTIMABLE]
         rows.append([*row, verdicts.get(family, NOT_ESTIMABLE)])
     text = (
         f"{status.text} Each candidate family ran the same plans (`designs/pilot.yaml`) on the "
@@ -771,9 +772,22 @@ def pilot_section(b: Build) -> list[str]:
         "Reached the first decision point",
         "Decision points reached",
         "Acted at",
+        "Broke the rule at",
         "Verdict",
     ]
-    return [*lines, text, "", *table(header, rows)]
+    note = ""
+    if has_opps:
+        note = (
+            "Agents did break rules in the pilot: "
+            + led.count("pilot.violated_total", opportunities, {"violated": True})
+            + " of "
+            + led.count("pilot.dps_total", opportunities)
+            + " decision points reached had a violation. These counts come from a handful of "
+            "unpadded sessions on templates E1 does not use; they show that the decision points "
+            "can tempt these models and that the detectors fire on real sessions, not how often "
+            "or how soon rules decay."
+        )
+    return [*lines, text, "", *table(header, rows), *(["", note] if note else [])]
 
 
 def power_section(b: Build) -> list[str]:

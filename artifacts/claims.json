@@ -9,6 +9,11 @@
       "context": "at least 0.95",
       "reason": "G5 threshold for detector precision and recall (section 6) [make report]",
       "value": "0.95"
+    },
+    {
+      "context": "at least 80% of its pilot sessions",
+      "reason": "pilot reach threshold from section 5 of the brief (D-026, D-042) [make report]",
+      "value": "80"
     }
   ],
   "claims": {
@@ -491,6 +496,37 @@
         "label": true
       }
     },
+    "e0.leak.leaks": {
+      "artifact": "artifacts/e0/probe_leakage.json",
+      "field": "/leaks",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.leak.runs": {
+      "artifact": "artifacts/e0/probe_leakage.json",
+      "field": "/validation_runs",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.logs.complete": {
+      "artifact": "artifacts/e0/compaction_logs.json",
+      "field": "/complete",
+      "format": "d",
+      "note": "make report"
+    },
+    "e0.logs.events": {
+      "aggregate": "count",
+      "artifact": "artifacts/e0/compaction_logs.json",
+      "format": "d",
+      "note": "make report",
+      "pointer": "/events"
+    },
+    "e0.logs.incomplete": {
+      "artifact": "artifacts/e0/compaction_logs.json",
+      "field": "/incomplete",
+      "format": "d",
+      "note": "make report"
+    },
     "e0.precision": {
       "artifact": "artifacts/e0/detector_validation.json",
       "field": "/precision/value",
@@ -616,6 +652,237 @@
       "field": "/recall/lo",
       "format": ".3f",
       "note": "make report"
+    },
+    "e4.overhead.guard.ms": {
+      "artifact": "artifacts/e4/overhead.json",
+      "field": "/halflife-guard/latency_ms",
+      "format": ".1f",
+      "note": "make report"
+    },
+    "e4.overhead.guard.tokens": {
+      "artifact": "artifacts/e4/overhead.json",
+      "field": "/halflife-guard/tokens",
+      "format": ",.1f",
+      "note": "make report"
+    },
+    "e4.overhead.pin.ms": {
+      "artifact": "artifacts/e4/overhead.json",
+      "field": "/halflife-pin/latency_ms",
+      "format": ".2f",
+      "note": "make report"
+    },
+    "e4.overhead.pin.tokens": {
+      "artifact": "artifacts/e4/overhead.json",
+      "field": "/halflife-pin/tokens",
+      "format": ",d",
+      "note": "make report"
+    },
+    "pilot.dps_total": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report"
+    },
+    "pilot.granite.acted": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "acted": true,
+        "family": "granite"
+      }
+    },
+    "pilot.granite.dps": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "granite"
+      }
+    },
+    "pilot.granite.reached": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "granite",
+        "reached_first_dp": true
+      }
+    },
+    "pilot.granite.sessions": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "granite"
+      }
+    },
+    "pilot.granite.violated": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "granite",
+        "violated": true
+      }
+    },
+    "pilot.phi.acted": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "acted": true,
+        "family": "phi"
+      }
+    },
+    "pilot.phi.dps": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "phi"
+      }
+    },
+    "pilot.phi.reached": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "phi",
+        "reached_first_dp": true
+      }
+    },
+    "pilot.phi.sessions": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "phi"
+      }
+    },
+    "pilot.phi.violated": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "phi",
+        "violated": true
+      }
+    },
+    "pilot.qwen.acted": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "acted": true,
+        "family": "qwen"
+      }
+    },
+    "pilot.qwen.dps": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "qwen"
+      }
+    },
+    "pilot.qwen.reached": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "qwen",
+        "reached_first_dp": true
+      }
+    },
+    "pilot.qwen.sessions": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "qwen"
+      }
+    },
+    "pilot.qwen.violated": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "qwen",
+        "violated": true
+      }
+    },
+    "pilot.smollm.acted": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "acted": true,
+        "family": "smollm"
+      }
+    },
+    "pilot.smollm.dps": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "smollm"
+      }
+    },
+    "pilot.smollm.reached": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "smollm",
+        "reached_first_dp": true
+      }
+    },
+    "pilot.smollm.sessions": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/sessions.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "smollm"
+      }
+    },
+    "pilot.smollm.violated": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "family": "smollm",
+        "violated": true
+      }
+    },
+    "pilot.violated_total": {
+      "aggregate": "count",
+      "artifact": "artifacts/pilot/opportunities.jsonl",
+      "format": "d",
+      "note": "make report",
+      "where": {
+        "violated": true
+      }
     }
   },
   "derivations": {
@@ -629,6 +896,40 @@
       ],
       "note": "make report",
       "params": {}
+    },
+    "artifacts/e0/compaction_logs.json": {
+      "compare": [
+        "/source",
+        "/complete",
+        "/incomplete",
+        "/events"
+      ],
+      "derive": "halflife.derive:e0_compaction_logs",
+      "inputs": [
+        "artifacts/pilot/sessions.jsonl",
+        "artifacts/pilot/compaction_logs.json",
+        "artifacts/pilot/compactions/"
+      ],
+      "note": "make report",
+      "params": {
+        "source": "artifacts/pilot"
+      }
+    },
+    "artifacts/e0/probe_leakage.json": {
+      "compare": [
+        "/source",
+        "/validation_runs",
+        "/leaks",
+        "/runs"
+      ],
+      "derive": "halflife.derive:e0_probe_leakage",
+      "inputs": [
+        "artifacts/pilot/sessions.jsonl"
+      ],
+      "note": "make report",
+      "params": {
+        "source": "artifacts/pilot"
+      }
     },
     "artifacts/e0/probe_scoring.json": {
       "compare": [
@@ -658,7 +959,12 @@
   "notes": "Written by make report (python -m halflife.report) from banked artifacts. Claims and derivations noted 'make report', and allowlist and raw reasons ending in '[make report]', are rewritten on every run; other entries are kept as written.",
   "raw": {
     "artifacts/bench/routes/": "compliant-route records of every template, executed in sandboxes by python -m halflife.bench verify --bank [make report]",
-    "artifacts/e0/detector_validation.json": "E0 runner output: blind seeded cases executed for real in sandboxes and scored by the detectors (python -m halflife.e0 --bank); re-running them needs sandboxed processes, so the file is primary data [make report]"
+    "artifacts/e0/detector_validation.json": "E0 runner output: blind seeded cases executed for real in sandboxes and scored by the detectors (python -m halflife.e0 --bank); re-running them needs sandboxed processes, so the file is primary data [make report]",
+    "artifacts/e4/overhead.json": "wall-time and size measurements of halflife-guard and halflife-pin (halflife.kit.overhead), which cannot be re-derived offline [make report]",
+    "artifacts/pilot/compaction_logs.json": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
+    "artifacts/pilot/compactions/": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
+    "artifacts/pilot/opportunities.jsonl": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
+    "artifacts/pilot/sessions.jsonl": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]"
   },
   "schema": "halflife/claims/1"
 }

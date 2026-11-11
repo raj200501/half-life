@@ -226,8 +226,15 @@ def test_full_synthetic_repo_passes_claimcheck_and_freshness(full_repo: Path) ->
     abstract = abstract.split("<!-- report:end abstract -->")[0]
     assert "In E2 (ecological, exploratory, synthetic data)" in abstract
     assert "sessions per family by column, split equally between the two arms" in plain_text
-    assert "| syn-a | 3 | 3 | 9 | 6 | qualifies |" in plain_text
-    assert "| syn-b | 3 | 2 | 6 | 4 | does not qualify |" in plain_text
+    pilot_part = plain_text.split("### 5.3 ")[1].split("### 5.4 ")[0]
+    rows = {
+        ln.split("|")[1].strip(): ln for ln in pilot_part.splitlines() if ln.startswith("| syn-")
+    }
+    assert rows["syn-a"].startswith("| syn-a | 3 | 3 | 9 | 6 | ")
+    assert rows["syn-a"].endswith(" qualifies |")
+    assert rows["syn-b"].startswith("| syn-b | 3 | 2 | 6 | 4 | ")
+    assert rows["syn-b"].endswith(" does not qualify |")
+    assert "decision points reached had a violation" in plain_text
     assert "`artifacts/pilot/family_choice.json`" in text and "it names syn-a." in text
     assert "confidence interval" in readme and "docs/figures/e1-hazard.svg" in readme
     for figure in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", text):

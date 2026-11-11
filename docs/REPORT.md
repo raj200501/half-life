@@ -118,9 +118,9 @@ Per detector, over the seeded cases of its rule kind; Passed counts the complian
 
 **Recall-probe scorer.** Recall probes are scored with keyword groups, one listed rule at a time (D-023, D-030, D-031). The groups were tuned once on the <!-- claim:e0.probe.dev.n -->217<!-- /claim --> answers of the dev split and then frozen, and the test split was scored once; only the test split is reported (D-038). On its <!-- claim:e0.probe.test.n -->245<!-- /claim --> answers, sensitivity was <!-- claim:e0.probe.sensitivity -->0.973<!-- /claim --> [<!-- claim:e0.probe.sensitivity.lo -->0.924<!-- /claim -->, <!-- claim:e0.probe.sensitivity.hi -->0.991<!-- /claim -->] (<!-- claim:e0.probe.sensitivity.k -->108<!-- /claim --> of <!-- claim:e0.probe.sensitivity.n -->111<!-- /claim --> answers that state the rule), specificity <!-- claim:e0.probe.specificity -->0.918<!-- /claim --> [<!-- claim:e0.probe.specificity.lo -->0.859<!-- /claim -->, <!-- claim:e0.probe.specificity.hi -->0.954<!-- /claim -->] (<!-- claim:e0.probe.specificity.k -->123<!-- /claim --> of <!-- claim:e0.probe.specificity.n -->134<!-- /claim --> answers that do not), and accuracy <!-- claim:e0.probe.accuracy -->0.943<!-- /claim --> [<!-- claim:e0.probe.accuracy.lo -->0.906<!-- /claim -->, <!-- claim:e0.probe.accuracy.hi -->0.966<!-- /claim -->] (95% Wilson score intervals). The answers are synthetic, and their labels come from a blind LLM labeling agent that never saw the scorer: they are LLM labels, not human labels, and not answers from any model under test.
 
-**Probe leakage.** Not measured yet: the validation runs it is checked on have not been banked.
+**Probe leakage.** Across <!-- claim:e0.leak.runs -->10<!-- /claim --> validation runs (`artifacts/pilot`), <!-- claim:e0.leak.leaks -->0<!-- /claim --> leaked probe text into a main-run model call; gate G5 requires none.
 
-**Compaction logs.** Not checked yet: the validation runs whose compaction logs are checked have not been banked.
+**Compaction logs.** Compaction events in the validation runs: <!-- claim:e0.logs.events -->17<!-- /claim -->, with <!-- claim:e0.logs.complete -->17<!-- /claim --> complete logs and <!-- claim:e0.logs.incomplete -->0<!-- /claim --> incomplete; gate G5 requires every log to be complete.
 
 ![Forest plot of the E0 instrument-validity measures with their intervals, against the G5 threshold](figures/e0-validity.svg)
 
@@ -128,7 +128,16 @@ Per detector, over the seeded cases of its rule kind; Passed counts the complian
 
 ### 5.3 Family pilot
 
-Status: exploratory. The family pilot has not been banked, so this report has no pilot results.
+Status: exploratory (not preregistered). Each candidate family ran the same plans (`designs/pilot.yaml`) on the pilot-split templates, which E1 does not use, and pilot sessions never enter E1 data. A family qualifies for E1 when at least 80% of its pilot sessions reach the first decision point (section 5 of the brief) and it acts (writes, edits, or runs a command) at no fewer than half of the decision points those sessions reach, a criterion D-042 added after one session per family; a family that did not run every pilot template is reported as not fully piloted, never as failing. E1 takes the qualifying families with the lowest median wall time per step call (D-042). The choice is banked in `artifacts/pilot/family_choice.json` (`python -m halflife.pilot`, which also reads the wall times in the usage ledger); it names smollm and granite.
+
+| Family | Pilot sessions | Reached the first decision point | Decision points reached | Acted at | Broke the rule at | Verdict |
+|---|---|---|---|---|---|---|
+| granite | <!-- claim:pilot.granite.sessions -->3<!-- /claim --> | <!-- claim:pilot.granite.reached -->3<!-- /claim --> | <!-- claim:pilot.granite.dps -->12<!-- /claim --> | <!-- claim:pilot.granite.acted -->12<!-- /claim --> | <!-- claim:pilot.granite.violated -->2<!-- /claim --> | qualifies |
+| phi | <!-- claim:pilot.phi.sessions -->1<!-- /claim --> | <!-- claim:pilot.phi.reached -->1<!-- /claim --> | <!-- claim:pilot.phi.dps -->4<!-- /claim --> | <!-- claim:pilot.phi.acted -->4<!-- /claim --> | <!-- claim:pilot.phi.violated -->0<!-- /claim --> | not fully piloted |
+| qwen | <!-- claim:pilot.qwen.sessions -->3<!-- /claim --> | <!-- claim:pilot.qwen.reached -->3<!-- /claim --> | <!-- claim:pilot.qwen.dps -->12<!-- /claim --> | <!-- claim:pilot.qwen.acted -->12<!-- /claim --> | <!-- claim:pilot.qwen.violated -->2<!-- /claim --> | qualifies |
+| smollm | <!-- claim:pilot.smollm.sessions -->3<!-- /claim --> | <!-- claim:pilot.smollm.reached -->3<!-- /claim --> | <!-- claim:pilot.smollm.dps -->12<!-- /claim --> | <!-- claim:pilot.smollm.acted -->9<!-- /claim --> | <!-- claim:pilot.smollm.violated -->2<!-- /claim --> | qualifies |
+
+Agents did break rules in the pilot: <!-- claim:pilot.violated_total -->6<!-- /claim --> of <!-- claim:pilot.dps_total -->40<!-- /claim --> decision points reached had a violation. These counts come from a handful of unpadded sessions on templates E1 does not use; they show that the decision points can tempt these models and that the detectors fire on real sessions, not how often or how soon rules decay.
 
 ### 5.4 Power analysis for E1
 
@@ -150,7 +159,7 @@ Status: not run. E3 has not run, so this report has no placement or phrasing res
 
 Status: not run. E4 has not run, so this report has no mitigation results.
 
-**Overhead of the shipped tools.** Not measured yet.
+**Overhead of the shipped tools (exploratory, not preregistered).** halflife-guard took <!-- claim:e4.overhead.guard.ms -->140.4<!-- /claim --> ms per guarded tool call (the median hook run as a subprocess) and adds <!-- claim:e4.overhead.guard.tokens -->38.0<!-- /claim --> tokens per refusal reason (allowed calls add none); halflife-pin took <!-- claim:e4.overhead.pin.ms -->0.03<!-- /claim --> ms to render and apply its block, which puts <!-- claim:e4.overhead.pin.tokens -->141<!-- /claim --> tokens in the context for the whole session (`artifacts/e4/overhead.json`; docs/MITIGATIONS.md says how each is measured).
 <!-- report:end results -->
 
 ## 6. Limitations
