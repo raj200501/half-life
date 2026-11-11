@@ -98,3 +98,22 @@ def test_main_banks_the_grid(tmp_path: Path) -> None:
         power.main(["--pilot", str(tmp_path), "--out", str(out), "--n-sim", "3"])
     grid_size = len(power.SESSIONS_GRID) * len(power.EFFECTS_GRID) * (len(power.PLANNING_RATES) + 1)
     assert len(banked["grid"]) == grid_size and banked["command"].startswith("python -m")
+
+
+def test_pilot_inputs_drop_procedure_rules_in_cut_spans_as_e1_does() -> None:
+    # D-050 item 5 (synthetic pilot rows): a procedure decision point whose span was cut,
+    # or whose row predates span_end, leaves the measured rate as it leaves E1's.
+    sessions, opportunities = _pilot(6)
+    for i, row in enumerate(opportunities):
+        row["constraint_type"] = "procedure" if i % 2 else "prohibition"
+        if i in (1, 3):
+            row["span_end"] = "done"
+        elif i == 5:
+            row["span_end"] = "subtask_cap"
+    inputs = power.pilot_inputs(sessions, opportunities)
+    # Odd rows are procedures: 1 and 3 finished, 5 was cut, 7, 9, and 11 have no span_end.
+    assert inputs["opportunities_procedure_cut"] == 4
+    assert inputs["opportunities"] == 8
+    assert inputs["violations"] == sum(
+        1 for i, o in enumerate(opportunities) if o["violated"] and i not in (5, 7, 9, 11)
+    )

@@ -35,9 +35,13 @@ What is here:
   errors, that names the reason when no valid p-value exists instead of returning one.
 - :func:`score_test`: a two-sided score test of one term at the null fit, clustered
   through an exchangeable within-cluster correlation, which stays valid under separation
-  (for example an arm without violations).
-- :func:`power_by_simulation`: power for preregistration sizing. Its datasets are
-  simulated, and its result is labeled synthetic.
+  (for example an arm without violations); with ``strata`` the null model is fit within
+  each stratum (pooled families, DECISIONS.md D-050), and rows a separated null model
+  puts at fitted value 0 or 1 leave, as the ridge-free limit has them add nothing.
+- :func:`hazard_score_test`: that test for one numeric term of the hazard model on the
+  risk set (H1 and H2b), with factor levels without violations left out per stratum.
+- :func:`power_by_simulation`: power for preregistration sizing, deciding by those score
+  tests. Its datasets are simulated, and its result is labeled synthetic.
 - :func:`wilson_interval` and :func:`normal_quantile`.
 
 Everything is deterministic: every random draw takes an explicit seed and uses
@@ -803,13 +807,23 @@ def wald_test(fit: LogisticFit, term: str, *, robust: bool = True) -> WaldTest:
 SCORE_PROBLEMS: dict[str, str] = {
     "no_events": "no outcome is a violation, so there is nothing to test",
     "all_events": "every outcome is a violation, so there is nothing to test",
+    "no_stratum_with_variation": (
+        "no stratum has both violations and non-violations, so there is nothing to test "
+        "within strata"
+    ),
     "one_cluster": "a clustered score test needs at least two clusters",
     "rank_deficient": "the term is collinear with the null model, so it cannot be tested",
     "zero_variance": "the score has zero or non-finite variance",
     "null_not_converged": "the null fit did not converge",
-    "null_separation": "the null model is separated, so its fitted values are held by the ridge",
+    "null_separation": (
+        "the null model separates every row (its fitted values are all 0 or 1), so nothing "
+        "is left to test"
+    ),
 }
 """Why :func:`score_test` reports no p-value, by problem code."""
+
+_BOUNDARY_ROUNDS = 10
+"""Refits :func:`score_test` makes in one stratum while rows of a separated null model leave."""
 
 SCORE_RHO_MAX = 0.99
 """Upper bound of the within-cluster correlation :func:`score_test` uses (its lower bound
@@ -826,7 +840,12 @@ class ScoreTest:
 
     ``rho`` is the within-cluster correlation its variance used. ``p_value`` (and ``z``) are
     None, with a code from :data:`SCORE_PROBLEMS`, when no valid test exists; a missing
-    p-value is never reported as a number.
+    p-value is never reported as a number. ``n_rows`` and ``n_events`` count the rows the
+    test used and their violations. A stratified test (``n_strata`` not None) fits its null
+    model within each stratum; ``strata_skipped`` names the strata that add nothing (no
+    violations, or only violations, left), and ``n_boundary`` counts the rows a separated
+    null model puts at fitted value 0 or 1, which add nothing either; neither is counted in
+    ``n_rows``.
     """
 
     term: str
@@ -836,6 +855,11 @@ class ScoreTest:
     problem: str | None = None
     detail: str | None = None
     rho: float | None = None
+    n_rows: int | None = None
+    n_events: int | None = None
+    n_strata: int | None = None
+    strata_skipped: tuple[str, ...] = ()
+    n_boundary: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-ready form."""
@@ -846,9 +870,76 @@ class ScoreTest:
             "p_value": None if self.p_value is None else _json_float(self.p_value),
             "rho": None if self.rho is None else _json_float(self.rho),
             "n_clusters": self.n_clusters,
+            "n_rows": self.n_rows,
+            "n_events": self.n_events,
+            "n_strata": self.n_strata,
+            "strata_skipped": list(self.strata_skipped),
+            "n_boundary_rows": self.n_boundary,
             "problem": self.problem,
             "detail": self.detail,
         }
+
+
+@dataclass(frozen=True)
+class _NullFit:
+    """One stratum's null fit inside :func:`score_test`: rows, fitted values, residualized x,
+    and how many rows left because the null model put them at fitted value 0 or 1."""
+
+    index: npt.NDArray[np.intp]
+    p: FloatArray
+    resid_x: FloatArray
+    boundary: int
+
+
+def _stratum_null_fit(
+    index: npt.NDArray[np.intp],
+    xx: FloatArray,
+    yy: FloatArray,
+    extra: FloatArray | None,
+    l2: float,
+) -> _NullFit | str | None:
+    """The null fit of one stratum, None when the stratum adds nothing, or a problem code.
+
+    The null design is an intercept and the columns of ``extra`` that vary within the
+    stratum (a column constant there is collinear with the intercept and adds nothing).
+    When the null model is separated (the separation test of :func:`fit_logistic`: the
+    linear predictor drifts by more than :data:`SEPARATION_DRIFT` as the ridge shrinks), the
+    rows that drift have maximum likelihood fitted values of 0 or 1, so their residuals and
+    weights are 0 and they add nothing to the score or its variance; they leave and the rest
+    is refit, which is the limit of the ridge-free test (the rows that stay do not move
+    along the separating direction). ``x`` is then residualized by weighted least squares,
+    which stays defined when the columns are collinear (the fitted values are unique even
+    when the coefficients are not).
+    """
+    boundary = 0
+    for _ in range(_BOUNDARY_ROUNDS):
+        ys = yy[index]
+        if float(ys.sum()) in (0.0, float(len(index))):
+            return None
+        columns = [np.ones(len(index))]
+        if extra is not None:
+            sub = extra[index]
+            columns += [sub[:, j] for j in np.flatnonzero(np.ptp(sub, axis=0) > 0.0)]
+        z_mat = np.column_stack(columns)
+        if z_mat.shape[1] == 1:
+            p = np.full(len(index), float(ys.mean()))
+            break
+        beta, converged, _ = _newton(z_mat, ys, l2, np.zeros(z_mat.shape[1]), _MAX_ITER, _TOL)
+        if not converged:
+            return "null_not_converged"
+        shrunk, _, _ = _newton(z_mat, ys, l2 / 100.0, beta, _MAX_ITER, _TOL)
+        moved = np.abs(z_mat @ (shrunk - beta)) > SEPARATION_DRIFT
+        if not bool(moved.any()):
+            p = _sigmoid(z_mat @ beta)
+            break
+        boundary += int(moved.sum())
+        index = index[~moved]
+    else:
+        return "null_separation"
+    root_w = np.sqrt(p * (1.0 - p))
+    xs = xx[index]
+    coef = np.linalg.lstsq(z_mat * root_w[:, None], root_w * xs, rcond=None)[0]
+    return _NullFit(index, p, np.asarray(xs - z_mat @ coef, dtype=np.float64), boundary)
 
 
 def score_test(
@@ -859,6 +950,7 @@ def score_test(
     *,
     term: str = "x",
     l2: float = DEFAULT_L2,
+    strata: Sequence[object] | None = None,
 ) -> ScoreTest:
     """Two-sided score test of ``x`` in a logistic model of ``y``, clustered by ``clusters``.
 
@@ -875,6 +967,19 @@ def score_test(
     ``z = U / sqrt(V)`` and ``p = erfc(|z| / sqrt(2))``. With no within-cluster pair
     ``rho`` is 0 and the test is the Pearson chi-square test of the two-by-two table.
 
+    With ``strata`` (one label per row, DECISIONS.md D-050 item 2) the null model is fit
+    within each stratum: its own intercept and the ``null_design`` columns that vary there,
+    so ``x~`` and ``p`` are per stratum, while the score sums over strata and the variance
+    sums over clusters, which may hold rows of several strata (E1 plans hold both families'
+    sessions), with one ``rho`` from every within-cluster pair. A stratum without
+    violations, or with only violations, has its null fitted values at 0 or 1 and adds
+    nothing to the score, its variance, or ``rho``, so it is left out (``strata_skipped``)
+    instead of separating a stratum term. Columns of ``null_design`` that are constant
+    within a stratum (for example another stratum's columns) are dropped there. The same
+    limit holds for any separated null model, stratified or not: rows it puts at fitted
+    value 0 or 1 leave (``n_boundary``, see :func:`_stratum_null_fit`), and a null model
+    that puts every row there leaves nothing to test.
+
     The test is evaluated at the null fit only, so it stays valid where the model with the
     term has no finite estimate: an arm with no violations separates that model and leaves
     no Wald test, yet its score test is defined. Its variance uses the null fit's ``w``
@@ -887,22 +992,49 @@ def score_test(
     Without a null design the null fit is the overall rate (exact).
 
     Raises:
-        StatsError: for empty or mismatched input, or outcomes other than 0 and 1.
+        StatsError: for empty or mismatched input, outcomes other than 0 and 1, or
+            non-finite ``x`` or ``null_design`` values.
     """
     xx = np.asarray(x, dtype=np.float64).ravel()
     yy = np.asarray(y, dtype=np.float64).ravel()
     n = int(yy.shape[0])
-    if n == 0 or xx.shape[0] != n or len(clusters) != n:
-        raise StatsError("score_test needs x, y, and clusters of the same nonzero length")
+    if (
+        n == 0
+        or xx.shape[0] != n
+        or len(clusters) != n
+        or (strata is not None and len(strata) != n)
+    ):
+        raise StatsError("score_test needs x, y, clusters, and strata of the same nonzero length")
     if not bool(np.all((yy == 0.0) | (yy == 1.0))):
         raise StatsError("outcomes must be 0 or 1")
     if not bool(np.all(np.isfinite(xx))):
         raise StatsError("x has non-finite values")
-    unique, labels = np.unique(np.array([str(c) for c in clusters]), return_inverse=True)
-    groups = len(unique)
+    extra: FloatArray | None = None
+    if null_design is not None:
+        extra = np.asarray(null_design, dtype=np.float64).reshape(n, -1)
+        if not bool(np.all(np.isfinite(extra))):
+            raise StatsError("null_design has non-finite values")
+    cluster_labels = np.array([str(c) for c in clusters])
+    groups = len(np.unique(cluster_labels))
+    if strata is None:
+        stratum_of = np.zeros(n, dtype=np.intp)
+        stratum_keys: list[str] = [""]
+    else:
+        stratum_keys = sorted({str(s) for s in strata})
+        position = {key: i for i, key in enumerate(stratum_keys)}
+        stratum_of = np.array([position[str(s)] for s in strata], dtype=np.intp)
 
-    def missing(code: str) -> ScoreTest:
-        return ScoreTest(term, None, None, groups, code, SCORE_PROBLEMS[code])
+    def missing(code: str, used: int = groups, skipped: Sequence[str] = ()) -> ScoreTest:
+        return ScoreTest(
+            term,
+            None,
+            None,
+            used,
+            code,
+            SCORE_PROBLEMS[code],
+            n_strata=None if strata is None else len(stratum_keys) - len(skipped),
+            strata_skipped=tuple(skipped),
+        )
 
     if groups < 2:
         return missing("one_cluster")
@@ -911,44 +1043,63 @@ def score_test(
         return missing("no_events")
     if events == float(n):
         return missing("all_events")
-    if null_design is None:
-        z_mat = np.ones((n, 1))
-        p = np.full(n, events / n)
-    else:
-        extra = np.asarray(null_design, dtype=np.float64).reshape(n, -1)
-        z_mat = np.column_stack([np.ones(n), extra])
-        null = fit_logistic(z_mat, yy, l2, intercept=False)
-        if not null.converged:
-            return missing("null_not_converged")
-        if null.separation:
-            return missing("null_separation")
-        p = _sigmoid(z_mat @ null.coef)
-    w = p * (1.0 - p)
-    gram = (z_mat * w[:, None]).T @ z_mat
-    try:
-        coef = np.linalg.solve(gram, z_mat.T @ (w * xx))
-    except np.linalg.LinAlgError:
-        return missing("rank_deficient")
-    resid_x = xx - z_mat @ coef
-    if float(np.max(np.abs(resid_x))) <= 1e-9 * max(1.0, float(np.max(np.abs(xx)))):
-        return missing("rank_deficient")
-    residual = yy - p
-    root_w = np.sqrt(w)
+    fits: list[_NullFit] = []
+    skipped: list[str] = []
+    for i, key in enumerate(stratum_keys):
+        index = np.flatnonzero(stratum_of == i)
+        k = float(yy[index].sum())
+        found = (
+            None if k in (0.0, float(len(index))) else _stratum_null_fit(index, xx, yy, extra, l2)
+        )
+        if isinstance(found, str):
+            return missing(found, skipped=skipped)
+        if found is None:
+            skipped.append(key)
+            continue
+        fits.append(found)
+    if not fits:
+        return missing(
+            "null_separation" if strata is None else "no_stratum_with_variation",
+            skipped=skipped if strata is not None else (),
+        )
+    index = np.concatenate([f.index for f in fits])
+    p = np.concatenate([f.p for f in fits])
+    resid_x = np.concatenate([f.resid_x for f in fits])
+    used_x, used_y = xx[index], yy[index]
+    unique, labels = np.unique(cluster_labels[index], return_inverse=True)
+    used = len(unique)
+    if used < 2:
+        return missing("one_cluster", used, skipped)
+    if float(np.max(np.abs(resid_x))) <= 1e-9 * max(1.0, float(np.max(np.abs(used_x)))):
+        return missing("rank_deficient", used, skipped)
+    residual = used_y - p
+    root_w = np.sqrt(p * (1.0 - p))
     pearson = residual / root_w
-    sizes = np.bincount(labels, minlength=groups).astype(np.float64)
+    sizes = np.bincount(labels, minlength=used).astype(np.float64)
     pairs = float(sizes @ (sizes - 1.0))
     rho = 0.0
     if pairs > 0.0:
-        sum_e = np.bincount(labels, weights=pearson, minlength=groups)
-        sum_e2 = np.bincount(labels, weights=pearson * pearson, minlength=groups)
+        sum_e = np.bincount(labels, weights=pearson, minlength=used)
+        sum_e2 = np.bincount(labels, weights=pearson * pearson, minlength=used)
         rho = min(max(float((sum_e * sum_e - sum_e2).sum()) / pairs, 0.0), SCORE_RHO_MAX)
     scaled = root_w * resid_x
-    together = np.bincount(labels, weights=scaled, minlength=groups)
+    together = np.bincount(labels, weights=scaled, minlength=used)
     variance = (1.0 - rho) * float(scaled @ scaled) + rho * float(together @ together)
     if not (math.isfinite(variance) and variance > 0.0):
-        return missing("zero_variance")
+        return missing("zero_variance", used, skipped)
     z = float(resid_x @ residual) / math.sqrt(variance)
-    return ScoreTest(term, z, math.erfc(abs(z) / math.sqrt(2.0)), groups, rho=rho)
+    return ScoreTest(
+        term,
+        z,
+        math.erfc(abs(z) / math.sqrt(2.0)),
+        used,
+        rho=rho,
+        n_rows=len(index),
+        n_events=int(used_y.sum()),
+        n_strata=None if strata is None else len(fits),
+        strata_skipped=tuple(skipped),
+        n_boundary=sum(f.boundary for f in fits),
+    )
 
 
 # --------------------------------------------------------------------------- design matrices
@@ -1294,6 +1445,189 @@ def fit_hazard(
         n_clusters=len(set(clusters)),
         used_risk_set=use_risk_set,
     )
+
+
+@dataclass(frozen=True)
+class HazardScoreTest:
+    """A score test of one hazard-model term at the null fit (:func:`hazard_score_test`).
+
+    Attributes:
+        test: The clustered :class:`ScoreTest`.
+        term: Design name of the tested term (``log1p(position)``, ``compaction_count``).
+        null_covariates: Design names of the numeric terms of the null model.
+        categorical: Factors of the null model.
+        position_transform: ``linear`` or ``log1p``.
+        strata: Row field whose values are the strata the null model is fit within, or None.
+        n_rows: Rows of the risk set (or of the rows, without ``use_risk_set``).
+        n_events: Violations among them; :data:`halflife.e1_analysis.Settings.min_events`
+            compares this count.
+        levels_without_variation: Factor levels whose rows, within their stratum, hold no
+            violation or only violations (``stratum: factor[level]`` when stratified); at
+            the null fit their fitted values are 0 or 1, so they add nothing and are left
+            out of the test instead of separating the null model.
+        used_risk_set: Whether rows were cut to the risk set first.
+    """
+
+    test: ScoreTest
+    term: str
+    null_covariates: tuple[str, ...]
+    categorical: tuple[str, ...]
+    position_transform: PositionTransform
+    strata: str | None
+    n_rows: int
+    n_events: int
+    levels_without_variation: tuple[str, ...] = ()
+    used_risk_set: bool = True
+
+    def to_dict(self) -> dict[str, Any]:
+        """JSON-ready form."""
+        return {
+            "term": self.term,
+            "score": self.test.to_dict(),
+            "null_covariates": list(self.null_covariates),
+            "null_factors": list(self.categorical),
+            "position_transform": self.position_transform,
+            "strata": self.strata,
+            "n_rows": self.n_rows,
+            "n_events": self.n_events,
+            "levels_without_variation": list(self.levels_without_variation),
+            "used_risk_set": self.used_risk_set,
+        }
+
+
+def _levels_without_variation(
+    y: FloatArray,
+    mine: npt.NDArray[np.bool_],
+    factors: Mapping[str, npt.NDArray[np.str_]],
+    keep: npt.NDArray[np.bool_],
+) -> list[tuple[str, str]]:
+    """Drop (in ``keep``) the factor levels of one stratum without variation, repeatedly.
+
+    A level whose kept rows hold no violation or only violations is dropped while the
+    stratum still has both outcomes; dropping a level of one factor can leave a level of
+    another without variation, so the search repeats until nothing changes. Returns the
+    dropped ``(factor, level)`` pairs in order.
+    """
+    dropped: list[tuple[str, str]] = []
+    changed = True
+    while changed:
+        changed = False
+        current = mine & keep
+        k = float(y[current].sum())
+        if k in (0.0, float(current.sum())):
+            break
+        for name, values in factors.items():
+            for level in sorted(set(values[current].tolist())):
+                rows = current & (values == level)
+                k_level = float(y[rows].sum())
+                if k_level in (0.0, float(rows.sum())):
+                    keep &= ~rows
+                    dropped.append((name, str(level)))
+                    changed = True
+            if changed:
+                break
+    return dropped
+
+
+def hazard_score_test(
+    rows: Iterable[Row],
+    term: str,
+    covariates: Sequence[str] = DEFAULT_COVARIATES,
+    categorical: Sequence[str] = DEFAULT_CATEGORICAL,
+    position_transform: PositionTransform = "linear",
+    *,
+    strata: str | None = None,
+    cluster: str = "session_id",
+    session: Sequence[str] = SESSION_KEY,
+    use_risk_set: bool = True,
+    l2: float = DEFAULT_L2,
+) -> HazardScoreTest:
+    """Score test of one numeric term of the hazard model of :func:`fit_hazard`.
+
+    The rows are cut to the risk set per ``session`` (unless ``use_risk_set`` is False).
+    The tested term is ``term`` (``position`` enters through ``position_transform``); the
+    null model holds an intercept, the other ``covariates``, and the treatment-coded
+    ``categorical`` factors, fit within each value of the ``strata`` field when one is
+    named (D-050 item 2: pooled E1 tests fit their nuisance terms within each family, and a
+    family without violations adds nothing). Within a stratum, a factor level without
+    violations, or with only violations, has no finite null estimate; its rows have fitted
+    values 0 or 1 and add nothing to the score or its variance, so they are left out
+    (``levels_without_variation``) and the test is the limit of the ridge-free test, which
+    an unstratified factor model could only reach through a separated fit. The test itself
+    is :func:`score_test`, clustered by ``cluster`` (plans, which pooled hold both families'
+    sessions) through an exchangeable within-cluster correlation. A null model separated in
+    another way (for example every violation at the largest compaction count of a stratum)
+    gives no p-value (``null_separation``).
+
+    Raises:
+        StatsError: when ``term`` is not among ``covariates``, for no rows, for missing
+            fields, or for repeated or unknown terms.
+    """
+    _check_transform(position_transform)
+    _check_terms(covariates, categorical)
+    if term not in covariates:
+        raise StatsError(f"the tested term {term!r} is not among the covariates {list(covariates)}")
+    data = risk_set(rows, session) if use_risk_set else [dict(row) for row in rows]
+    if not data:
+        raise StatsError("no opportunity rows to test")
+    y = np.array([_outcome(row, "violated", i) for i, row in enumerate(data)], dtype=np.float64)
+
+    def column(name: str) -> FloatArray:
+        values = np.array([_number(row, name, i) for i, row in enumerate(data)], dtype=np.float64)
+        return np.log1p(values) if name == "position" and position_transform == "log1p" else values
+
+    name = _position_name(position_transform) if term == "position" else term
+    x = column(term)
+    nuisance = [c for c in covariates if c != term]
+    numeric = {c: column(c) for c in nuisance}
+    factors = {
+        f: np.array([str(_field(row, f, i)) for i, row in enumerate(data)]) for f in categorical
+    }
+    stratum = np.array(
+        [str(_field(row, strata, i)) if strata else "" for i, row in enumerate(data)]
+    )
+    labels = np.array([str(_field(row, cluster, i)) for i, row in enumerate(data)])
+    keep = np.ones(len(data), dtype=bool)
+    dropped: list[str] = []
+    keys = sorted(set(stratum.tolist()))
+    for key in keys:
+        for factor, level in _levels_without_variation(y, stratum == key, factors, keep):
+            dropped.append(f"{key}: {factor}[{level}]" if strata else f"{factor}[{level}]")
+    index = np.flatnonzero(keep)
+    columns: list[FloatArray] = []
+    for key in keys:
+        mine = (stratum[index] == key).astype(np.float64)
+        columns += [mine * numeric[c][index] for c in nuisance]
+        for factor in categorical:
+            values = factors[factor][index]
+            present = sorted(set(values[mine > 0].tolist()))
+            columns += [mine * (values == level) for level in present[1:]]
+    result = HazardScoreTest(
+        ScoreTest(name, None, None, len(set(labels.tolist()))),
+        name,
+        tuple(_position_name(position_transform) if c == "position" else c for c in nuisance),
+        tuple(categorical),
+        position_transform,
+        strata,
+        len(data),
+        int(y.sum()),
+        tuple(dropped),
+        use_risk_set,
+    )
+    if not len(index):
+        code = "no_stratum_with_variation"
+        empty = ScoreTest(name, None, None, 0, code, SCORE_PROBLEMS[code], n_strata=0)
+        return dataclasses.replace(result, test=empty)
+    test = score_test(
+        x[index],
+        y[index],
+        labels[index].tolist(),
+        np.column_stack(columns) if columns else None,
+        term=name,
+        l2=l2,
+        strata=stratum[index].tolist() if strata else None,
+    )
+    return dataclasses.replace(result, test=test)
 
 
 def half_life(
@@ -2360,6 +2694,7 @@ class RateContrast:
     score: ScoreTest
     session: tuple[str, ...] = SESSION_KEY
     cluster: str = "session_id"
+    score_strata: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-ready form."""
@@ -2374,6 +2709,7 @@ class RateContrast:
             "separation": self.fit.separation,
             "wald": self.wald.to_dict(),
             "score": self.score.to_dict(),
+            "score_strata": self.score_strata,
             "stratified_by_arm": self.stratified,
             "used_risk_set": self.used_risk_set,
             "session_key": list(self.session),
@@ -2400,6 +2736,7 @@ def rate_contrast(
     position_transform: PositionTransform = "linear",
     use_risk_set: bool = False,
     l2: float = DEFAULT_L2,
+    strata: str | None = None,
 ) -> RateContrast:
     """Compare per-opportunity violation rates between two arms.
 
@@ -2415,8 +2752,14 @@ def rate_contrast(
     ``use_risk_set`` the rows are cut per ``session`` first. Sessions per arm are
     counted by ``session`` (:data:`SESSION_KEY`).
 
+    With ``strata`` (a row field, such as ``family`` for a pooled contrast; D-050 item 2)
+    the score test that decides the contrast fits its null model within each stratum, so a
+    stratum without violations adds nothing (:func:`score_test`); the rates, the
+    difference, and the odds ratio stay pooled descriptive estimates.
+
     Raises:
-        StatsError: for equal arms, a row without ``arm_key``, or an arm with no rows.
+        StatsError: for equal arms, a row without ``arm_key`` (or the ``strata`` field), or
+            an arm with no rows.
     """
     if arm_a == arm_b:
         raise StatsError("arm_a and arm_b must differ")
@@ -2484,6 +2827,11 @@ def rate_contrast(
         covariate_matrix(selected)[0] if adjusted else None,
         term=term,
         l2=l2,
+        strata=(
+            None
+            if strata is None
+            else [str(_field(row, strata, index)) for index, row in enumerate(selected)]
+        ),
     )
     or_missing: str | None = None
     if full_fit.n_events in (0, full_fit.n):
@@ -2564,6 +2912,7 @@ def rate_contrast(
         score=score,
         session=fields,
         cluster=cluster,
+        score_strata=strata,
     )
 
 
@@ -2760,12 +3109,13 @@ def recall_effect(
 class PowerResult:
     """Simulated power for preregistration sizing (synthetic, labeled so).
 
-    ``compaction``: rejection rate of a two-sided Wald test (cluster-robust CR1
-    errors) of the compaction coefficient in the hazard model on the risk set, with
-    ``n_sessions`` sessions. ``contrast``: the same test of the arm coefficient in a
-    per-opportunity logistic model with ``arm_sessions`` sessions in each of two arms.
-    Simulations whose fit was unusable (separation, no convergence, rank deficiency,
-    one cluster) count as non-rejections and are tallied in ``*_unusable``.
+    ``compaction``: rejection rate of the two-sided score test of the compaction term at
+    the null fit of the hazard model on the risk set (:func:`score_test`, clustered by
+    session), with ``n_sessions`` sessions. ``contrast``: the same test of the arm term
+    among decision points after a compaction, with ``arm_sessions`` sessions in each of
+    two arms. These are the tests that decide H2b and H2a (DECISIONS.md D-050 items 1 and
+    6). Simulations without a p-value (no violation, a null model that separates every
+    row, one cluster) count as non-rejections and are tallied in ``*_unusable``.
     Intervals are Wilson intervals for the Monte Carlo error.
     """
 
@@ -2809,15 +3159,18 @@ class PowerResult:
                 "position_transform": self.position_transform,
                 "session_sd": self.session_sd,
             },
-            "test": "two-sided Wald test, cluster-robust (CR1) standard errors",
+            "test": (
+                "two-sided score test at the null fit, clustered by session through an "
+                "exchangeable within-session correlation (the test that decides H2a and H2b)"
+            ),
             "compaction": {
                 **self.compaction.to_dict(),
                 "unusable": self.compaction_unusable,
                 "design": (
                     "risk set to first violation; terms "
                     f"{_position_name(self.position_transform)} and compaction_count (the "
-                    "E1 factors are not simulated); CR1 Wald test in place of the bootstrap "
-                    "interval that decides H2b"
+                    "E1 factors are not simulated); score test of compaction_count with "
+                    f"{_position_name(self.position_transform)} in the null model, as H2b"
                 ),
             },
             "contrast": {
@@ -2825,8 +3178,8 @@ class PowerResult:
                 "unusable": self.contrast_unusable,
                 "design": (
                     f"{self.arm_sessions} sessions per arm; decision points after at least "
-                    "one compaction, where the arms differ, as in H2a; term arm; CR1 Wald "
-                    "test in place of the bootstrap interval that decides H2a"
+                    "one compaction, where the arms differ, as in H2a; score test of the "
+                    "arm term at the overall rate, as H2a"
                 ),
             },
         }
@@ -2871,14 +3224,9 @@ def _simulate(
     return positions, counts, outcomes, sessions
 
 
-def _rejects(fit: LogisticFit, term: str, critical: float) -> bool | None:
-    """True or False for a usable fit, None when it is unusable."""
-    if not fit.usable or fit.robust_se is None:
-        return None
-    se = fit.std_error(term, robust=True)
-    if not se > 0:
-        return None
-    return abs(fit.coefficient(term) / se) > critical
+def _rejects(test: ScoreTest, alpha: float) -> bool | None:
+    """True or False for a computed score test, None when it has no p-value."""
+    return None if test.p_value is None else test.p_value < alpha
 
 
 def power_by_simulation(
@@ -2916,9 +3264,11 @@ def power_by_simulation(
     E1 model without its factors). In the second design, as in H2a, the arms differ only
     after a compaction: arm ``b`` adds ``effect`` to the log odds of its opportunities
     with at least one compaction before them, compaction has no other effect, and the
-    arm term is fitted on those opportunities only. Both designs decide by a CR1 Wald
-    test (the E1 analysis decides H2a and H2b by bootstrap intervals, which a simulation
-    of this size cannot afford). Each design draws from its own child of ``seed``.
+    arm term is tested on those opportunities only. Both designs decide by the score tests
+    that decide H2b and H2a (:func:`score_test` at the null fit, clustered by session
+    through an exchangeable within-session correlation; DECISIONS.md D-050 items 1 and 6):
+    the compaction count with ``g(position)`` in the null model, and the arm at the overall
+    rate. Each design draws from its own child of ``seed``.
 
     Raises:
         StatsError: for out-of-range inputs, including no compaction events.
@@ -2948,12 +3298,10 @@ def power_by_simulation(
         raise StatsError("more decision points or compactions than positions")
     if compactions == 0:
         raise StatsError("compactions_per_session must be >= 1 to estimate a compaction effect")
-    critical = normal_quantile(1.0 - alpha / 2.0)
     intercept = math.log(base_rate / (1.0 - base_rate))
     rng_compaction, rng_contrast = (
         np.random.default_rng(child) for child in np.random.SeedSequence(seed).spawn(2)
     )
-    names = (_position_name(position_transform), "compaction_count")
     hits = unusable = 0
     for _ in range(n_sim):
         pos, cnt, y, ses = _simulate(
@@ -2970,9 +3318,8 @@ def power_by_simulation(
         )
         keep = (np.cumsum(y, axis=1) - y) == 0
         term = pos[keep] if position_transform == "linear" else np.log1p(pos[keep])
-        x = np.column_stack([term, cnt[keep]])
-        fit = fit_logistic(x, y[keep], l2, names=names, clusters=list(ses[keep]))
-        verdict = _rejects(fit, "compaction_count", critical)
+        test = score_test(cnt[keep], y[keep], list(ses[keep]), term, term="compaction_count", l2=l2)
+        verdict = _rejects(test, alpha)
         unusable += verdict is None
         hits += bool(verdict)
     arm_hits = arm_unusable = 0
@@ -3002,8 +3349,7 @@ def power_by_simulation(
         y_all = np.concatenate(outcomes)
         indicator = np.concatenate([np.zeros(outcomes[0].size), np.ones(outcomes[1].size)])
         sessions = np.concatenate(session_ids)
-        fit = fit_logistic(indicator, y_all, l2, names=("arm",), clusters=list(sessions))
-        verdict = _rejects(fit, "arm", critical)
+        verdict = _rejects(score_test(indicator, y_all, list(sessions), term="arm", l2=l2), alpha)
         arm_unusable += verdict is None
         arm_hits += bool(verdict)
     return PowerResult(
@@ -3057,6 +3403,7 @@ __all__ = [
     "HazardCoefficients",
     "HazardCurve",
     "HazardFit",
+    "HazardScoreTest",
     "Interval",
     "KaplanMeier",
     "LogisticFit",
@@ -3078,6 +3425,7 @@ __all__ = [
     "fit_hazard",
     "fit_logistic",
     "half_life",
+    "hazard_score_test",
     "kaplan_meier",
     "kaplan_meier_rows",
     "normal_cdf",

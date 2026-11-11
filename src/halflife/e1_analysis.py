@@ -16,32 +16,42 @@ family-session before resampling, so every draw holds whole per-family risk sets
 
 Analysis set (to be fixed in the E1 preregistration): confirmatory sessions without a
 probe leak that reached their first decision point, and their opportunities with at
-least one tool call in the decision-point span. Every exclusion is counted, in total
-and per family.
+least one tool call in the decision-point span, less procedure rules whose span a cap or
+stop cut (:func:`procedure_cut`, DECISIONS.md D-050 item 5). Every exclusion is counted,
+in total and per family.
+
+Decisions (D-050 items 1 and 2): every hypothesis is decided by a two-sided score test at
+the null fit, clustered by plan through an exchangeable within-plan correlation
+(:func:`halflife.stats.score_test`), at ``alpha``. A pooled test fits its null model
+within each family and sums the score over families, with the variance summed over plan
+clusters that hold both families' sessions, so a family without violations adds nothing.
+In E1 the per-family and pooled H1, H2a, and H2b are separate hypotheses, with no
+adjustment across families. Bootstrap percentile intervals are descriptive estimates
+beside each decision.
 
 Models (DECISIONS.md D-029 for the estimation details):
 
-* Hazard model per family, and pooled with a family factor: logistic regression
-  per opportunity on the risk set, with ``log1p(position)`` and
-  ``compaction_count`` as covariates and ``constraint_type`` and ``strategy`` as
-  factors. H1 is the ``log1p(position)`` coefficient, H2b the
-  ``compaction_count`` coefficient. Each fit's diagnostics are written under ``fits``;
+* Hazard model per family, and pooled with a family factor (for the descriptive
+  intervals): logistic regression per opportunity on the risk set, with
+  ``log1p(position)`` and ``compaction_count`` as covariates and ``constraint_type`` and
+  ``strategy`` as factors. H1 is the ``log1p(position)`` term, H2b the
+  ``compaction_count`` term, each decided by its score test
+  (:func:`halflife.stats.hazard_score_test`), not tested when the fit has fewer than
+  ``min_events`` risk-set violations. Each fit's diagnostics are written under ``fits``;
   a term without a finite estimate (no violation, or separation) is written without a
-  number, and its hypothesis is not tested.
+  number, and its hypothesis is still decided by its score test when that exists.
 * H2a: violation-rate contrast between the ``full_summary`` and ``sham`` arms
-  among opportunities with at least one compaction before them, decided by its interval.
-* H3: per-type violation rates and every pairwise type contrast, with score-test
-  p-values clustered by plan (:func:`halflife.stats.score_test`) and Holm-adjusted over
-  all pairs (:data:`HOLM_NOTE`).
-* Half-life per family from a hazard model with ``log1p(position)`` and
-  ``compaction_count`` only, at ``compaction_count = 1``, searched from the family's
-  first decision point.
+  among opportunities with at least one compaction before them, decided by its score test.
+* H3: per-type violation rates and every pairwise type contrast, pooled over families
+  (family-stratified score tests), Holm-adjusted over all pairs (:data:`HOLM_NOTE`).
+* Half-life per family from a hazard model with ``log1p(position)`` only, marginal over
+  compaction, rule type, and strategy (D-050 item 4), searched from the family's first
+  decision point to ``max_position``.
 * Kaplan-Meier curves of time to first violation, descriptive only.
 
 Every hypothesis estimate carries the verdict of its rule (:data:`VERDICT_NOTE`):
-``supported``, ``not supported``, or ``not tested`` with the reason (not estimable,
-unstable bootstrap, too few violations, or no valid p-value), using the constants of
-:class:`Settings`.
+``supported``, ``not supported``, or ``not tested`` with the reason (no valid p-value, or
+too few violations), using the constants of :class:`Settings`.
 """
 
 from __future__ import annotations
@@ -50,7 +60,6 @@ import argparse
 import hashlib
 import itertools
 import json
-import math
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -63,7 +72,11 @@ from halflife.schema import CONSTRAINT_TYPES
 
 HAZARD_COVARIATES = ("position", "compaction_count")
 HAZARD_FACTORS = ("constraint_type", "strategy")
-HALF_LIFE_FIXED: Mapping[str, float | str] = {"compaction_count": 1}
+HALF_LIFE_COVARIATES: tuple[str, ...] = ("position",)
+"""The half-life model's terms: ``log1p(position)`` only, marginal over compaction (D-050)."""
+HALF_LIFE_FIXED: Mapping[str, float | str] = {}
+"""Nothing is held fixed for the half-life (D-050 item 4; it held ``compaction_count = 1``
+before)."""
 TRANSFORM: stats.PositionTransform = "log1p"
 POSITION_TERM = "log1p(position)"
 SESSION: tuple[str, ...] = SESSION_KEY
@@ -78,13 +91,15 @@ RESAMPLING = (
 HOLM_NOTE = (
     "Holm step-down over every test in the family, on the p-values of a two-sided score "
     "test at the null fit, clustered by plan through an exchangeable within-plan "
-    "correlation estimated at the null fit (halflife.stats.score_test). It stays valid "
+    "correlation estimated at the null fit (halflife.stats.score_test); pooled over "
+    "families, the null model is fit within each family (score_strata). It stays valid "
     "under separation, so an arm or rule type without violations is still tested, and "
     "unlike a CR1 variance of the score it does not read a rarer arm without violations as "
     "a difference. A test whose p-value cannot be computed "
     "(p_value null, with the reason in p_value_missing, for example no violation in either "
-    "arm), an unstable one, and a preregistered test without rows stay in the family as "
-    "p = 1: never rejected, the other tests keep the full family size, and p_holm is null."
+    "arm) and a preregistered test without rows stay in the family as p = 1: never "
+    "rejected, the other tests keep the full family size, and p_holm is null. An unstable "
+    "interval is labeled and decides nothing."
 )
 
 
@@ -93,21 +108,23 @@ class Settings:
     """Analysis constants the E1 preregistration will fix (not committed yet).
 
     Attributes:
-        n_boot: Bootstrap draws.
+        n_boot: Bootstrap draws (descriptive intervals).
         seed: Bootstrap seed.
         max_position: Tool calls within which a half-life is searched.
         level: Interval level.
-        alpha: Level of the tests whose decisions use a p-value (H3, and H4a, H4b, H5 in
-            :mod:`halflife.arms_analysis`), Holm-adjusted.
-        max_failed_share: An estimate whose bootstrap had a larger share of failed draws
-            (``n_failed / n_boot``) is unstable and its hypothesis is not tested
-            (to be fixed in the E1 preregistration).
+        alpha: Level of every decision: the two-sided score tests of H1, H2a, and H2b
+            (unadjusted; per family and pooled are separate hypotheses) and the
+            Holm-adjusted tests of H3 (and H4a, H4b, H5 in :mod:`halflife.arms_analysis`).
+        max_failed_share: An interval whose bootstrap had a larger share of failed draws
+            (``n_failed / n_boot``) is labeled unstable; the label decides nothing
+            (DECISIONS.md D-050 item 1).
         min_events: A hazard fit (per family, or pooled) with fewer violations in its risk
-            set leaves H1 and H2b not tested. In a synthetic null calibration on the E1
-            plans (before any data) fits below this count were where the interval rule
-            failed most (most draws separated, and about one in ten intervals excluded
-            zero); above it the rule still rejected a true null somewhat more often than
-            its nominal level, which the preregistration has to state or address.
+            set leaves H1 and H2b not tested. The value is the calibration banked in
+            ``artifacts/power/min_events.json`` by ``python -m halflife.calibrate --out
+            artifacts/power/min_events.json`` (D-050 item 3; synthetic nulls on the 48 E1
+            plans with two families, labeled synthetic): the smallest number of risk-set
+            violations at and above which both score tests kept their null rejection rate
+            within 3% to 7% in every event-count bin.
     """
 
     n_boot: int = 2000
@@ -116,7 +133,7 @@ class Settings:
     level: float = 0.95
     alpha: float = 0.05
     max_failed_share: float = 0.1
-    min_events: int = 10
+    min_events: int = 2
 
 
 ANALYSIS_MODULES = (
@@ -141,16 +158,37 @@ def analysis_code_sha256() -> dict[str, str]:
 
 HYPOTHESIS_TERMS: Mapping[str, str] = {POSITION_TERM: "H1", "compaction_count": "H2b"}
 """Hazard terms that carry a hypothesis (to be fixed in the E1 preregistration)."""
+TESTED_COVARIATES: Mapping[str, str] = {
+    POSITION_TERM: "position",
+    "compaction_count": "compaction_count",
+}
+"""The covariate behind each hypothesis term (``position`` enters as ``log1p(position)``)."""
 SUPPORTED, NOT_SUPPORTED, NOT_TESTED = "supported", "not supported", "not tested"
-"""Verdicts of an interval rule (H1, H2a, H2b) or a Holm rule (H3, H4a, H4b, H5)."""
+"""Verdicts of a score-test rule (H1, H2a, H2b) or a Holm rule (H3, H4a, H4b, H5)."""
+DECIDED_BY = "score_test"
+"""What decides every hypothesis (D-050 item 1): a two-sided score test at the null fit."""
 VERDICT_NOTE = (
-    "verdict applies the preregistered rule: for H1, H2a, and H2b, supported when the "
-    "interval excludes zero; for a Holm family, supported (differs) when the Holm-adjusted "
-    "p-value is below alpha. A hypothesis is not tested (not_tested names why) when its "
-    "estimate is not estimable, when its bootstrap is unstable (failed_share above "
-    "max_failed_share), when a hazard fit has fewer than min_events violations, or when its "
-    "p-value cannot be computed."
+    "verdict applies the preregistered rule to a two-sided score test at the null fit, "
+    "clustered by plan through an exchangeable within-plan correlation (decided_by: "
+    "score_test): for H1, H2a, and H2b, supported when its p-value is below alpha, with no "
+    "adjustment across families (per family and pooled are separate hypotheses); for a Holm "
+    "family (H3, H4a, H4b, H5), supported (differs) when the Holm-adjusted p-value is below "
+    "alpha. Pooled tests fit the null model within each family. A hypothesis is not tested "
+    "(not_tested names why) when its p-value cannot be computed (the reason code of "
+    "halflife.stats.SCORE_PROBLEMS, for example no_events) or, for H1 and H2b, when its "
+    "hazard fit has fewer than min_events violations in the risk set (few_violations). "
+    "direction is the sign of the score (positive: more violations with the term, or in the "
+    "second arm). Bootstrap intervals are descriptive estimates; unstable (failed_share "
+    "above max_failed_share) labels an interval and decides nothing."
 )
+HAZARD_TEST = (
+    "two-sided score test of the term at the null fit of the hazard model without it, on "
+    "the risk set, clustered by plan through an exchangeable within-plan correlation "
+    "estimated at the null fit; pooled, the null model is fit within each family, and "
+    "factor levels without violations in a family add nothing "
+    "(halflife.stats.hazard_score_test)"
+)
+"""The test behind every H1 and H2b decision (``p_value_test`` of a hazard term)."""
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -172,6 +210,24 @@ def session_of(row: Mapping[str, Any], key: Sequence[str] = SESSION) -> tuple[st
         raise stats.StatsError(f"a row has no {exc.args[0]!r} to identify its session") from None
 
 
+SPAN_DONE = "done"
+"""``span_end`` of a decision-point span the agent finished (:func:`procedure_cut`)."""
+
+
+def procedure_cut(row: Mapping[str, Any]) -> bool:
+    """A procedure rule whose decision-point span the agent did not finish (D-050 item 5).
+
+    ``span_end`` (written by :func:`halflife.analysis.opportunity_rows`) is ``done`` when
+    the span ended because the agent finished the request, otherwise the cap or stop that
+    cut it (``subtask_cap``, ``tool_cap``, ``turn_cap``, ``subtask_tool_cap``,
+    ``session_tool_cap``, ``timeout``, ``error``). Whether a procedure ("before you
+    finish", "in the same task") was followed shows only in a finished span, so a
+    procedure opportunity with any other ``span_end``, a null one, or none (rows written
+    before the field existed) is cut. Other rule types are never cut.
+    """
+    return row.get("constraint_type") == "procedure" and row.get("span_end") != SPAN_DONE
+
+
 def analysis_set(
     sessions: Sequence[Mapping[str, Any]],
     opportunities: Sequence[Mapping[str, Any]],
@@ -185,7 +241,8 @@ def analysis_set(
     stand in for the other's. In order, a session leaves the analysis when it is not
     confirmatory, when a probe leaked into its main run (``probe_leaks`` not empty), or
     when it did not reach its first decision point; an opportunity of a kept session
-    leaves when its decision-point span has no tool call. Each count is reported.
+    leaves when its decision-point span has no tool call, and then when it is a procedure
+    rule whose span was cut (:func:`procedure_cut`). Each count is reported.
 
     Raises:
         stats.StatsError: when two session rows have the same key, or a row lacks a key
@@ -205,14 +262,16 @@ def analysis_set(
         if s.get("reached_first_dp") is True and session_of(s, key) not in leaked
     }
     in_set = [o for o in opportunities if session_of(o, key) in reached]
-    kept = [dict(o) for o in in_set if int(o.get("span_calls", 1)) > 0]
+    called = [dict(o) for o in in_set if int(o.get("span_calls", 1)) > 0]
+    kept = [o for o in called if not procedure_cut(o)]
     exclusions = {
         "sessions_total": len(sessions),
         "sessions_confirmatory": len(confirmatory),
         "sessions_probe_leak": len(leaked),
         "sessions_not_reaching_first_dp": len(confirmatory) - len(leaked) - len(reached),
         "sessions_analyzed": len(reached),
-        "opportunities_zero_calls": len(in_set) - len(kept),
+        "opportunities_zero_calls": len(in_set) - len(called),
+        "opportunities_procedure_cut": len(called) - len(kept),
         "opportunities_analyzed": len(kept),
     }
     return kept, exclusions
@@ -242,23 +301,9 @@ def _interval(interval: stats.Interval) -> dict[str, Any]:
 
 
 def is_unstable(interval: stats.Interval, settings: Settings) -> bool:
-    """More than ``max_failed_share`` of the draws failed (unstable, so not tested)."""
+    """More than ``max_failed_share`` of the draws failed: the interval is labeled unstable
+    (descriptive; it decides nothing, D-050 item 1)."""
     return interval.not_estimable is None and interval.failed_share > settings.max_failed_share
-
-
-def excludes_zero(interval: stats.Interval) -> bool:
-    """Both bounds are numbers on the same side of zero."""
-    lo, hi = interval.lo, interval.hi
-    if not (isinstance(lo, float) and isinstance(hi, float)) or math.isnan(lo) or math.isnan(hi):
-        return False
-    return lo > 0.0 or hi < 0.0
-
-
-def interval_verdict(not_tested: str | None, interval: stats.Interval) -> str:
-    """The interval rule: supported when the interval excludes zero."""
-    if not_tested is not None:
-        return NOT_TESTED
-    return SUPPORTED if excludes_zero(interval) else NOT_SUPPORTED
 
 
 def fit_record(
@@ -290,45 +335,117 @@ def fit_record(
     return record
 
 
+def decision(test: stats.ScoreTest, settings: Settings, *, few: bool = False) -> dict[str, Any]:
+    """The decision fields of one unadjusted hypothesis (H1, H2a, H2b) from its score test.
+
+    ``verdict`` is supported when the p-value is below ``alpha`` and not supported
+    otherwise; it is not tested when no p-value exists (``not_tested`` is the score test's
+    problem code) or when ``few`` (``few_violations``: the hazard fit has fewer than
+    ``min_events`` violations; the p-value stays on record). ``direction`` is the sign of
+    the score (:data:`VERDICT_NOTE`).
+    """
+    reason = test.problem if test.p_value is None else ("few_violations" if few else None)
+    verdict = NOT_TESTED
+    if reason is None and test.p_value is not None:
+        verdict = SUPPORTED if test.p_value < settings.alpha else NOT_SUPPORTED
+    return {
+        "decided_by": DECIDED_BY,
+        "alpha": settings.alpha,
+        "p_value": json_p(test.p_value),
+        "p_value_missing": test.problem,
+        "direction": direction(test.z),
+        "not_tested": reason,
+        "verdict": verdict,
+    }
+
+
+def direction(z: float | None) -> str | None:
+    """``positive`` or ``negative``: the sign of a score statistic, None without one."""
+    if z is None or z == 0.0:
+        return None
+    return "positive" if z > 0.0 else "negative"
+
+
+def hazard_tests(
+    rows: Sequence[Mapping[str, Any]], family: str, terms: Sequence[str] | None = None
+) -> dict[str, stats.HazardScoreTest]:
+    """The H1 and H2b score tests of one hazard fit, by term (:data:`HAZARD_TEST`).
+
+    Per family the null model is fit to that family's rows; ``pooled`` fits it within each
+    family (D-050 item 2), so a family without violations adds nothing. ``terms`` limits
+    the tests to some of :data:`TESTED_COVARIATES` (the calibration of ``min_events`` runs
+    one at a time); all of them by default.
+    """
+    strata = "family" if family == "pooled" else None
+    wanted = TESTED_COVARIATES if terms is None else {t: TESTED_COVARIATES[t] for t in terms}
+    return {
+        term: stats.hazard_score_test(
+            rows,
+            covariate,
+            HAZARD_COVARIATES,
+            HAZARD_FACTORS,
+            TRANSFORM,
+            strata=strata,
+            cluster=CLUSTER,
+            session=SESSION,
+        )
+        for term, covariate in wanted.items()
+    }
+
+
 def term_records(
     found: stats.HazardCoefficients,
     settings: Settings,
     hypotheses: Mapping[str, str] = HYPOTHESIS_TERMS,
+    *,
+    tests: Mapping[str, stats.HazardScoreTest] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Every term's interval with its flags and, for a hypothesis term, its verdict.
+    """Every term's descriptive interval with its flags and, for a hypothesis term, its
+    decision from its score test in ``tests`` (:func:`decision`, :data:`VERDICT_NOTE`).
 
-    ``not_tested`` is ``not_estimable`` (no number: no violation, only violations, or a
-    separated term), ``unstable`` (more than ``max_failed_share`` of the draws failed), or
-    ``few_violations`` (the fit has fewer than ``min_events`` violations), in that order,
-    or None.
+    ``not_estimable`` (no number: no violation, only violations, or a separated term) and
+    ``unstable`` (more than ``max_failed_share`` of the draws failed) describe the interval
+    and decide nothing. A hypothesis term is not tested when its score test has no p-value
+    or its fit has fewer than ``min_events`` risk-set violations; ``score`` is that test
+    (laid out as a contrast's ``score``) and ``score_model`` its null model. A term without
+    a hypothesis has no decision (``decided_by``, ``not_tested``, and ``verdict`` null).
+
+    Raises:
+        stats.StatsError: when a hypothesis term has no score test in ``tests``.
     """
     out: dict[str, dict[str, Any]] = {}
     for term in sorted(found):
         interval = found[term]
-        unstable = is_unstable(interval, settings)
-        reason: str | None = None
-        if interval.not_estimable is not None:
-            reason = "not_estimable"
-        elif unstable:
-            reason = "unstable"
-        elif found.fit.n_events < settings.min_events:
-            reason = "few_violations"
         hypothesis = hypotheses.get(term)
-        out[term] = _interval(interval) | {
-            "unstable": unstable,
-            "not_tested": reason,
+        record = _interval(interval) | {
+            "unstable": is_unstable(interval, settings),
             "hypothesis": hypothesis,
-            "verdict": None if hypothesis is None else interval_verdict(reason, interval),
         }
+        if hypothesis is None:
+            record |= {"decided_by": None, "not_tested": None, "verdict": None}
+        else:
+            test = (tests or {}).get(term)
+            if test is None:
+                raise stats.StatsError(f"no score test for the hypothesis term {term!r}")
+            record |= decision(test.test, settings, few=test.n_events < settings.min_events)
+            model = test.to_dict()
+            record |= {
+                "p_value_test": HAZARD_TEST,
+                "n_events": test.n_events,
+                "score": model.pop("score"),
+                "score_model": model,
+            }
+        out[term] = record
     return out
 
 
 def hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, Any]:
-    """H1 and H2b: bootstrap intervals for every term, per family and pooled.
+    """H1 and H2b, per family and pooled: decided by score tests (:func:`hazard_tests`),
+    with bootstrap intervals for every term beside them.
 
     Each fit's full-data diagnostics go under ``fits``; a term the data cannot estimate is
     written without a number (``not_estimable``), and the H1 and H2b terms carry their
-    verdict (:data:`VERDICT_NOTE`).
+    decision (:data:`VERDICT_NOTE`).
     """
     estimates: list[dict[str, Any]] = []
     fits: list[dict[str, Any]] = []
@@ -349,11 +466,14 @@ def hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, A
             position_transform=TRANSFORM,
         )
         fits.append(fit_record(family, subset, found.fit))
-        for term, record in term_records(found, settings).items():
+        records = term_records(found, settings, tests=hazard_tests(subset, family))
+        for term, record in records.items():
             estimates.append({"family": family, "term": term} | record)
     return {
         "fits": fits,
         "verdict_note": VERDICT_NOTE,
+        "decided_by": DECIDED_BY,
+        "alpha": settings.alpha,
         "model": {
             "covariates": list(HAZARD_COVARIATES),
             "factors": list(HAZARD_FACTORS),
@@ -363,6 +483,8 @@ def hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, A
             "cluster": CLUSTER,
             "resampling": RESAMPLING,
             "outcome": "violated",
+            "test": HAZARD_TEST,
+            "pooled_test_strata": "family",
         },
         "h1_term": POSITION_TERM,
         "h2b_term": "compaction_count",
@@ -371,11 +493,16 @@ def hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, A
 
 
 def half_lives(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, Any]:
-    """Half-life per family at ``compaction_count = 1``, searched from the family's first
-    decision-point position (:func:`halflife.stats.half_life`).
+    """Half-life per family from a hazard model with ``log1p(position)`` only (D-050 item 4).
 
-    A separated fit with violations gives no number (``not_estimable``); an estimate with
-    more than ``max_failed_share`` failed draws is ``unstable``.
+    The model is marginal over compaction, rule type, and strategy (nothing is held fixed:
+    holding the compaction count at one value extrapolated where token-budget compactions
+    tie the count to position). The search runs from the family's first decision-point
+    position to ``max_position`` (:func:`halflife.stats.half_life`): a value at the first
+    position reads at or before it, no crossing within the range is not reached (D-028),
+    and an upper bound among draws that never crossed is open. A separated fit with
+    violations gives no number (``not_estimable``); an interval with more than
+    ``max_failed_share`` failed draws is labeled ``unstable``.
     """
     estimates = []
     for family in families(rows):
@@ -389,7 +516,7 @@ def half_lives(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[st
             level=settings.level,
             cluster=CLUSTER,
             session=SESSION,
-            covariates=HAZARD_COVARIATES,
+            covariates=HALF_LIFE_COVARIATES,
             categorical=(),
             position_transform=TRANSFORM,
         )
@@ -397,6 +524,9 @@ def half_lives(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[st
         estimates.append({"family": family} | result.to_dict() | {"unstable": unstable})
     return {
         "fixed": dict(HALF_LIFE_FIXED),
+        "covariates": list(HALF_LIFE_COVARIATES),
+        "position_transform": TRANSFORM,
+        "marginal_over": ["compaction_count", *HAZARD_FACTORS],
         "max_position": settings.max_position,
         "estimates": estimates,
     }
@@ -424,7 +554,8 @@ def json_p(value: float | None) -> float | None:
 
 P_VALUE_TEST = (
     "two-sided score test of the arm term at the null fit, clustered by plan through an "
-    "exchangeable within-plan correlation estimated at the null fit"
+    "exchangeable within-plan correlation estimated at the null fit; with score_strata, "
+    "the null model is fit within each stratum (pooled contrasts: each family)"
 )
 """The test behind every decision p-value (``p_value``) of a contrast."""
 
@@ -442,6 +573,7 @@ def test_fields(result: stats.RateContrast) -> dict[str, Any]:
         "p_value": json_p(result.score.p_value),
         "p_value_missing": result.score.problem,
         "p_value_test": P_VALUE_TEST,
+        "direction": direction(result.score.z),
     }
 
 
@@ -466,22 +598,24 @@ def holm_verdicts(
 ) -> None:
     """Holm-adjust ``entries`` (named ``names``) over every test in ``family``, in place.
 
-    A test with no p-value, an unstable one, and a planned test with no rows stay in
-    the family as p = 1 (:data:`HOLM_NOTE`). Each entry gets ``p_holm``,
-    ``holm_family_size``, and its verdict: supported when ``p_holm`` is below
-    ``settings.alpha``, not supported otherwise, and not tested (with ``not_tested``
-    naming why) when it has no adjusted p-value.
+    A test with no p-value and a planned test with no rows stay in the family as p = 1
+    (:data:`HOLM_NOTE`); an unstable interval decides nothing (D-050 item 1). Each entry
+    gets ``p_holm``, ``holm_family_size``, ``decided_by``, ``alpha``, and its verdict:
+    supported when ``p_holm`` is below ``settings.alpha``, not supported otherwise, and not
+    tested (with ``not_tested`` naming why) when it has no adjusted p-value.
     """
     pvalues: dict[str, float | None] = dict.fromkeys(family)
     for name, entry in zip(names, entries, strict=True):
-        pvalues[name] = None if entry["unstable"] else entry["p_value"]
+        pvalues[name] = entry["p_value"]
     adjusted = holm(pvalues)
     for name, entry in zip(names, entries, strict=True):
         p_holm = adjusted[name]
         entry["p_holm"] = json_p(p_holm)
         entry["holm_family_size"] = len(pvalues)
+        entry["decided_by"] = DECIDED_BY
+        entry["alpha"] = settings.alpha
         if p_holm is None:
-            entry["not_tested"] = "unstable" if entry["unstable"] else entry["p_value_missing"]
+            entry["not_tested"] = entry["p_value_missing"]
             entry["verdict"] = NOT_TESTED
         else:
             entry["not_tested"] = None
@@ -510,8 +644,10 @@ def holm(pvalues: Mapping[str, float | None]) -> dict[str, float | None]:
 def contrasts(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, Any]:
     """H2a (summary versus sham after compaction) and H3 (pairwise rule types).
 
-    H2a is decided by its interval and H3 by the Holm-adjusted score-test p-values
-    (:data:`VERDICT_NOTE`); every entry carries its verdict.
+    H2a is decided per family and pooled by its score test, unadjusted, and H3 (pooled)
+    by the Holm-adjusted score-test p-values (:data:`VERDICT_NOTE`); pooled tests fit their
+    null model within each family (``score_strata``). Every entry carries its verdict
+    beside its descriptive intervals.
     """
     out: dict[str, Any] = {
         "h2a": [],
@@ -535,15 +671,10 @@ def contrasts(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str
                 level=settings.level,
                 cluster=CLUSTER,
                 session=SESSION,
+                strata="family" if family == "pooled" else None,
             )
-            entry = {"family": family} | contrast_entry(result, settings)
-            not_tested = "unstable" if entry["unstable"] else None
-            entry |= {
-                "hypothesis": "H2a",
-                "not_tested": not_tested,
-                "verdict": interval_verdict(not_tested, result.difference),
-            }
-            out["h2a"].append(entry)
+            entry = {"family": family, "hypothesis": "H2a"} | contrast_entry(result, settings)
+            out["h2a"].append(entry | decision(result.score, settings))
     types = sorted({str(r["constraint_type"]) for r in rows})
     for ctype in types:
         typed = [r for r in rows if r["constraint_type"] == ctype]
@@ -571,6 +702,7 @@ def contrasts(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str
             level=settings.level,
             cluster=CLUSTER,
             session=SESSION,
+            strata="family",
         )
         key = f"{a} vs {b}"
         keys.append(key)

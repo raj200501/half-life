@@ -23,11 +23,13 @@ def synthetic(
     *,
     shared_plans: bool = False,
     type_effects: Mapping[str, float] | None = None,
+    slope: float = 0.5,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Synthetic sessions and opportunities from a known hazard model (not model data).
 
     With ``shared_plans`` both families run the same plans, so session ids repeat across
-    families as they do in E1; ``type_effects`` add log odds per rule type.
+    families as they do in E1; ``type_effects`` add log odds per rule type, and ``slope``
+    multiplies ``log1p(position)``.
     """
     rng = random.Random(seed)
     effects = type_effects or {}
@@ -51,7 +53,7 @@ def synthetic(
                 ctype = TYPES[(i + j) % 4]
                 eta = (
                     -3.0
-                    + 0.5 * math.log1p(position)
+                    + slope * math.log1p(position)
                     + (0.6 * count if strategy == "full_summary" else 0.0)
                     + effects.get(ctype, 0.0)
                 )
@@ -67,6 +69,7 @@ def synthetic(
                         "acted": rng.random() < 0.8,
                         "recalled_before": rng.random() < 0.6,
                         "span_calls": 0 if (i == 1 and j == 3) else 3,
+                        "span_end": "done",
                     }
                 )
     return sessions, opps
@@ -199,6 +202,7 @@ def test_analysis_set_and_exclusions_are_per_family_session() -> None:
         "sessions_not_reaching_first_dp": 5,
         "sessions_analyzed": 55,
         "opportunities_zero_calls": 1,
+        "opportunities_procedure_cut": 0,
         "opportunities_analyzed": 219,
     }
     assert by_family["fam-b"]["sessions_not_reaching_first_dp"] == 6
@@ -285,26 +289,32 @@ def test_a_family_without_violations_has_no_hazard_estimate_and_no_verdict() -> 
     for entry in fam_b.values():
         assert (entry["estimate"], entry["lo"], entry["hi"]) == (None, None, None)
         assert entry["not_estimable"] == "no_violations"
-        assert entry["not_tested"] == "not_estimable"
     assert fam_b["log1p(position)"]["hypothesis"] == "H1"
     assert fam_b["compaction_count"]["hypothesis"] == "H2b"
-    assert {fam_b[t]["verdict"] for t in ("log1p(position)", "compaction_count")} == {"not tested"}
+    for term in ("log1p(position)", "compaction_count"):
+        # Without a violation the score test has nothing to test, and says so.
+        assert fam_b[term]["verdict"] == "not tested" and fam_b[term]["not_tested"] == "no_events"
+        assert fam_b[term]["p_value"] is None and fam_b[term]["p_value_missing"] == "no_events"
     pooled = {e["term"]: e for e in out["estimates"] if e["family"] == "pooled"}
     assert pooled["family[fam-b]"]["not_estimable"] == "separation"
     assert pooled["log1p(position)"]["not_estimable"] is None
-    assert pooled["log1p(position)"]["verdict"] in {"supported", "not supported"}
     fam_a = {e["term"]: e for e in out["estimates"] if e["family"] == "fam-a"}
+    for term in ("log1p(position)", "compaction_count"):
+        # Pooled tests are stratified by family (D-050 item 2): fam-b adds nothing, so the
+        # pooled score test equals fam-a's, instead of resting on a separated family term.
+        assert pooled[term]["verdict"] in {"supported", "not supported"}
+        assert pooled[term]["p_value"] == pytest.approx(fam_a[term]["p_value"], rel=1e-9)
+        assert pooled[term]["score"]["strata_skipped"] == ["fam-b"]
+        assert pooled[term]["score_model"]["strata"] == "family"
+        assert pooled[term]["score"]["p_value"] == pooled[term]["p_value"]
     assert fam_a["intercept"]["hypothesis"] is None and fam_a["intercept"]["verdict"] is None
+    assert fam_a["intercept"]["decided_by"] is None and fam_a["intercept"]["not_tested"] is None
     json.dumps(out, allow_nan=False)
 
 
-def test_more_than_a_tenth_of_failed_draws_leaves_a_hypothesis_not_tested() -> None:
-    # Section 5: n_failed / n_boot above 0.1 is unstable and its hypothesis not tested;
-    # exactly 0.1 is not above it.
-    sessions, opps = synthetic(shared_plans=True)
-    rows, _ = e1_analysis.analysis_set(sessions, opps)
+def _fam_a_coefficients(rows: list[dict[str, Any]]) -> stats.HazardCoefficients:
     fam = [dict(r) for r in rows if r["family"] == "fam-a"]
-    found = stats.bootstrap_coefficients(
+    return stats.bootstrap_coefficients(
         fam,
         20,
         1,
@@ -312,20 +322,38 @@ def test_more_than_a_tenth_of_failed_draws_leaves_a_hypothesis_not_tested() -> N
         categorical=e1_analysis.HAZARD_FACTORS,
         position_transform=e1_analysis.TRANSFORM,
     )
+
+
+def test_a_failed_share_above_a_tenth_labels_an_interval_unstable_only() -> None:
+    # Section 5 and D-050 item 1: n_failed / n_boot above 0.1 is unstable (exactly 0.1 is
+    # not above it); the label is descriptive and the score test still decides.
+    sessions, opps = synthetic(shared_plans=True)
+    rows, _ = e1_analysis.analysis_set(sessions, opps)
+    found = _fam_a_coefficients(rows)
+    tests = e1_analysis.hazard_tests([r for r in rows if r["family"] == "fam-a"], "fam-a")
     intervals = dict(found.intervals)
     h1, h2b = e1_analysis.POSITION_TERM, "compaction_count"
     intervals[h1] = dataclasses.replace(intervals[h1], n_boot=2000, n_failed=300)
     intervals[h2b] = dataclasses.replace(intervals[h2b], n_boot=2000, n_failed=200)
     records = e1_analysis.term_records(
-        stats.HazardCoefficients(intervals, found.fit), e1_analysis.Settings()
+        stats.HazardCoefficients(intervals, found.fit), e1_analysis.Settings(), tests=tests
     )
     assert records[h1]["unstable"] is True and records[h1]["failed_share"] == 0.15
-    assert records[h1]["not_tested"] == "unstable" and records[h1]["verdict"] == "not tested"
-    assert records[h2b]["unstable"] is False and records[h2b]["not_tested"] is None
-    assert records[h2b]["verdict"] in {"supported", "not supported"}
-    # Too few violations in the fit leaves both slopes untested, whatever the interval.
-    few = e1_analysis.term_records(found, e1_analysis.Settings(min_events=10**6))
-    assert {few[t]["not_tested"] for t in (h1, h2b)} == {"few_violations"}
+    assert records[h2b]["unstable"] is False
+    for term in (h1, h2b):
+        record = records[term]
+        assert record["not_tested"] is None and record["decided_by"] == "score_test"
+        p_value = tests[term].test.p_value
+        assert p_value is not None and record["p_value"] == pytest.approx(p_value)
+        expected = "supported" if p_value < 0.05 else "not supported"
+        assert record["verdict"] == expected and record["alpha"] == 0.05
+    # Too few violations in the fit leaves both slopes untested; the p-value stays on record.
+    few = e1_analysis.term_records(found, e1_analysis.Settings(min_events=10**6), tests=tests)
+    for term in (h1, h2b):
+        assert few[term]["not_tested"] == "few_violations" and few[term]["verdict"] == "not tested"
+        assert few[term]["p_value"] == records[term]["p_value"]
+    with pytest.raises(stats.StatsError, match="no score test"):
+        e1_analysis.term_records(found, e1_analysis.Settings())
     half = e1_analysis.half_lives(rows, e1_analysis.Settings(n_boot=20, seed=1))
     for entry in half["estimates"]:
         assert entry["unstable"] is False and entry["first_position"] == min(
@@ -448,19 +476,203 @@ def test_h3_holm_family_is_every_pair_of_rule_types_even_when_a_type_has_no_rows
         assert pairs[name]["p_holm"] == pytest.approx(running)
 
 
-def test_unstable_contrasts_are_not_tested_and_count_as_p_one_in_holm() -> None:
+def test_an_unstable_interval_is_labeled_but_decides_nothing() -> None:
+    # D-050 item 1: more than max_failed_share failed draws labels an interval unstable,
+    # and the score test still decides (before D-050 it left the hypothesis not tested).
     sessions, opps = synthetic(n_sessions=40, shared_plans=True)
     rows, _ = e1_analysis.analysis_set(sessions, opps)
     settings = e1_analysis.Settings(n_boot=20, seed=1)
     out = e1_analysis.contrasts(rows, settings)
-    # A strict threshold makes any failed draw unstable; with none failing, nothing moves.
+    # A strict threshold makes every interval unstable; no decision moves.
     strict = e1_analysis.contrasts(rows, dataclasses.replace(settings, max_failed_share=-1.0))
-    for pair in strict["h3_pairs"]:
-        assert pair["unstable"] is True and pair["verdict"] == "not tested"
-        assert pair["not_tested"] == "unstable" and pair["p_holm"] is None
-        assert pair["p_value"] is not None  # the test exists; it is just not used
-    for entry in strict["h2a"]:
-        assert entry["verdict"] == "not tested" and entry["not_tested"] == "unstable"
+    for before, after in zip(out["h3_pairs"], strict["h3_pairs"], strict=True):
+        assert after["unstable"] is True and before["unstable"] is False
+        assert after["p_holm"] == before["p_holm"] and after["p_holm"] is not None
+        assert after["verdict"] == before["verdict"] != "not tested"
+        assert after["not_tested"] is None and after["decided_by"] == "score_test"
+    for before, after in zip(out["h2a"], strict["h2a"], strict=True):
+        assert after["unstable"] is True and after["verdict"] == before["verdict"]
+        assert after["hypothesis"] == "H2a" and after["verdict"] in {"supported", "not supported"}
+    hazard = e1_analysis.hazard(rows, dataclasses.replace(settings, max_failed_share=-1.0))
+    for entry in hazard["estimates"]:
+        if entry["hypothesis"] is not None and entry["not_estimable"] is None:
+            assert entry["unstable"] is True and entry["not_tested"] is None
+            assert entry["verdict"] in {"supported", "not supported"}
+
+
+# --------------------------------------------------------------------------- D-050
+
+
+def test_h1_and_h2b_are_decided_by_the_score_test_per_family_and_pooled() -> None:
+    # Synthetic: the hazard rises with log1p(position) (slope 1.5 per unit).
+    sessions, opps = synthetic(n_sessions=80, shared_plans=True, slope=1.5)
+    rows, _ = e1_analysis.analysis_set(sessions, opps)
+    settings = e1_analysis.Settings(n_boot=10, seed=1)
+    out = e1_analysis.hazard(rows, settings)
+    assert out["decided_by"] == "score_test" and out["alpha"] == settings.alpha
+    for family in ("fam-a", "fam-b", "pooled"):
+        subset = [r for r in rows if family == "pooled" or r["family"] == family]
+        for term, name in ((e1_analysis.POSITION_TERM, "position"), ("compaction_count", None)):
+            entry = next(e for e in out["estimates"] if e["family"] == family and e["term"] == term)
+            expected = stats.hazard_score_test(
+                subset,
+                name or term,
+                e1_analysis.HAZARD_COVARIATES,
+                e1_analysis.HAZARD_FACTORS,
+                e1_analysis.TRANSFORM,
+                strata="family" if family == "pooled" else None,
+            )
+            assert entry["p_value"] == pytest.approx(expected.test.p_value, rel=1e-9)
+            assert entry["decided_by"] == "score_test" and entry["alpha"] == 0.05
+            assert entry["n_events"] == expected.n_events >= settings.min_events
+            assert entry["p_value_test"] == e1_analysis.HAZARD_TEST
+            p_value = entry["p_value"]
+            assert entry["verdict"] == ("supported" if p_value < 0.05 else "not supported")
+            direction = "positive" if (expected.test.z or 0.0) > 0 else "negative"
+            assert entry["direction"] == direction
+            # The descriptive interval sits beside the decision with its flags.
+            assert {"estimate", "lo", "hi", "unstable", "not_estimable"} <= set(entry)
+    pooled_h1 = next(
+        e for e in out["estimates"] if (e["family"], e["term"]) == ("pooled", "log1p(position)")
+    )
+    assert pooled_h1["verdict"] == "supported" and pooled_h1["direction"] == "positive"
+    assert out["verdict_note"] == e1_analysis.VERDICT_NOTE and "score test" in out["verdict_note"]
+
+
+def _separated_count_rows(seed: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Synthetic: violations only at decision points after a compaction, whose count is
+    0 or 1 independently of position, so every violation sits at the largest count."""
+    rng = random.Random(seed)
+    sessions, opps = [], []
+    for i in range(60):
+        sessions.append(
+            {"session_id": f"s{i}", "family": "fam-a", "confirmatory": True}
+            | {"reached_first_dp": True}
+        )
+        for j in range(4):
+            count = int(rng.random() < 0.5)
+            opps.append(
+                {
+                    "session_id": f"s{i}",
+                    "family": "fam-a",
+                    "position": 5 + 12 * j + rng.randint(0, 9),
+                    "compaction_count": count,
+                    "constraint_type": TYPES[(i + j) % 4],
+                    "strategy": "full_summary" if i % 2 else "sham",
+                    "violated": count == 1 and rng.random() < 0.4,
+                    "span_calls": 2,
+                }
+            )
+    return sessions, opps
+
+
+def test_a_term_without_a_finite_estimate_is_still_decided_by_its_score_test() -> None:
+    # The compaction term is separated in the full model (no finite estimate, so its
+    # interval has no number), but its score test at the null fit is valid and decides.
+    sessions, opps = _separated_count_rows(5)
+    rows, _ = e1_analysis.analysis_set(sessions, opps)
+    out = e1_analysis.hazard(rows, e1_analysis.Settings(n_boot=10, seed=1))
+    entry = next(
+        e for e in out["estimates"] if (e["family"], e["term"]) == ("fam-a", "compaction_count")
+    )
+    assert entry["not_estimable"] == "separation" and entry["estimate"] is None
+    assert entry["p_value"] is not None and entry["p_value"] < 1e-6
+    assert entry["verdict"] == "supported" and entry["not_tested"] is None
+    assert entry["direction"] == "positive"
+
+
+def test_h2a_and_h3_are_decided_by_family_stratified_score_tests() -> None:
+    sessions, opps = synthetic(n_sessions=80, shared_plans=True)
+    rows, _ = e1_analysis.analysis_set(sessions, opps)
+    settings = e1_analysis.Settings(n_boot=10, seed=1)
+    out = e1_analysis.contrasts(rows, settings)
+    after = [r for r in rows if r["compaction_count"] >= 1]
     for entry in out["h2a"]:
-        assert entry["verdict"] in {"supported", "not supported"}
-        assert entry["hypothesis"] == "H2a" and entry["unstable"] is False
+        family = entry["family"]
+        subset = [r for r in after if family == "pooled" or r["family"] == family]
+        expected = stats.rate_contrast(
+            subset,
+            "strategy",
+            "sham",
+            "full_summary",
+            2,
+            seed=1,
+            strata="family" if family == "pooled" else None,
+        )
+        assert entry["p_value"] == pytest.approx(expected.score.p_value, rel=1e-9)
+        assert entry["score_strata"] == ("family" if family == "pooled" else None)
+        assert entry["decided_by"] == "score_test" and entry["alpha"] == 0.05
+        # No adjustment across families: each is its own hypothesis.
+        assert "p_holm" not in entry
+        assert entry["verdict"] == ("supported" if entry["p_value"] < 0.05 else "not supported")
+    pooled = next(e for e in out["h2a"] if e["family"] == "pooled")
+    assert pooled["verdict"] == "supported"  # the generator's full-summary effect is 0.6
+    for pair in out["h3_pairs"]:
+        a, b = pair["pair"].split(" vs ")
+        subset = [r for r in rows if r["constraint_type"] in {a, b}]
+        expected = stats.rate_contrast(subset, "constraint_type", a, b, 2, seed=1, strata="family")
+        assert pair["p_value"] == pytest.approx(expected.score.p_value, rel=1e-9)
+        assert pair["score_strata"] == "family" and pair["decided_by"] == "score_test"
+        assert pair["alpha"] == 0.05
+
+
+def test_the_half_life_is_marginal_over_compaction() -> None:
+    # D-050 item 4: per family, a hazard model with log1p(position) only, searched from the
+    # family's first decision point; nothing is held fixed. Synthetic: the compaction count
+    # rises with position, as token-budget compactions make it.
+    sessions, opps = synthetic(n_sessions=60, shared_plans=True)
+    rows, _ = e1_analysis.analysis_set(sessions, opps)
+    settings = e1_analysis.Settings(n_boot=30, seed=2)
+    out = e1_analysis.half_lives(rows, settings)
+    assert out["fixed"] == {} and out["covariates"] == ["position"]
+    assert out["position_transform"] == "log1p" and out["max_position"] == 150
+    for entry in out["estimates"]:
+        subset = [dict(r) for r in rows if r["family"] == entry["family"]]
+        expected = stats.bootstrap_half_life(
+            subset,
+            150,
+            {},
+            30,
+            2,
+            covariates=("position",),
+            categorical=(),
+            position_transform="log1p",
+        ).to_dict()
+        assert entry["model"]["covariates"] == ["position"]
+        assert entry["model"]["categorical"] == []
+        for key in ("half_life", "lo", "hi", "not_reached_within", "first_position"):
+            assert entry.get(key) == expected.get(key), key
+        model = stats.fit_hazard(subset, ("position",), (), "log1p")
+        point = stats.half_life(model, 150, first_position=entry["first_position"])
+        if isinstance(point, stats.NotReached):
+            assert entry["half_life"] is None
+        else:
+            assert entry["half_life"] == pytest.approx(point, rel=1e-9)
+
+
+def test_procedure_rules_in_cut_spans_leave_the_analysis_and_are_counted() -> None:
+    # D-050 item 5 (synthetic rows): a procedure decision point whose span a cap cut, or
+    # whose rows predate span_end (null), cannot show whether the procedure was followed.
+    sessions, opps = synthetic(shared_plans=True)
+    ends = ["done", "subtask_cap", None, "tool_cap", "turn_cap", "timeout"]
+    for i, row in enumerate(opps):
+        row["span_end"] = ends[i % len(ends)]
+    for row in opps[:4]:
+        row.pop("span_end")  # rows banked before the field existed
+    rows, exclusions = e1_analysis.analysis_set(sessions, opps)
+    reached = reached_pairs(sessions)
+    candidates = [o for o in opps if (o["family"], o["session_id"]) in reached]
+    called = [o for o in candidates if o["span_calls"] > 0]
+    cut = [o for o in called if o["constraint_type"] == "procedure" and o.get("span_end") != "done"]
+    assert cut and exclusions["opportunities_procedure_cut"] == len(cut)
+    assert exclusions["opportunities_zero_calls"] == len(candidates) - len(called)
+    assert exclusions["opportunities_analyzed"] == len(called) - len(cut) == len(rows)
+    for row in rows:
+        assert row["constraint_type"] != "procedure" or row["span_end"] == "done"
+    # Other rule types in cut spans stay.
+    assert any(r["constraint_type"] != "procedure" and r.get("span_end") != "done" for r in rows)
+    by_family = e1_analysis.exclusions_by_family(sessions, opps)
+    assert sum(e["opportunities_procedure_cut"] for e in by_family) == len(cut)
+    assert e1_analysis.procedure_cut({"constraint_type": "procedure"}) is True
+    assert e1_analysis.procedure_cut({"constraint_type": "procedure", "span_end": "done"}) is False
+    assert e1_analysis.procedure_cut({"constraint_type": "invariant", "span_end": None}) is False

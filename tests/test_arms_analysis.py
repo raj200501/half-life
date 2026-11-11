@@ -69,6 +69,7 @@ def _synthetic(
                         "violated": rng.random() < 0.1 + 0.08 * a,
                         "recalled_before": rng.random() < 0.6,
                         "span_calls": 2,
+                        "span_end": "done",
                         "placement": "first_user",
                         "phrasing": "bare",
                         "strategy": "full_summary",
@@ -218,7 +219,9 @@ def test_e3_hazard_writes_separated_terms_without_a_number() -> None:
     reminder = terms["placement[reminder]"]
     assert (reminder["estimate"], reminder["lo"], reminder["hi"]) == (None, None, None)
     assert reminder["not_estimable"] == "separation"
-    assert reminder["not_tested"] == "not_estimable" and reminder["verdict"] is None
+    # No E3 hazard term carries a hypothesis, so none has a decision.
+    assert reminder["hypothesis"] is None and reminder["verdict"] is None
+    assert reminder["not_tested"] is None and reminder["decided_by"] is None
     assert terms["placement[system]"]["not_estimable"] is None
     json.dumps(out, allow_nan=False)
 
@@ -433,3 +436,76 @@ def test_cli_prints_the_code_pins(capsys: pytest.CaptureFixture[str]) -> None:
     assert json.loads(capsys.readouterr().out) == arms_analysis.analysis_code_sha256()
     with pytest.raises(SystemExit):
         arms_analysis.main(["e3"])  # --dir is required unless printing the pins
+
+
+# --------------------------------------------------------------------------- D-050
+
+
+def test_pooled_contrasts_are_stratified_by_family_and_per_family_ones_exploratory() -> None:
+    # D-050 item 2: the pooled E3 and E4 contrasts are the confirmatory tests and fit their
+    # null model within each family; per-family contrasts are exploratory.
+    sessions, opportunities = _synthetic("e4", E4_ARMS, ("fa", "fb"), 12, 8)
+    for row in opportunities:
+        if row["family"] == "fb":
+            row["violated"] = row["violated"] or row["mitigation"] == "none"
+    out = arms_analysis.analyze_e4(sessions, opportunities, FAST)
+    for entry in out["contrasts"]["by_family"]:
+        family = entry["family"]
+        subset = [r for r in opportunities if family == "pooled" or r["family"] == family]
+        for contrast in entry["mitigation"]:
+            arm = contrast["mitigation"]
+            pair = [r for r in subset if r["mitigation"] in {"none", arm}]
+            expected = stats.rate_contrast(
+                pair,
+                "mitigation",
+                "none",
+                arm,
+                2,
+                seed=1,
+                strata="family" if family == "pooled" else None,
+            )
+            assert contrast["p_value"] == pytest.approx(expected.score.p_value, rel=1e-9)
+            assert contrast["score_strata"] == ("family" if family == "pooled" else None)
+            assert contrast["exploratory"] is (family != "pooled")
+            assert contrast["decided_by"] == "score_test" and contrast["alpha"] == 0.05
+    summary = {m["name"]: m for m in out["summary"]["mitigations"]}
+    pooled = next(f for f in out["contrasts"]["by_family"] if f["family"] == "pooled")
+    for contrast in pooled["mitigation"]:
+        mine = summary[contrast["mitigation"]]
+        assert mine["decided_by"] == "score_test" and mine["alpha"] == 0.05
+        assert mine["p_value"] == contrast["p_value"] and mine["p_holm"] == contrast["p_holm"]
+        assert mine["verdict"] == contrast["verdict"]
+    e3_sessions, e3_opportunities = _synthetic("e3", E3_ARMS, ("fa", "fb"), 4, 1)
+    e3 = arms_analysis.analyze_e3(e3_sessions, e3_opportunities, FAST)
+    for entry in e3["contrasts"]["by_family"]:
+        for contrast in [*entry["placement"], *entry["phrasing"]]:
+            assert contrast["exploratory"] is (entry["family"] != "pooled")
+            assert contrast["score_strata"] == ("family" if entry["family"] == "pooled" else None)
+
+
+def test_an_unstable_contrast_interval_decides_nothing() -> None:
+    _, opportunities = _synthetic("e4", E4_ARMS, ("fa",), 8, 5)
+    strict = Settings(n_boot=20, seed=7, max_failed_share=-1.0)
+    plain = Settings(n_boot=20, seed=7)
+    every = arms_analysis.MITIGATIONS
+    before = arms_analysis.contrasts_against(opportunities, "mitigation", "none", every, plain)
+    after = arms_analysis.contrasts_against(opportunities, "mitigation", "none", every, strict)
+    for old, new in zip(before, after, strict=True):
+        assert new["unstable"] is True and old["unstable"] is False
+        assert new["p_holm"] == old["p_holm"] is not None
+        assert new["verdict"] == old["verdict"] != "not tested"
+
+
+def test_e2_drops_procedure_rules_in_cut_spans_and_counts_them() -> None:
+    sessions, opportunities = _synthetic("e2", [{}], ("claude",), 4, 6)
+    tiered_sessions = [dict(s, model="haiku", confirmatory=False) for s in sessions]
+    tiered = [dict(o, model="haiku") for o in opportunities]
+    ends = ["done", "turn_cap", "subtask_tool_cap", None]
+    for i, row in enumerate(tiered):
+        row["span_end"] = ends[i % len(ends)]
+    out = arms_analysis.analyze_e2(tiered_sessions, tiered, FAST)
+    cut = [o for o in tiered if o["constraint_type"] == "procedure" and o["span_end"] != "done"]
+    assert cut and out["rates"]["exclusions"]["opportunities_procedure_cut"] == len(cut)
+    analyzed = out["rates"]["exclusions"]["opportunities_analyzed"]
+    assert analyzed == len(tiered) - len(cut)
+    assert out["rates"]["model"][0]["opportunities"] == analyzed

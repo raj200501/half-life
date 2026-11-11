@@ -950,12 +950,12 @@ def test_hazard_terms_not_estimable_or_not_tested_never_read_as_findings(tmp_pat
     assert row.count("not estimable (no violations)") == 2 and row.count("not tested") == 2
     assert "hazard falls" not in row and "hazard rises" not in row
     assert "syn-b had no violations, so the pooled slopes come from syn-a alone" in text
-    # An unstable estimate (more than a tenth of its draws failed) is not tested either,
-    # and a fit with too few violations leaves its slopes untested.
+    # D-050: an unstable interval is a label and decides nothing (the score test does),
+    # and a fit with too few violations leaves its slope untested.
     hazard = outputs["hazard"]
     for entry in hazard["estimates"]:
         if (entry["family"], entry["term"]) == ("syn-a", "compaction_count"):
-            entry.update(unstable=True, not_tested="unstable", verdict="not tested")
+            entry.update(unstable=True, not_tested=None, verdict="not supported")
         if (entry["family"], entry["term"]) == ("syn-a", e1_analysis.POSITION_TERM):
             entry.update(not_tested="few_violations", verdict="not tested")
     write_json(tmp_path, "artifacts/e1/hazard.json", hazard)
@@ -963,9 +963,11 @@ def test_hazard_terms_not_estimable_or_not_tested_never_read_as_findings(tmp_pat
     b = report.Build(store, report.Ledger(store))
     row = hazard_row(plain(report.e1_tables(b, ["syn-a", "syn-b"])), "syn-a")
     minimum = hazard["settings"]["min_events"]
-    assert f"not tested (fewer than {minimum} violations in the risk set)" in row
-    assert "unstable (too many failed draws), not tested" in row
-    assert "interval" not in row.split("|")[3] and "interval" not in row.split("|")[5]
+    cells = [c.strip() for c in row.split("|")]
+    assert cells[4] == f"not tested (fewer than {minimum} violations in the risk set)"
+    assert "unstable interval: too many failed draws, descriptive only" in cells[5]
+    assert cells[7] == "does not differ from zero at the 0.05 level"
+    assert "interval above" not in row and "interval below" not in row
 
 
 def bank_arm_outputs(root: Path, kind: str, outputs: dict[str, Any], prereg: str | None) -> None:

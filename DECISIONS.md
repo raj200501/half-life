@@ -328,3 +328,16 @@ The fourth independent review (BLOCK at 526ae0d) showed that the hand-written im
 2. **Fail closed on the raw text.** After decoding HTML character references, percent-encoding, and Markdown backslash escapes, any token anywhere in the raw text (prose, code, comments, link definitions) that names an image file (by extension) or a `data:image` URI must resolve to a generated figure. A link to a figure that is not embedded therefore also fails; the documents link to none.
 
 Every form the review found becomes a mutation test, beside the earlier ones.
+
+## D-058 2026-11-11: statistics round two implemented (D-050 items 1 to 5, item 6 in part), with its interpretations
+
+Implemented test-first before any confirmatory data. Interpretations made while implementing it, none informed by data:
+
+1. **Boundary rows in a separated null model.** Rows whose null fit sits at a fitted value of 0 or 1 (for example a rule-type level with no violations in a family) add nothing to the score or its variance at the maximum-likelihood limit, so they leave the score test and are counted (`levels_without_variation`, `n_boundary_rows`, `strata_skipped`). This extends item 2 from families to factor levels and covariate ranges, which few events would otherwise leave untested; `null_separation` now means every row is at the boundary.
+2. **Calibration nulls.** The `min_events` calibration (`python -m halflife.calibrate --out artifacts/power/min_events.json`, synthetic) uses three nulls (both terms zero with a decision-point effect shared across families; position zero with a compaction effect; compaction zero with a position effect) and no persistent session effect, because a session frailty makes the marginal hazard fall with position by selection and so is not a null of the marginal model. It judges rejection among computed tests in event-count bins with at least 2,000 tests, per-family and pooled fits together. The result is `min_events = 2`, which `Settings` cites and a test ties to the artifact. A consequence to state in the report: a falling hazard with position can come from differences between sessions (selection), not only from rules fading.
+3. **Not tested** comes only from a missing p-value (the score test's problem code) or, for H1 and H2b, from fewer violations than `min_events`; H2a has no `min_events` rule. An unstable or not-estimable interval is a label and decides nothing.
+4. **H3 is stratified by family** like the other pooled tests; E3 and E4 per-family contrasts are labeled exploratory.
+5. **The procedure-span rule** (item 5) also applies to E2 and to the pilot inputs of the power analysis. Pilot rows predate `span_end`, so every pilot procedure decision point leaves the measured pilot rate.
+6. **`direction`** of a decision is the sign of the score.
+7. **No per-rule-type half-lives** are produced (item 4 makes them exploratory).
+8. **Item 6, in part.** The power simulation now decides by the same score tests as the analysis. The plan-based session process (the E1 compaction process at the pilot's and the padded shape) is not built: the power analysis keeps its uniform session process, and its shape caveat (`halflife.power.SHAPE_NOTE`) stays in the report. This is a known gap against D-050 item 6, not a silent change.

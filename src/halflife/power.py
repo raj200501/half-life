@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any
 
 from halflife import stats
-from halflife.e1_analysis import load_jsonl
+from halflife.e1_analysis import load_jsonl, procedure_cut
 
 SESSIONS_GRID = (40, 48, 56, 64)
 EFFECTS_GRID = (0.4, 0.7, 1.0)
@@ -64,15 +64,18 @@ def pilot_inputs(
     Only the ``families`` E1 uses count (the pilot's family choice, D-042; every family
     when None), and the E1 analysis-set exclusions apply: sessions that reached their
     first decision point without a probe leak, and their decision points with at least
-    one tool call in the span. A session is ``(family, session_id)``, since every family
-    runs the same plans.
+    one tool call in the span, less procedure rules whose span was cut
+    (:func:`halflife.e1_analysis.procedure_cut`; pilot rows written before ``span_end``
+    existed count as cut, as they would in E1). A session is ``(family, session_id)``,
+    since every family runs the same plans.
     """
     present = sorted({str(s.get("family", "")) for s in sessions})
     used = sorted(set(families)) if families is not None else present
     mine = [s for s in sessions if str(s.get("family", "")) in used]
     reached = [s for s in mine if s.get("reached_first_dp") is True and not s.get("probe_leaks")]
     keys = {_key(s) for s in reached}
-    kept = [o for o in opportunities if _key(o) in keys and int(o.get("span_calls", 1)) > 0]
+    called = [o for o in opportunities if _key(o) in keys and int(o.get("span_calls", 1)) > 0]
+    kept = [o for o in called if not procedure_cut(o)]
     k = sum(1 for o in kept if o["violated"])
     n = len(kept)
     if not reached or n == 0:
@@ -88,6 +91,7 @@ def pilot_inputs(
         "sessions_reaching_first_dp": len(reached),
         "violations": k,
         "opportunities": n,
+        "opportunities_procedure_cut": len(called) - len(kept),
         "violation_rate": stats.wilson_interval(k, n).to_dict(),
         "opportunities_per_session": max(1, round(statistics.median(per_session.values()))),
         "max_position": max(2, round(statistics.median(int(s["n_tool_calls"]) for s in reached))),

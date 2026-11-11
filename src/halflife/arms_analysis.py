@@ -9,7 +9,15 @@ produced from the banked rows.
 
 Analysis set for violations and recall: as in E1 (:func:`halflife.e1_analysis.analysis_set`),
 confirmatory sessions that reached their first decision point and their opportunities with
-at least one tool call in the decision-point span.
+at least one tool call in the decision-point span, less procedure rules whose span a cap or
+stop cut (:func:`halflife.e1_analysis.procedure_cut`).
+
+Decisions (DECISIONS.md D-050 items 1 and 2): every contrast is decided by a two-sided
+score test at the null fit, clustered by plan through an exchangeable within-plan
+correlation, Holm-adjusted over its preregistered family. The pooled contrasts are the
+confirmatory tests and fit their null model within each family (``score_strata``), so a
+family without violations adds nothing; the per-family contrasts are exploratory
+(``exploratory: true``). Bootstrap intervals are descriptive.
 
 E3, placement and phrasing (RQ3):
 
@@ -63,10 +71,12 @@ from typing import Any
 from halflife import stats
 from halflife.e1_analysis import (
     CLUSTER,
+    DECIDED_BY,
     HAZARD_COVARIATES,
     HOLM_NOTE,
     SESSION,
     TRANSFORM,
+    VERDICT_NOTE,
     Settings,
     analysis_set,
     contrast_entry,
@@ -76,6 +86,7 @@ from halflife.e1_analysis import (
     holm_verdicts,
     is_unstable,
     load_jsonl,
+    procedure_cut,
     session_of,
     term_records,
 )
@@ -146,16 +157,22 @@ def contrasts_against(
     reference: str,
     arms: Sequence[str],
     settings: Settings,
+    *,
+    strata: str | None = None,
+    exploratory: bool = False,
 ) -> list[dict[str, Any]]:
     """Violation-rate contrast of each present arm against ``reference``, Holm-adjusted.
 
     The decision p-value is the clustered score test at the null fit (:func:`halflife.
-    e1_analysis.test_fields`), which stays valid when an arm has no violations. The Holm
-    family is every arm in ``arms``, as the preregistrations will fix it (D-040: over the three
-    placements, over the five mitigations). An arm without rows, an unstable contrast, and
-    one whose p-value cannot be computed stay in it as p = 1 (:data:`HOLM_NOTE`), so they
-    never make the other adjustments smaller; absent arms get no entry. Every entry
-    carries its verdict (:data:`halflife.e1_analysis.VERDICT_NOTE`).
+    e1_analysis.test_fields`), which stays valid when an arm has no violations; with
+    ``strata`` (``family`` for the pooled contrasts, D-050 item 2) its null model is fit
+    within each stratum. The Holm family is every arm in ``arms``, as the preregistrations
+    will fix it (D-040: over the three placements, over the five mitigations). An arm
+    without rows and one whose p-value cannot be computed stay in it as p = 1
+    (:data:`HOLM_NOTE`), so they never make the other adjustments smaller; absent arms get
+    no entry, and an unstable interval decides nothing. Every entry carries its verdict
+    (:data:`halflife.e1_analysis.VERDICT_NOTE`) and ``exploratory`` (per-family contrasts
+    are exploratory; the pooled ones are the confirmatory tests).
     """
     present = {r[key] for r in rows}
     out: list[dict[str, Any]] = []
@@ -176,11 +193,20 @@ def contrasts_against(
             level=settings.level,
             cluster=CLUSTER,
             session=SESSION,
+            strata=strata,
         )
         names.append(arm)
-        out.append({key: arm, "reference": reference} | contrast_entry(result, settings))
+        entry = {key: arm, "reference": reference, "exploratory": exploratory}
+        out.append(entry | contrast_entry(result, settings))
     holm_verdicts(out, names, list(arms), settings)
     return out
+
+
+def pooled_options(family: str) -> dict[str, Any]:
+    """``contrasts_against`` options for one ``_by_family`` entry: the pooled contrasts fit
+    their null model within each family and are confirmatory; per family, exploratory."""
+    pooled = family == "pooled"
+    return {"strata": "family" if pooled else None, "exploratory": not pooled}
 
 
 def e3_rates(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str, Any]:
@@ -205,10 +231,20 @@ def e3_contrasts(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[
             {
                 "family": family,
                 "placement": contrasts_against(
-                    subset, "placement", PLACEMENT_REFERENCE, PLACEMENTS, settings
+                    subset,
+                    "placement",
+                    PLACEMENT_REFERENCE,
+                    PLACEMENTS,
+                    settings,
+                    **pooled_options(family),
                 ),
                 "phrasing": contrasts_against(
-                    subset, "phrasing", PHRASING_REFERENCE, PHRASINGS, settings
+                    subset,
+                    "phrasing",
+                    PHRASING_REFERENCE,
+                    PHRASINGS,
+                    settings,
+                    **pooled_options(family),
                 ),
             }
             for family, subset in _by_family(rows)
@@ -398,6 +434,9 @@ def e4_summary(
                 "name": name,
                 "violation_difference": effect.get("difference"),
                 "odds_ratio": effect.get("odds_ratio"),
+                "decided_by": effect.get("decided_by", DECIDED_BY),
+                "alpha": effect.get("alpha"),
+                "p_value": effect.get("p_value"),
                 "p_holm": effect.get("p_holm"),
                 "p_value_missing": effect.get("p_value_missing"),
                 "verdict": effect.get("verdict"),
@@ -440,9 +479,10 @@ def analyze_e3(
         "exclusions": exclusions,
         "exclusions_by_family": exclusions_by_family(sessions, opportunities),
     }
+    notes = {"holm_note": HOLM_NOTE, "verdict_note": VERDICT_NOTE}
     return {
         "rates": e3_rates(rows, settings) | meta,
-        "contrasts": e3_contrasts(rows, settings) | {"holm_note": HOLM_NOTE} | meta,
+        "contrasts": e3_contrasts(rows, settings) | notes | meta,
         "hazard": e3_hazard(rows, settings) | meta,
         "summary": {"arm": "E3", "ran": True, "n_sessions": len(sessions)} | meta,
     }
@@ -467,12 +507,18 @@ def analyze_e4(
             {
                 "family": family,
                 "mitigation": contrasts_against(
-                    subset, "mitigation", MITIGATION_REFERENCE, MITIGATIONS, settings
+                    subset,
+                    "mitigation",
+                    MITIGATION_REFERENCE,
+                    MITIGATIONS,
+                    settings,
+                    **pooled_options(family),
                 ),
             }
             for family, subset in _by_family(rows)
         ],
         "holm_note": HOLM_NOTE,
+        "verdict_note": VERDICT_NOTE,
     }
     costs, means = e4_costs(sessions, settings)
     return {
@@ -497,10 +543,14 @@ def analyze_e2(
     """Every E2 output, keyed by file stem; E2 rows carry the model tier in ``model``.
 
     Sessions are ``(model, session_id)`` (:data:`E2_SESSION`): one plan runs on each tier.
+    As in E1, opportunities without a tool call in their span and procedure rules whose
+    span a cap or stop cut (:func:`halflife.e1_analysis.procedure_cut`) leave and are
+    counted.
     """
     reached = {session_of(s, E2_SESSION) for s in sessions if s.get("reached_first_dp") is True}
     in_set = [o for o in opportunities if session_of(o, E2_SESSION) in reached]
-    rows = [dict(o) for o in in_set if int(o.get("span_calls", 1)) > 0]
+    called = [dict(o) for o in in_set if int(o.get("span_calls", 1)) > 0]
+    rows = [o for o in called if not procedure_cut(o)]
     if not rows:
         raise stats.StatsError("no opportunities in the E2 analysis set")
     confirmatory = all(s.get("confirmatory") is True for s in sessions)
@@ -511,7 +561,8 @@ def analyze_e2(
         "exclusions": {
             "sessions_total": len(sessions),
             "sessions_not_reaching_first_dp": len(sessions) - len(reached),
-            "opportunities_zero_calls": len(in_set) - len(rows),
+            "opportunities_zero_calls": len(in_set) - len(called),
+            "opportunities_procedure_cut": len(called) - len(rows),
             "opportunities_analyzed": len(rows),
         },
     }

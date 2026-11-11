@@ -1973,22 +1973,24 @@ def test_power_contrast_simulates_h2a_after_a_compaction_only(
     rng = np.random.default_rng(1)
     _, cnt, y, _ = stats._simulate(rng, 30, 6, 100, 1, -30.0, 0.0, 0.0, 0.0, after_shift=60.0)
     assert np.array_equal(y, (cnt >= 1).astype(float))  # the shift lands only after one
-    fitted: list[int] = []
-    real = stats.fit_logistic
+    tested: dict[str, list[int]] = {}
+    real = stats.score_test
 
-    def spy(x: Any, y: Any, *args: Any, **kwargs: Any) -> stats.LogisticFit:
-        if kwargs.get("names") == ("arm",):
-            fitted.append(len(y))
-        return real(x, y, *args, **kwargs)
+    def spy(x: Any, y: Any, clusters: Any, *args: Any, **kwargs: Any) -> stats.ScoreTest:
+        tested.setdefault(str(kwargs.get("term")), []).append(len(y))
+        return real(x, y, clusters, *args, **kwargs)
 
-    monkeypatch.setattr(stats, "fit_logistic", spy)
+    monkeypatch.setattr(stats, "score_test", spy)
     result = power_by_simulation(
         0.7, 20, 6, 0.1, 5, seed=3, max_position=100, compactions_per_session=1
     )
-    # 20 sessions per arm with 6 decision points each; those before a compaction are out.
-    assert fitted and all(n < 2 * 20 * 6 for n in fitted)
+    # D-050 item 6: both designs decide by the score tests the analysis uses. 20 sessions
+    # per arm with 6 decision points each; those before a compaction are out.
+    assert len(tested["arm"]) == 5 and all(n < 2 * 20 * 6 for n in tested["arm"])
+    assert len(tested["compaction_count"]) == 5
     record = result.to_dict()
     assert "after at least one compaction" in record["contrast"]["design"]
+    assert "score test" in record["test"] and "Wald" not in record["test"]
     assert record["inputs"]["position_transform"] == "log1p"
     assert "log1p(position)" in record["compaction"]["design"]
     linear = power_by_simulation(0.7, 20, 6, 0.1, 2, seed=3, position_transform="linear")

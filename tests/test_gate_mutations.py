@@ -2094,6 +2094,7 @@ def synthetic_e1_rows() -> dict[str, list[dict[str, Any]]]:
                         "constraint_type": RULE_TYPES[(i + k) % 2],
                         "position": position,
                         "compaction_count": count,
+                        "span_end": "done",
                         "strategy": arm,
                         "violated": rng.random() < 1.0 / (1.0 + math.exp(-logit)),
                         "synthetic": True,

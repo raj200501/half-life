@@ -1,0 +1,1544 @@
+{
+  "code_sha256": {
+    "halflife/__init__.py": "3358f44e933ad966d5d5aee10add6aa8ec68807ac76c97e5e6c49fcc18a8ccae",
+    "halflife/analysis.py": "4ee58d99a4a15da4efc234703503e45992beb349edbf7572bf0c643ff576cf61",
+    "halflife/calibrate.py": "39779b745cd0fb61b367678b6fbafd1149c198399bd4dce074c8d441e4909d82",
+    "halflife/e1_analysis.py": "1fb0335d6fb04e5d3ae421153845155f68e5e68358b03de42f875b34c98394fe",
+    "halflife/schema.py": "71565baf8825c53b282d56573fec94f66e13eb87089e4cbd228903c11a977220",
+    "halflife/stats.py": "3d1ab36b0c035072804f56dcef5a07b0a00166d8b541cdb6bb31ab2ed987ea4b"
+  },
+  "command": "python -m halflife.calibrate --out artifacts/power/min_events.json --jobs 3",
+  "created": "2026-11-11T21:24:05Z",
+  "design": {
+    "alpha": 0.05,
+    "analysis": "halflife.e1_analysis.analysis_set and hazard_tests",
+    "band": [
+      0.03,
+      0.07
+    ],
+    "base_logit": [
+      -6.5,
+      -0.5
+    ],
+    "bin_edges": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      10,
+      15,
+      20,
+      30,
+      40,
+      60,
+      97
+    ],
+    "families": [
+      {
+        "calls_per_request": 2.0,
+        "name": "syn-a",
+        "offset": 0.0,
+        "tokens_per_call": 120.0
+      },
+      {
+        "calls_per_request": 3.4,
+        "name": "syn-b",
+        "offset": 0.5,
+        "tokens_per_call": 150.0
+      }
+    ],
+    "min_tests": 2000,
+    "n_datasets": 20000,
+    "n_plans": 48,
+    "plans": "designs/e1.yaml",
+    "reset_tokens": [
+      350.0,
+      700.0
+    ],
+    "scenarios": [
+      {
+        "base_shift": 0.0,
+        "compaction": 0.0,
+        "dp_sd": 0.8,
+        "name": "both_null_shared_dp_effect",
+        "slope": 0.0,
+        "terms": [
+          "log1p(position)",
+          "compaction_count"
+        ]
+      },
+      {
+        "base_shift": -0.8,
+        "compaction": 0.4,
+        "dp_sd": 0.0,
+        "name": "h1_null_compaction_effect",
+        "slope": 0.0,
+        "terms": [
+          "log1p(position)"
+        ]
+      },
+      {
+        "base_shift": -1.6,
+        "compaction": 0.0,
+        "dp_sd": 0.0,
+        "name": "h2b_null_position_effect",
+        "slope": 0.5,
+        "terms": [
+          "compaction_count"
+        ]
+      }
+    ],
+    "seed": 20261111,
+    "start_tokens": 300.0,
+    "token_shape": 2.0,
+    "type_effects": {
+      "invariant": 0.4,
+      "procedure": -0.4,
+      "prohibition": 0.0,
+      "resource_limit": 0.2
+    }
+  },
+  "git_sha": "f7367a13eeeaf81393de65ef08a0022e2b983ca5",
+  "min_events": 2,
+  "note": "Synthetic: null rejection rates of the H1 and H2b score tests on simulated sessions of the E1 plans, for calibrating min_events before the E1 preregistration; not model results or real-world results.",
+  "rule": "min_events is the smallest bin lower edge at and above which every bin with at least 2000 computed tests has a null rejection rate (p < 0.05) within [0.03, 0.07] for both tests in every scenario that feeds them; 0 when every such bin does",
+  "runtime_s": 239.6,
+  "synthetic": true,
+  "table": [
+    {
+      "bins": [
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3507,
+              "rejected": 161,
+              "tests": 3851
+            },
+            "pooled": {
+              "computed": 948,
+              "rejected": 38,
+              "tests": 1043
+            }
+          },
+          "computed": 4455,
+          "lower": 1,
+          "not_computed": {
+            "no_stratum_with_variation": 82,
+            "null_separation": 287,
+            "rank_deficient": 70
+          },
+          "rate": {
+            "hi": 0.0511372796247,
+            "k": 199,
+            "level": 0.95,
+            "lo": 0.0389851126002,
+            "method": "wilson",
+            "n": 4455,
+            "value": 0.0446689113356
+          },
+          "rejected": 199,
+          "tests": 4894,
+          "upper": 1
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3033,
+              "rejected": 165,
+              "tests": 3038
+            },
+            "pooled": {
+              "computed": 1167,
+              "rejected": 70,
+              "tests": 1168
+            }
+          },
+          "computed": 4200,
+          "lower": 2,
+          "not_computed": {
+            "no_stratum_with_variation": 1,
+            "null_separation": 5
+          },
+          "rate": {
+            "hi": 0.0633175315141,
+            "k": 235,
+            "level": 0.95,
+            "lo": 0.0493987693888,
+            "method": "wilson",
+            "n": 4200,
+            "value": 0.0559523809524
+          },
+          "rejected": 235,
+          "tests": 4206,
+          "upper": 2
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2321,
+              "rejected": 125,
+              "tests": 2321
+            },
+            "pooled": {
+              "computed": 1038,
+              "rejected": 60,
+              "tests": 1038
+            }
+          },
+          "computed": 3359,
+          "lower": 3,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0633112487653,
+            "k": 185,
+            "level": 0.95,
+            "lo": 0.0478570781983,
+            "method": "wilson",
+            "n": 3359,
+            "value": 0.055075915451
+          },
+          "rejected": 185,
+          "tests": 3359,
+          "upper": 3
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 1803,
+              "rejected": 89,
+              "tests": 1803
+            },
+            "pooled": {
+              "computed": 867,
+              "rejected": 48,
+              "tests": 867
+            }
+          },
+          "computed": 2670,
+          "lower": 4,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0603429998587,
+            "k": 137,
+            "level": 0.95,
+            "lo": 0.0435679698452,
+            "method": "wilson",
+            "n": 2670,
+            "value": 0.0513108614232
+          },
+          "rejected": 137,
+          "tests": 2670,
+          "upper": 4
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2667,
+              "rejected": 163,
+              "tests": 2667
+            },
+            "pooled": {
+              "computed": 1230,
+              "rejected": 77,
+              "tests": 1230
+            }
+          },
+          "computed": 3897,
+          "lower": 5,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0695740054514,
+            "k": 240,
+            "level": 0.95,
+            "lo": 0.0544611454073,
+            "method": "wilson",
+            "n": 3897,
+            "value": 0.0615858352579
+          },
+          "rejected": 240,
+          "tests": 3897,
+          "upper": 6
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2918,
+              "rejected": 162,
+              "tests": 2918
+            },
+            "pooled": {
+              "computed": 1346,
+              "rejected": 84,
+              "tests": 1346
+            }
+          },
+          "computed": 4264,
+          "lower": 7,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0650969323159,
+            "k": 246,
+            "level": 0.95,
+            "lo": 0.0510839201373,
+            "method": "wilson",
+            "n": 4264,
+            "value": 0.0576923076923
+          },
+          "rejected": 246,
+          "tests": 4264,
+          "upper": 9
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3598,
+              "rejected": 199,
+              "tests": 3598
+            },
+            "pooled": {
+              "computed": 1620,
+              "rejected": 96,
+              "tests": 1620
+            }
+          },
+          "computed": 5218,
+          "lower": 10,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0631338879333,
+            "k": 295,
+            "level": 0.95,
+            "lo": 0.0505887257277,
+            "method": "wilson",
+            "n": 5218,
+            "value": 0.0565350709084
+          },
+          "rejected": 295,
+          "tests": 5218,
+          "upper": 14
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2827,
+              "rejected": 162,
+              "tests": 2827
+            },
+            "pooled": {
+              "computed": 1132,
+              "rejected": 73,
+              "tests": 1132
+            }
+          },
+          "computed": 3959,
+          "lower": 15,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0671549114951,
+            "k": 235,
+            "level": 0.95,
+            "lo": 0.0524162254642,
+            "method": "wilson",
+            "n": 3959,
+            "value": 0.0593584238444
+          },
+          "rejected": 235,
+          "tests": 3959,
+          "upper": 19
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 4897,
+              "rejected": 255,
+              "tests": 4897
+            },
+            "pooled": {
+              "computed": 1772,
+              "rejected": 109,
+              "tests": 1772
+            }
+          },
+          "computed": 6669,
+          "lower": 20,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0602937068467,
+            "k": 364,
+            "level": 0.95,
+            "lo": 0.049380929264,
+            "method": "wilson",
+            "n": 6669,
+            "value": 0.0545808966862
+          },
+          "rejected": 364,
+          "tests": 6669,
+          "upper": 29
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 5235,
+              "rejected": 263,
+              "tests": 5235
+            },
+            "pooled": {
+              "computed": 1475,
+              "rejected": 97,
+              "tests": 1475
+            }
+          },
+          "computed": 6710,
+          "lower": 30,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.059302569402,
+            "k": 360,
+            "level": 0.95,
+            "lo": 0.0485107388598,
+            "method": "wilson",
+            "n": 6710,
+            "value": 0.053651266766
+          },
+          "rejected": 360,
+          "tests": 6710,
+          "upper": 39
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3528,
+              "rejected": 200,
+              "tests": 3528
+            },
+            "pooled": {
+              "computed": 2438,
+              "rejected": 116,
+              "tests": 2438
+            }
+          },
+          "computed": 5966,
+          "lower": 40,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0589430909236,
+            "k": 316,
+            "level": 0.95,
+            "lo": 0.047565844566,
+            "method": "wilson",
+            "n": 5966,
+            "value": 0.0529668119343
+          },
+          "rejected": 316,
+          "tests": 5966,
+          "upper": 59
+        },
+        {
+          "by_scope": {
+            "pooled": {
+              "computed": 4319,
+              "rejected": 247,
+              "tests": 4319
+            }
+          },
+          "computed": 4319,
+          "lower": 60,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0645158561909,
+            "k": 247,
+            "level": 0.95,
+            "lo": 0.0506494728093,
+            "method": "wilson",
+            "n": 4319,
+            "value": 0.0571891641584
+          },
+          "rejected": 247,
+          "tests": 4319,
+          "upper": 96
+        }
+      ],
+      "outside_bins": 3869,
+      "scenario": "both_null_shared_dp_effect",
+      "term": "compaction_count"
+    },
+    {
+      "bins": [
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3747,
+              "rejected": 161,
+              "tests": 4096
+            },
+            "pooled": {
+              "computed": 1080,
+              "rejected": 41,
+              "tests": 1179
+            }
+          },
+          "computed": 4827,
+          "lower": 1,
+          "not_computed": {
+            "no_stratum_with_variation": 91,
+            "null_separation": 298,
+            "rank_deficient": 59
+          },
+          "rate": {
+            "hi": 0.0478706504868,
+            "k": 202,
+            "level": 0.95,
+            "lo": 0.0365538669182,
+            "method": "wilson",
+            "n": 4827,
+            "value": 0.0418479386783
+          },
+          "rejected": 202,
+          "tests": 5275,
+          "upper": 1
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3043,
+              "rejected": 158,
+              "tests": 3054
+            },
+            "pooled": {
+              "computed": 1261,
+              "rejected": 75,
+              "tests": 1268
+            }
+          },
+          "computed": 4304,
+          "lower": 2,
+          "not_computed": {
+            "no_stratum_with_variation": 4,
+            "null_separation": 9,
+            "rank_deficient": 5
+          },
+          "rate": {
+            "hi": 0.0613022879991,
+            "k": 233,
+            "level": 0.95,
+            "lo": 0.0477642742948,
+            "method": "wilson",
+            "n": 4304,
+            "value": 0.0541356877323
+          },
+          "rejected": 233,
+          "tests": 4322,
+          "upper": 2
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2309,
+              "rejected": 117,
+              "tests": 2309
+            },
+            "pooled": {
+              "computed": 1023,
+              "rejected": 67,
+              "tests": 1023
+            }
+          },
+          "computed": 3332,
+          "lower": 3,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0635023460284,
+            "k": 184,
+            "level": 0.95,
+            "lo": 0.0479662184735,
+            "method": "wilson",
+            "n": 3332,
+            "value": 0.0552220888355
+          },
+          "rejected": 184,
+          "tests": 3332,
+          "upper": 3
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 1761,
+              "rejected": 109,
+              "tests": 1761
+            },
+            "pooled": {
+              "computed": 858,
+              "rejected": 56,
+              "tests": 858
+            }
+          },
+          "computed": 2619,
+          "lower": 4,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0729615319971,
+            "k": 165,
+            "level": 0.95,
+            "lo": 0.0543208310668,
+            "method": "wilson",
+            "n": 2619,
+            "value": 0.0630011454754
+          },
+          "rejected": 165,
+          "tests": 2619,
+          "upper": 4
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2685,
+              "rejected": 174,
+              "tests": 2685
+            },
+            "pooled": {
+              "computed": 1298,
+              "rejected": 94,
+              "tests": 1298
+            }
+          },
+          "computed": 3983,
+          "lower": 5,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0754903175571,
+            "k": 268,
+            "level": 0.95,
+            "lo": 0.0599154828482,
+            "method": "wilson",
+            "n": 3983,
+            "value": 0.0672859653527
+          },
+          "rejected": 268,
+          "tests": 3983,
+          "upper": 6
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2834,
+              "rejected": 177,
+              "tests": 2834
+            },
+            "pooled": {
+              "computed": 1320,
+              "rejected": 80,
+              "tests": 1320
+            }
+          },
+          "computed": 4154,
+          "lower": 7,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0696068892531,
+            "k": 257,
+            "level": 0.95,
+            "lo": 0.0549388549628,
+            "method": "wilson",
+            "n": 4154,
+            "value": 0.06186807896
+          },
+          "rejected": 257,
+          "tests": 4154,
+          "upper": 9
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3482,
+              "rejected": 155,
+              "tests": 3482
+            },
+            "pooled": {
+              "computed": 1527,
+              "rejected": 78,
+              "tests": 1527
+            }
+          },
+          "computed": 5009,
+          "lower": 10,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0527040891556,
+            "k": 233,
+            "level": 0.95,
+            "lo": 0.0410234828573,
+            "method": "wilson",
+            "n": 5009,
+            "value": 0.0465162707127
+          },
+          "rejected": 233,
+          "tests": 5009,
+          "upper": 14
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2679,
+              "rejected": 130,
+              "tests": 2679
+            },
+            "pooled": {
+              "computed": 1187,
+              "rejected": 57,
+              "tests": 1187
+            }
+          },
+          "computed": 3866,
+          "lower": 15,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0555932440853,
+            "k": 187,
+            "level": 0.95,
+            "lo": 0.0420442076918,
+            "method": "wilson",
+            "n": 3866,
+            "value": 0.0483704086912
+          },
+          "rejected": 187,
+          "tests": 3866,
+          "upper": 19
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 4504,
+              "rejected": 256,
+              "tests": 4504
+            },
+            "pooled": {
+              "computed": 1730,
+              "rejected": 107,
+              "tests": 1730
+            }
+          },
+          "computed": 6234,
+          "lower": 20,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0643187899757,
+            "k": 363,
+            "level": 0.95,
+            "lo": 0.0526834556951,
+            "method": "wilson",
+            "n": 6234,
+            "value": 0.05822906641
+          },
+          "rejected": 363,
+          "tests": 6234,
+          "upper": 29
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 4760,
+              "rejected": 262,
+              "tests": 4760
+            },
+            "pooled": {
+              "computed": 1382,
+              "rejected": 86,
+              "tests": 1382
+            }
+          },
+          "computed": 6142,
+          "lower": 30,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0627227997393,
+            "k": 348,
+            "level": 0.95,
+            "lo": 0.0511495582624,
+            "method": "wilson",
+            "n": 6142,
+            "value": 0.0566590687073
+          },
+          "rejected": 348,
+          "tests": 6142,
+          "upper": 39
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3600,
+              "rejected": 203,
+              "tests": 3600
+            },
+            "pooled": {
+              "computed": 2380,
+              "rejected": 154,
+              "tests": 2380
+            }
+          },
+          "computed": 5980,
+          "lower": 40,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0659914008236,
+            "k": 357,
+            "level": 0.95,
+            "lo": 0.0539719143412,
+            "method": "wilson",
+            "n": 5980,
+            "value": 0.0596989966555
+          },
+          "rejected": 357,
+          "tests": 5980,
+          "upper": 59
+        },
+        {
+          "by_scope": {
+            "pooled": {
+              "computed": 4067,
+              "rejected": 217,
+              "tests": 4067
+            }
+          },
+          "computed": 4067,
+          "lower": 60,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0606944733719,
+            "k": 217,
+            "level": 0.95,
+            "lo": 0.0468610438964,
+            "method": "wilson",
+            "n": 4067,
+            "value": 0.0533562822719
+          },
+          "rejected": 217,
+          "tests": 4067,
+          "upper": 96
+        }
+      ],
+      "outside_bins": 5017,
+      "scenario": "h2b_null_position_effect",
+      "term": "compaction_count"
+    },
+    {
+      "bins": [
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3766,
+              "rejected": 94,
+              "tests": 3851
+            },
+            "pooled": {
+              "computed": 1016,
+              "rejected": 27,
+              "tests": 1043
+            }
+          },
+          "computed": 4782,
+          "lower": 1,
+          "not_computed": {
+            "no_stratum_with_variation": 26,
+            "null_separation": 78,
+            "one_cluster": 1,
+            "rank_deficient": 7
+          },
+          "rate": {
+            "hi": 0.0301498303,
+            "k": 121,
+            "level": 0.95,
+            "lo": 0.0212186617272,
+            "method": "wilson",
+            "n": 4782,
+            "value": 0.0253032204099
+          },
+          "rejected": 121,
+          "tests": 4894,
+          "upper": 1
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3037,
+              "rejected": 137,
+              "tests": 3038
+            },
+            "pooled": {
+              "computed": 1167,
+              "rejected": 53,
+              "tests": 1168
+            }
+          },
+          "computed": 4204,
+          "lower": 2,
+          "not_computed": {
+            "no_stratum_with_variation": 1,
+            "null_separation": 1
+          },
+          "rate": {
+            "hi": 0.0519005277821,
+            "k": 190,
+            "level": 0.95,
+            "lo": 0.0393199857703,
+            "method": "wilson",
+            "n": 4204,
+            "value": 0.0451950523311
+          },
+          "rejected": 190,
+          "tests": 4206,
+          "upper": 2
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2321,
+              "rejected": 108,
+              "tests": 2321
+            },
+            "pooled": {
+              "computed": 1038,
+              "rejected": 43,
+              "tests": 1038
+            }
+          },
+          "computed": 3359,
+          "lower": 3,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0524960346931,
+            "k": 151,
+            "level": 0.95,
+            "lo": 0.038451297367,
+            "method": "wilson",
+            "n": 3359,
+            "value": 0.0449538553141
+          },
+          "rejected": 151,
+          "tests": 3359,
+          "upper": 3
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 1803,
+              "rejected": 104,
+              "tests": 1803
+            },
+            "pooled": {
+              "computed": 867,
+              "rejected": 40,
+              "tests": 867
+            }
+          },
+          "computed": 2670,
+          "lower": 4,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0631592281595,
+            "k": 144,
+            "level": 0.95,
+            "lo": 0.0459876540754,
+            "method": "wilson",
+            "n": 2670,
+            "value": 0.0539325842697
+          },
+          "rejected": 144,
+          "tests": 2670,
+          "upper": 4
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2667,
+              "rejected": 158,
+              "tests": 2667
+            },
+            "pooled": {
+              "computed": 1230,
+              "rejected": 89,
+              "tests": 1230
+            }
+          },
+          "computed": 3897,
+          "lower": 5,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0714701252476,
+            "k": 247,
+            "level": 0.95,
+            "lo": 0.0561539948496,
+            "method": "wilson",
+            "n": 3897,
+            "value": 0.0633820887862
+          },
+          "rejected": 247,
+          "tests": 3897,
+          "upper": 6
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2918,
+              "rejected": 159,
+              "tests": 2918
+            },
+            "pooled": {
+              "computed": 1346,
+              "rejected": 65,
+              "tests": 1346
+            }
+          },
+          "computed": 4264,
+          "lower": 7,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0596410203287,
+            "k": 224,
+            "level": 0.95,
+            "lo": 0.0462301708063,
+            "method": "wilson",
+            "n": 4264,
+            "value": 0.0525328330206
+          },
+          "rejected": 224,
+          "tests": 4264,
+          "upper": 9
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3598,
+              "rejected": 178,
+              "tests": 3598
+            },
+            "pooled": {
+              "computed": 1620,
+              "rejected": 98,
+              "tests": 1620
+            }
+          },
+          "computed": 5218,
+          "lower": 10,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0593023379829,
+            "k": 276,
+            "level": 0.95,
+            "lo": 0.0471431493426,
+            "method": "wilson",
+            "n": 5218,
+            "value": 0.0528938290533
+          },
+          "rejected": 276,
+          "tests": 5218,
+          "upper": 14
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2827,
+              "rejected": 158,
+              "tests": 2827
+            },
+            "pooled": {
+              "computed": 1132,
+              "rejected": 73,
+              "tests": 1132
+            }
+          },
+          "computed": 3959,
+          "lower": 15,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0660867271605,
+            "k": 231,
+            "level": 0.95,
+            "lo": 0.0514656563152,
+            "method": "wilson",
+            "n": 3959,
+            "value": 0.0583480676939
+          },
+          "rejected": 231,
+          "tests": 3959,
+          "upper": 19
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 4897,
+              "rejected": 248,
+              "tests": 4897
+            },
+            "pooled": {
+              "computed": 1772,
+              "rejected": 103,
+              "tests": 1772
+            }
+          },
+          "computed": 6669,
+          "lower": 20,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0582529713575,
+            "k": 351,
+            "level": 0.95,
+            "lo": 0.047525273664,
+            "method": "wilson",
+            "n": 6669,
+            "value": 0.0526315789474
+          },
+          "rejected": 351,
+          "tests": 6669,
+          "upper": 29
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 5235,
+              "rejected": 279,
+              "tests": 5235
+            },
+            "pooled": {
+              "computed": 1475,
+              "rejected": 80,
+              "tests": 1475
+            }
+          },
+          "computed": 6710,
+          "lower": 30,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0591465680078,
+            "k": 359,
+            "level": 0.95,
+            "lo": 0.0483688482033,
+            "method": "wilson",
+            "n": 6710,
+            "value": 0.0535022354694
+          },
+          "rejected": 359,
+          "tests": 6710,
+          "upper": 39
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3528,
+              "rejected": 198,
+              "tests": 3528
+            },
+            "pooled": {
+              "computed": 2438,
+              "rejected": 133,
+              "tests": 2438
+            }
+          },
+          "computed": 5966,
+          "lower": 40,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0615810385951,
+            "k": 331,
+            "level": 0.95,
+            "lo": 0.049953155975,
+            "method": "wilson",
+            "n": 5966,
+            "value": 0.0554810593362
+          },
+          "rejected": 331,
+          "tests": 5966,
+          "upper": 59
+        },
+        {
+          "by_scope": {
+            "pooled": {
+              "computed": 4319,
+              "rejected": 239,
+              "tests": 4319
+            }
+          },
+          "computed": 4319,
+          "lower": 60,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0625591559476,
+            "k": 239,
+            "level": 0.95,
+            "lo": 0.0489049038406,
+            "method": "wilson",
+            "n": 4319,
+            "value": 0.0553368835379
+          },
+          "rejected": 239,
+          "tests": 4319,
+          "upper": 96
+        }
+      ],
+      "outside_bins": 3869,
+      "scenario": "both_null_shared_dp_effect",
+      "term": "log1p(position)"
+    },
+    {
+      "bins": [
+        {
+          "by_scope": {
+            "family": {
+              "computed": 4241,
+              "rejected": 97,
+              "tests": 4457
+            },
+            "pooled": {
+              "computed": 1302,
+              "rejected": 18,
+              "tests": 1388
+            }
+          },
+          "computed": 5543,
+          "lower": 1,
+          "not_computed": {
+            "no_stratum_with_variation": 81,
+            "null_separation": 203,
+            "one_cluster": 11,
+            "rank_deficient": 7
+          },
+          "rate": {
+            "hi": 0.0248444680207,
+            "k": 115,
+            "level": 0.95,
+            "lo": 0.0173131203215,
+            "method": "wilson",
+            "n": 5543,
+            "value": 0.0207468879668
+          },
+          "rejected": 115,
+          "tests": 5845,
+          "upper": 1
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3205,
+              "rejected": 116,
+              "tests": 3215
+            },
+            "pooled": {
+              "computed": 1259,
+              "rejected": 51,
+              "tests": 1262
+            }
+          },
+          "computed": 4464,
+          "lower": 2,
+          "not_computed": {
+            "no_stratum_with_variation": 3,
+            "null_separation": 9,
+            "one_cluster": 1
+          },
+          "rate": {
+            "hi": 0.0433866956974,
+            "k": 167,
+            "level": 0.95,
+            "lo": 0.0322295637278,
+            "method": "wilson",
+            "n": 4464,
+            "value": 0.0374103942652
+          },
+          "rejected": 167,
+          "tests": 4477,
+          "upper": 2
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2321,
+              "rejected": 100,
+              "tests": 2321
+            },
+            "pooled": {
+              "computed": 1093,
+              "rejected": 52,
+              "tests": 1093
+            }
+          },
+          "computed": 3414,
+          "lower": 3,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0519680942529,
+            "k": 152,
+            "level": 0.95,
+            "lo": 0.0381008754549,
+            "method": "wilson",
+            "n": 3414,
+            "value": 0.0445225541886
+          },
+          "rejected": 152,
+          "tests": 3414,
+          "upper": 3
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 1742,
+              "rejected": 79,
+              "tests": 1742
+            },
+            "pooled": {
+              "computed": 841,
+              "rejected": 35,
+              "tests": 841
+            }
+          },
+          "computed": 2583,
+          "lower": 4,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0527555989325,
+            "k": 114,
+            "level": 0.95,
+            "lo": 0.0368677747884,
+            "method": "wilson",
+            "n": 2583,
+            "value": 0.0441347270616
+          },
+          "rejected": 114,
+          "tests": 2583,
+          "upper": 4
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2730,
+              "rejected": 132,
+              "tests": 2730
+            },
+            "pooled": {
+              "computed": 1321,
+              "rejected": 58,
+              "tests": 1321
+            }
+          },
+          "computed": 4051,
+          "lower": 5,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0538530666234,
+            "k": 190,
+            "level": 0.95,
+            "lo": 0.040809440584,
+            "method": "wilson",
+            "n": 4051,
+            "value": 0.0469019995063
+          },
+          "rejected": 190,
+          "tests": 4051,
+          "upper": 6
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2973,
+              "rejected": 158,
+              "tests": 2973
+            },
+            "pooled": {
+              "computed": 1408,
+              "rejected": 73,
+              "tests": 1408
+            }
+          },
+          "computed": 4381,
+          "lower": 7,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.059746099009,
+            "k": 231,
+            "level": 0.95,
+            "lo": 0.0464929664613,
+            "method": "wilson",
+            "n": 4381,
+            "value": 0.0527276877425
+          },
+          "rejected": 231,
+          "tests": 4381,
+          "upper": 9
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 3467,
+              "rejected": 180,
+              "tests": 3467
+            },
+            "pooled": {
+              "computed": 1613,
+              "rejected": 67,
+              "tests": 1613
+            }
+          },
+          "computed": 5080,
+          "lower": 10,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0548850954257,
+            "k": 247,
+            "level": 0.95,
+            "lo": 0.0430411406407,
+            "method": "wilson",
+            "n": 5080,
+            "value": 0.0486220472441
+          },
+          "rejected": 247,
+          "tests": 5080,
+          "upper": 14
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2619,
+              "rejected": 141,
+              "tests": 2619
+            },
+            "pooled": {
+              "computed": 1202,
+              "rejected": 79,
+              "tests": 1202
+            }
+          },
+          "computed": 3821,
+          "lower": 15,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0654164812939,
+            "k": 220,
+            "level": 0.95,
+            "lo": 0.0506253111828,
+            "method": "wilson",
+            "n": 3821,
+            "value": 0.0575765506412
+          },
+          "rejected": 220,
+          "tests": 3821,
+          "upper": 19
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 4607,
+              "rejected": 255,
+              "tests": 4607
+            },
+            "pooled": {
+              "computed": 1826,
+              "rejected": 90,
+              "tests": 1826
+            }
+          },
+          "computed": 6433,
+          "lower": 20,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0594061319257,
+            "k": 345,
+            "level": 0.95,
+            "lo": 0.0483860924532,
+            "method": "wilson",
+            "n": 6433,
+            "value": 0.0536297217472
+          },
+          "rejected": 345,
+          "tests": 6433,
+          "upper": 29
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 4033,
+              "rejected": 191,
+              "tests": 4033
+            },
+            "pooled": {
+              "computed": 1433,
+              "rejected": 84,
+              "tests": 1433
+            }
+          },
+          "computed": 5466,
+          "lower": 30,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0564281574574,
+            "k": 275,
+            "level": 0.95,
+            "lo": 0.0448255009878,
+            "method": "wilson",
+            "n": 5466,
+            "value": 0.0503110135382
+          },
+          "rejected": 275,
+          "tests": 5466,
+          "upper": 39
+        },
+        {
+          "by_scope": {
+            "family": {
+              "computed": 2734,
+              "rejected": 152,
+              "tests": 2734
+            },
+            "pooled": {
+              "computed": 2484,
+              "rejected": 110,
+              "tests": 2484
+            }
+          },
+          "computed": 5218,
+          "lower": 40,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0564740241973,
+            "k": 262,
+            "level": 0.95,
+            "lo": 0.0446093700389,
+            "method": "wilson",
+            "n": 5218,
+            "value": 0.050210808739
+          },
+          "rejected": 262,
+          "tests": 5218,
+          "upper": 59
+        },
+        {
+          "by_scope": {
+            "pooled": {
+              "computed": 3268,
+              "rejected": 194,
+              "tests": 3268
+            }
+          },
+          "computed": 3268,
+          "lower": 60,
+          "not_computed": {},
+          "rate": {
+            "hi": 0.0679943594308,
+            "k": 194,
+            "level": 0.95,
+            "lo": 0.0517673905661,
+            "method": "wilson",
+            "n": 3268,
+            "value": 0.0593635250918
+          },
+          "rejected": 194,
+          "tests": 3268,
+          "upper": 96
+        }
+      ],
+      "outside_bins": 5963,
+      "scenario": "h1_null_compaction_effect",
+      "term": "log1p(position)"
+    }
+  ],
+  "tests": 240000
+}

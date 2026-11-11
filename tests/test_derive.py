@@ -70,6 +70,7 @@ def synthetic_e1(
                         "acted": rng.random() < 0.8,
                         "recalled_before": rng.random() < 0.6,
                         "span_calls": 3,
+                        "span_end": "done",
                         "synthetic": True,
                     }
                 )
@@ -132,6 +133,7 @@ def synthetic_arms(
                         "violated": rng.random() < 0.15 + 0.1 * a,
                         "recalled_before": rng.random() < 0.6,
                         "span_calls": 2,
+                        "span_end": "done",
                         "placement": "first_user",
                         "phrasing": "bare",
                         "strategy": "full_summary",
