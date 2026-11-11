@@ -2,7 +2,7 @@
 
 `tools/ship_check.py` verifies banked artifacts against the layouts below and recomputes what it can from them. It never runs an experiment or calls a model. These layouts may gain fields and checks over time; a change that would let a gate pass more easily needs a DECISIONS.md entry and a reviewer pass first (rule 13: never pass a gate by weakening its check).
 
-All paths are relative to the repository root. JSON files are UTF-8. Every artifact directory also carries provenance (git SHA, config hash, model IDs and revisions, seeds, timestamps, environment, exact command lines, usage) as section 10.2 step 5 requires.
+All paths are relative to the repository root. JSON files are UTF-8. Experiment directories banked by `python -m halflife.experiment bank` carry a `provenance.json` (git SHA, design hash, model IDs, command, timestamp, and every run's invocation records), as section 10.2 step 5 requires; other artifacts record their own command and inputs, and `artifacts/claims.json` declares which are raw and which are re-derived (docs/CLAIMS.md).
 
 Rules that hold for every layout below:
 
@@ -27,7 +27,7 @@ Rules that hold for every layout below:
 - `detector_validation.json`
   - `cases`: list of `{case_id, constraint_id, kind, label, predicted}`; `case_id` is a non-empty string, unique across cases (a repeated case fails); `label` and `predicted` are booleans (violation or not). Seeded violations must include the kinds `sed_inplace`, `scripted_write`, `git_checkout`, and `cp`.
   - `precision` and `recall`: `{value, lo, hi}` with Wilson 95% intervals. The ship check recomputes all six numbers from `cases` (tolerance 1e-6) and requires both values to be at least 0.95.
-- `probe_leakage.json`: `{validation_runs, leaks, runs: [{run_id, session_id, leaked}]}`. `validation_runs` and `leaks` are integers that match `runs`; `runs` is non-empty; every run has a non-empty `run_id`, a boolean `leaked` (null, meaning leakage was never checked, fails), and a unique `(run_id, session_id)` (`session_id` may be absent); `leaks` must be 0. `python -m halflife.experiment e0-validate` writes this layout and `compaction_logs.json`.
+- `probe_leakage.json`: `{validation_runs, leaks, runs: [{run_id, session_id, leaked}]}`. `validation_runs` and `leaks` are integers that match `runs`; `runs` is non-empty; every run has a non-empty `run_id`, a boolean `leaked` (null, meaning leakage was never checked, fails), and a unique `(run_id, session_id)` (`session_id` may be absent); `leaks` must be 0. `python -m halflife.experiment e0-validate --banked artifacts/pilot` writes this layout and `compaction_logs.json`.
 - `compaction_logs.json`: `{source, events: [...]}`, `events` non-empty; if it has an `incomplete` count, that count is 0. `source` is the repository-relative path of the banked experiment directory the validation runs came from, as `halflife.experiment.e0_validation` writes it.
   - Each event has `run_id`, `event_id`, `strategy`, `tool_call_index`, `tokens_before`, `tokens_after`, `log_path`, `log_sha256`; events are unique by `(run_id, session_id, event_id)`, and no two events share a log file.
   - `log_path` is a clean path inside the clone, and the file there exists with that SHA-256.

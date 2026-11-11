@@ -38,6 +38,11 @@ File names, sizes, SHA-256 digests, and parameter counts are in `src/halflife/mo
 
 Replies from these models are research data: they appear in banked run artifacts under `artifacts/`, in `artifacts/models/benchmark.json` (the first 400 characters of three replies per model to fixed synthetic prompts), and in the replay fixtures under `tests/fixtures/replay/`, which hold three calls recorded from SmolLM2-1.7B-Instruct (Apache-2.0) by `tools/bench_models.py` (the model key is in each fixture file; the raw results keep the model file name, not its local path). None of these files contains model weights. The prompts that produced them are this project's own synthetic material.
 
+## Project material written by Claude
+
+- `src/halflife/data/probe_answers.yaml`, the synthetic probe answers and their labels (D-038), was written by a Claude subagent of the build session. It is project material for validating the recall scorer, not output from any model under test.
+- `tests/fixtures/claude_code/help.txt` is a cut-down copy of `claude --help` output, kept so the E2 driver's flag checks run offline; it is quoted only as far as those checks need.
+
 ## Software used to run the models
 
 llama-cpp-python 0.3.36 (MIT, per its package metadata), installed from the project's CPU wheel index as the optional `local` extra (`make setup-local`; pinned in `uv.lock`). It is a dependency, not data, and is listed here only because it reads the files above.

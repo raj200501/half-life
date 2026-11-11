@@ -1,6 +1,6 @@
 # Mitigations for real agent tools
 
-half-life ships four mitigations for coding agents that drift from their rules over a long session (RQ5). All four read one portable constraint spec, `halflife.yaml`, and the same code runs in the study's minimal agent (the E4 arms `guard`, `pin`, `preserve`, and `reinject`) and in Claude Code, so E4 measures what you install. E4 results, with each mitigation's cost in tokens, latency, and task success beside its effect, are reported in docs/REPORT.md once E4 has run; the measured overhead of `halflife-guard` and `halflife-pin` is banked in `artifacts/e4/overhead.json` by `halflife.kit.overhead`. This page states no results.
+half-life ships four mitigations for coding agents that drift from their rules over a long session (RQ5). All four read one portable constraint spec, `halflife.yaml`. E4 tests the same mechanisms in the study's minimal agent, not the installed tools inside Claude Code: the `guard` arm runs the guard's decision core (`halflife.kit.guard.decide_minimal_agent`) and the `reinject` arm appends the hook's text (`halflife.kit.reinject.reinject_text`), but the `pin` arm is a memory message the harness re-inserts after each compaction (DECISIONS.md D-013) rather than the CLAUDE.md block `halflife-pin` writes, and the `preserve` arm replaces the minimal agent's own summary prompt with `preserve_prompt()`, while in Claude Code the Compact Instructions are read by Claude Code's own compactor. E4 also runs a fifth arm, `selfcheck`, a periodic request to check recent actions against the rules, which exists only in the minimal agent. E4 results, with each mitigation's cost in tokens, latency, and task success beside its effect, will be reported in docs/REPORT.md once E4 has run; the measured overhead of `halflife-guard` and `halflife-pin` is banked in `artifacts/e4/overhead.json` (see [Measured overhead](#measured-overhead)).
 
 | Mitigation | Command | What it does | What it does not do |
 |---|---|---|---|
@@ -147,6 +147,15 @@ It is conservative where a precise answer would need the command's result, and t
 Claude Code adds the stdout of a SessionStart hook that matches the `compact` source to the compacted context. `python -m halflife.kit.reinject` prints the rules as `hookSpecificOutput.additionalContext` (or plain text with `--plain`), phrased as a statement that the session's rules still apply, as the hooks reference advises for added context. It prints nothing for other events and other SessionStart sources unless `--any-source` is given. PostCompact is not used: it has no decision control and cannot change the compacted context.
 
 There is no PreCompact hook in the kit. A PreCompact hook can only block compaction (exit 2 or `"decision": "block"`), and Claude Code discards its `systemMessage`; the documented ways to steer the summary are a "Compact Instructions" section in CLAUDE.md and `/compact` with a focus. In the minimal agent, `halflife.kit.compaction_prompt.preserve_prompt()` replaces the default summary prompt: it is the default prompt plus the request to begin with a verbatim "Rules in force" section, placed first so that a summary cut off at the token cap keeps the rules. `halflife.kit.reinject.reinject_text` builds the message the minimal agent's `reinject` arm appends after each compaction, the same text the hook adds.
+
+## Measured overhead
+
+`tools/bank_overhead.py` measures both tools with `halflife.kit.overhead` and banks `artifacts/e4/overhead.json` with its provenance (git SHA, command, repeat count, and the machine's load average before and after, since a model run on the same machine would slow the hook):
+
+- **halflife-guard, latency:** the median wall time of one hook run as a fresh `python -m halflife.kit.guard` subprocess, fed one PreToolUse fixture from `tests/fixtures/claude_hooks/` on stdin, as Claude Code runs it; interpreter start-up and imports dominate. The in-process decision time is recorded beside it.
+- **halflife-guard, tokens:** the mean length of a refusal reason, the only text the guard adds to the context (allowed calls add nothing). Tokens are estimated as characters divided by four unless a tokenizer is given.
+- **halflife-pin, tokens:** the size of the pinned block for each held-out template, which stays in the context for the whole session; the record reports the template with the median block size and keeps every template's numbers.
+- **halflife-pin, latency:** the median time to render the block and apply it to a memory file, paid once per spec change.
 
 ## Documentation relied on
 

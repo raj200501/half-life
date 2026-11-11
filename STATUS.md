@@ -35,8 +35,8 @@ Updated 2026-11-11 (goal_turn 4). Pre-release pass before the repository goes pu
 
 ## Backends and fallbacks
 
-- Local open-weight models through llama.cpp: usable; model client and pins being built.
-- Claude: unusable here; `make review` uses the reviewer subagent; E2 needs Raj (docs/E2_RUNBOOK.md being written).
+- Local open-weight models through llama.cpp: usable; five families pinned by file hash (`artifacts/models/pins.json`), behind the capped client and usage ledger (`halflife.client`).
+- Claude: unusable here (billing guard); `make review` uses the reviewer subagent; E2 needs Raj and docs/E2_RUNBOOK.md.
 
 ## Now
 
@@ -53,13 +53,14 @@ Updated 2026-11-11 (goal_turn 4). Pre-release pass before the repository goes pu
 ## Usage to date
 
 - cash_usd = 0. Claude subject runs 0, single calls 0, review runs 0.
-- Ledger rows: 266, all local llama.cpp calls (dry runs, the planning benchmark, fixture recording, and pilot sessions); no study data yet.
+- Ledger rows: 584, all local llama.cpp calls (dry runs, the planning benchmark, fixture recording, and pilot sessions); no confirmatory data yet.
+- Build-session subagents (builders, the D-038 labeling agent, the citation checker, the reviewer) run on the Max plan outside the harness and are not in the ledger.
 - Claude plan usage: subagent builders hit the weekly limit at about 04:00 UTC on 2026-11-04 (reset 07:00 UTC); relaunched after the reset.
 
 ## Needs Raj
 
 1. **Claude backend (blocks E2 in G8, and headless review).** This cloud container sets `ANTHROPIC_BASE_URL` and `CLAUDE_CODE_USE_CCR_V2`, so the billing guard refuses Claude children. To run E2: on a Linux machine with bubblewrap and socat where `env | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_)'` prints nothing and `claude` is logged in to the Max plan, turn off extra usage (paid overage) on the account, then follow docs/E2_RUNBOOK.md (smoke run, plans from `designs/e2.yaml`, two tiers, bank, push). Record any contaminant the smoke run reports (for example a user-level CLAUDE.md) so it can go in DECISIONS.md. E2 needs about 3 days at the capped 6 sessions per day.
-2. **Before making the repository public: move `main` to this branch.** `main` still holds only the first commit (the build brief), and GitHub shows the default branch to visitors. This branch is a fast-forward of `main`, so from a machine with push rights run `git fetch origin && git push origin origin/claude/brave-albattani-c5c7e2:main` (or merge it in the GitHub interface). CI then runs `make ci` on Python 3.11 and 3.12 for that push (D-022).
+2. **Before making the repository public: move `main` to this branch while the repository is still private.** `main` still holds only the first commit (the build brief), and GitHub shows the default branch to visitors. This branch is a fast-forward of `main`: from a machine with push rights run `git fetch origin && git push origin origin/claude/brave-albattani-c5c7e2:main`. Do not use Squash and merge or Rebase and merge: banked provenance cites these commit SHAs and `make prereg-verify` reads commit order, so `main` must contain the same commits; keep the branch until it does. The push starts the first GitHub Actions run of `make ci` on Python 3.11 and 3.12 (D-022); make the repository public after both jobs pass, and check that Settings shows `main` as the default branch. To accept private security reports as SECURITY.md describes, turn on private vulnerability reporting in the repository's security settings.
 3. **Model licenses (confirm, not blocking).** Llama-3.2-3B-Instruct is under the Llama 3.2 Community License (its acceptable-use policy file is gated and could not be read here) and Qwen2.5-3B-Instruct under the Qwen Research License (non-commercial research and evaluation). This project uses both only for research evaluation and redistributes no weights (D-035). If you do not accept either license, say so and that family's data is dropped and recorded in CORRECTIONS.md.
 
 ## Blocked

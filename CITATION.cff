@@ -3,12 +3,12 @@ message: "If you use half-life or half-life-bench, please cite it as below."
 title: "half-life: survival analysis of constraint adherence in long agent sessions"
 type: software
 authors:
-  - name: "Raj"
+  - given-names: "Raj"
+    family-names: "Kashikar"
     alias: "raj200501"
 repository-code: "https://github.com/raj200501/half-life"
 license: MIT
 version: "0.0.1"
-date-released: "2026-10-23"
 keywords:
   - AI agents
   - evaluation

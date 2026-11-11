@@ -10,7 +10,7 @@ Every E2 table must label the arm as ecological. The driver writes `label: "ecol
 - Every launch is a clean child: `--restricted --strict-mcp-config`, `--tools Read,Write,Edit,Bash,Glob,Grep` with the same `--allowedTools`, `--permission-mode dontAsk`, `--output-format stream-json --verbose --include-hook-events`, `--model <tier>`, `--autocompact 100000` (the smallest auto-compaction window), and `--settings` with Claude Code's Bash sandbox (`enabled`, `failIfUnavailable`, no unsandboxed commands, no network domains allowed) and the snapshot hook. It never passes `--bare`, `--dangerously-skip-permissions`, or `bypassPermissions`, and it refuses to start if a command line breaks these rules.
 - The child environment is an allowlist: tokens, API keys, cloud credentials, `SSH_AUTH_SOCK`, proxies, and the parent-session markers `CLAUDECODE` and `CLAUDE_CODE_ENTRYPOINT` never reach it. Git reads no system or global configuration. Auto memory is off (`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`), so nothing is written to your memory folders.
 - After every tool call, a PostToolUse hook (`python -I -m halflife.drivers.snapshot_hook`) hashes the workspace, so the detectors see the same file snapshots as in minimal-agent runs. The hook never blocks a tool and prints nothing.
-- Claude Code 2.1.309 has no `--max-turns`. The driver counts assistant turns in the stream for each subtask message and stops the child (SIGINT, then SIGTERM) at `claude_agent_max_turns` times `cap_share`, which is 8 at `cap_share = 0.2` (D-010). If a turn still slips past the cap, the ledger row records it honestly and `make budget` will report it.
+- `claude --help` does not list `--max-turns`, although the CLI reference documents it for print mode, so the driver does not rely on it: it counts assistant turns in the stream for each subtask message and stops the child (SIGINT, then SIGTERM) at `claude_agent_max_turns` times `cap_share`, which is 8 at `cap_share = 0.2` (D-010). If a turn still slips past the cap, the ledger row records it honestly and `make budget` will report it.
 - Recall probes fork the conversation (`--resume <uuid> --fork-session --tools ""`) before each decision point after the first message and after each compaction, ask `halflife.probe.PROBE_QUESTION`, and score the answer with the template's recall keywords. The main transcript is hashed around each probe and searched for probe material at the end of the session.
 - Placements: `system` passes the rules with `--append-system-prompt` (identical text on every launch, because the CLI records the system prompt on the first request); `first_user` puts them at the top of the first message; `pinned_file` commits a `CLAUDE.md` with the rules into the workspace before the baseline snapshot; `reminder` appends them to the next subtask message once `reminder_every` tool calls have passed. The system prompt the CLI actually sent is copied from the transcript into `system_prompt.json`.
 - The driver stops launching at the first usage limit, billing error, authentication error, or any sign that the account could draw on paid extra usage (overage). It logs `total_cost_usd` as `plan_equivalent_usd`, never as cash.
@@ -28,7 +28,7 @@ From a normal terminal (not inside a Claude Code session):
 
 ```sh
 cd half-life                      # your clone of github.com/raj200501/half-life
-git fetch origin && git checkout claude/brave-albattani-c5c7e2 && git pull --ff-only
+git fetch origin && git checkout main && git pull --ff-only
 make setup                        # uv sync --frozen into .venv
 make subject-env                  # Python 3.12 with pytest only, for sandboxed commands (D-025)
 make doctor
@@ -153,6 +153,8 @@ Add `--prereg prereg/NNNN-e2.md` when E2 is preregistered. This writes `sessions
 cp runs/claude-smoke/smoke.json artifacts/e2/smoke.json
 ```
 
+Before committing, check that nothing under `artifacts/e2/` names your home directory or a personal plugin, skill, or agent: `grep -rnF "$HOME" artifacts/e2 || echo clean`.
+
 `artifacts/e2/summary.json` (the G8 layout in docs/ARTIFACTS.md) is written by the build session's E2 analysis step, not by hand; leave it to that step if it is not in the repository yet.
 
 Then check, commit, and push. D-022 requires `make ci` to pass in a fresh clone of the exact commit you push:
@@ -163,7 +165,7 @@ make secrets-scan
 git add artifacts/e2 artifacts/usage/ledger.jsonl
 git commit -m "E2: bank ecological runs (haiku, sonnet)"
 rm -rf /tmp/half-life-ci && git clone -q . /tmp/half-life-ci && (cd /tmp/half-life-ci && make setup && make ci)
-git push origin HEAD  # to claude/brave-albattani-c5c7e2; never force-push
+git push origin HEAD  # to the branch you run from; never force-push
 ```
 
 Never commit anything under `runs/` or `private/` (both are git-ignored). After the push, tell the build session which smoke contaminants you recorded, the CLI version, and the run ids, so it can update STATUS.md and report E2 with its null results beside any others.

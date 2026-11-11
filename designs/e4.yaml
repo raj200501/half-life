@@ -1,5 +1,5 @@
-# E4 mitigations on held-out templates (preregistered in prereg/0003-e4.md before any
-# E4 data). Rules in the first user message, full-summary compaction with a
+# E4 mitigations on held-out templates (to be preregistered in prereg/0003-e4.md before any
+# E4 data; not committed yet). Rules in the first user message, full-summary compaction with a
 # randomized schedule; the mitigation arm is assigned by blocked randomization.
 experiment: e4
 split: heldout

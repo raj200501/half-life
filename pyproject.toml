@@ -5,7 +5,7 @@ description = "Survival analysis of constraint adherence in long agent sessions,
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "Raj" }]
+authors = [{ name = "Raj Kashikar" }]
 dependencies = [
     "numpy>=1.26",
     "pyyaml>=6.0",
