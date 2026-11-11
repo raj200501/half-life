@@ -70,10 +70,13 @@ Rules that hold for every layout below:
 - `artifacts/e2/sessions.jsonl`: one row per E2 session, `{session_id, model, label: "ecological", ...}`. Rows are unique by `(session_id, model)` (one plan may run on each tier), the row count equals `n_sessions`, every row is labeled `ecological`, and the set of row `model` values equals the summary's `models`.
 - `artifacts/e3/summary.json`: `{arm: "E3", ran: true, n_sessions}` with `n_sessions` a positive integer.
 - `artifacts/e3/sessions.jsonl`: one row per E3 session with a non-empty `session_id`; rows unique by `(session_id, model)`, and the row count equals `n_sessions`.
+- **E3 is tied to its preregistration, as E1 is (D-050 gate pass).** `artifacts/e3/provenance.json` names a `prereg/NNNN-slug.md` committed strictly before `provenance.json`, `summary.json`, and `sessions.jsonl`; every session row carries that tag, `confirmatory: true`, and a `run_provenance` stamp at or after the preregistration's commit from a clean checkout. A full check also requires the preregistration's settings block to name `halflife.arms_analysis` and `"experiment": "e3"`, `summary.json`'s `settings` to record its `n_boot` and `seed`, and `python -m halflife.arms_analysis e3 --code-sha256` in the clone's environment to print its `code_sha256`.
 - `docs/REPORT.md` mentions `E2`, `E3`, and `ecological` as whole tokens: not inside a longer word, number, or hyphenated compound (`E20`, `E3-like`, and `non-ecological` do not count; `E2's` and `**E3**` do).
 - `docs/REPORT.md` has no sentence saying `E2` or `E3` "has not run": the sentence `make report` writes for an arm with no banked results names the arm, so a report not regenerated after the runs would otherwise pass the mention check (D-050 gate pass).
 
 ## G9 mitigations
+
+- **E4 is tied to its preregistration** by the same rules as E3 in G8, with `artifacts/e4/` and `"experiment": "e4"`.
 
 - `artifacts/e4/summary.json`: `{arm: "E4", ran: true, n_sessions, held_out_templates: [...], mitigations: [{name, ..., cost: {tokens, latency_s, task_success}}]}`.
   - `n_sessions` is a positive integer.

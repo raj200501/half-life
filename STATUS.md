@@ -54,9 +54,9 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Next three actions
 
-1. Finish statistics round 2 (D-050 items 1 to 4 in a subagent; then the report decisions, the power simulation, the `min_events` calibration, and the rest of the gate pass), with its adversarial review.
-2. Fill in and commit prereg/0001-e1.md (settings and code-pin block per D-046, sample size from the power run), generate the E1 plans, and start E1 for SmolLM2 and Granite with `tools/round_robin.py ... --prereg prereg/0001-e1.md` in the background (about two days on this CPU).
-3. After E1: E3, then E4 on the held-out templates, one model-heavy run at a time; E2 on Raj's machine; a fresh review when the daily allowance permits.
+1. Land the statistics audit fixes (D-059: flexible compaction adjustment in H1's model, recalibrated `min_events`, no-crash records, calibration provenance) from the subagent, verify, commit; check the dry run (`runs/dryrun2/`, pilot template, seeds from 992000).
+2. Freeze prereg/0001-e1.md (draft in the session scratchpad; settings and `code_sha256` block, plan hashes, the reach rule with `designs/e1-reserve.yaml`), then start E1 in the background: `tools/round_robin.py --plans runs/e1/plans.jsonl --prefix e1 --models smollm2-1.7b-instruct-q4km granite-3.3-2b-instruct-q4km --prereg prereg/0001-e1.md` (several days on this CPU); checkpoint finished sessions with `tools/checkpoint_runs.py --out artifacts/e1/raw runs/e1-*` every few hours.
+3. While E1 runs: G8 and G9 preregistration ties for E3 and E4 (task 75), the E3 and E4 preregistrations, and a fresh review of the frozen preregistration once the daily allowance permits; then E3, then E4, one model-heavy run at a time.
 
 ## Usage to date
 

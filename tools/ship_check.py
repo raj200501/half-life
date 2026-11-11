@@ -1608,6 +1608,78 @@ def report_mentions(clone: Path, *needles: str) -> list[str]:
     ]
 
 
+ARM_LINKED_FILES = ("provenance.json", "summary.json", "sessions.jsonl")
+"""The banked files of a confirmatory arm (E3, E4) that must cite its preregistration."""
+
+
+def arm_prereg_problem(ctx: Context, arm: str, rows: Sequence[dict[str, Any]]) -> str | None:
+    """Why a confirmatory arm is not tied to its preregistration, or None (D-050 gate pass).
+
+    As G7 does for E1: ``artifacts/<arm>/provenance.json`` names a preregistration
+    committed strictly before each banked file the gate reads, every session row carries
+    its tag and ``confirmatory: true`` and a ``run_provenance`` stamp at or after its
+    commit from a clean checkout. A full check also requires the preregistration's
+    settings block to name ``halflife.arms_analysis`` and this experiment, the banked
+    summary to record the same ``n_boot`` and ``seed``, and the clone's environment to
+    print the preregistered ``code_sha256`` for the analysis.
+    """
+    exp = arm.lower()
+    base = ctx.clone / "artifacts" / exp
+    if not (base / "provenance.json").is_file():
+        return f"missing artifacts/{exp}/provenance.json"
+    prereg = str(load_json(base / "provenance.json").get("prereg", ""))
+    for name in ARM_LINKED_FILES:
+        problem = check_prereg_link(ctx.clone, prereg, f"artifacts/{exp}/{name}")
+        if problem:
+            return problem
+    pre_commit = first_commit(ctx.clone, prereg)
+    if pre_commit is None:  # pragma: no cover - check_prereg_link already required it
+        return f"{prereg} is not committed"
+    contains: dict[str, bool] = {}
+    for row in rows:
+        if row.get("prereg") != prereg or row.get("confirmatory") is not True:
+            return (
+                f"{arm} session {row.get('session_id')} not tagged with the {arm} preregistration"
+            )
+        problem = run_provenance_problem(ctx.clone, pre_commit, row, contains)
+        if problem:
+            return f"{arm} {problem}"
+    if ctx.fast:
+        return None
+    path = ctx.clone / prereg
+    fixed = prereg_settings(path.read_text(encoding="utf-8") if path.is_file() else "")
+    if fixed is None:
+        return f"{prereg} has no halflife_prereg settings block"
+    if fixed.get("analysis") != "halflife.arms_analysis" or fixed.get("experiment") != exp:
+        return f"{prereg} does not name the {exp} analysis (halflife.arms_analysis {exp})"
+    settings = analysis_settings(load_json(base / "summary.json"))
+    if settings is None:
+        return f"{arm} summary.json does not record the analysis settings"
+    for key, value in zip(("n_boot", "seed"), settings, strict=True):
+        want = fixed.get(key)
+        if not isinstance(want, int) or isinstance(want, bool) or want != value:
+            return f"{arm} summary.json settings {key} {value} != {want!r} fixed in {prereg}"
+    pins = fixed.get("code_sha256")
+    if not isinstance(pins, dict) or not pins:
+        return f"{prereg} pins no analysis code (code_sha256)"
+    if (blocked := setup_failed(ctx)) is not None:
+        return blocked.evidence
+    result = ctx.run(
+        f"{exp}-code-pins",
+        [*ctx.python, "-I", "-m", "halflife.arms_analysis", exp, "--code-sha256"],
+    )
+    try:
+        current = json.loads(result.output) if result.returncode == 0 else None
+    except json.JSONDecodeError:
+        current = None
+    if not isinstance(current, dict):
+        return f"halflife.arms_analysis {exp} --code-sha256 failed: rc={result.returncode}"
+    changed = sorted(k for k in set(pins) | set(current) if pins.get(k) != current.get(k))
+    if changed:
+        return f"analysis code differs from the pins in {prereg}: {', '.join(changed)}"
+    return None
+
+
 # The sentence halflife.report writes for an arm with no banked results names the arm
 # (for example "E3 has not run, so ..."), so mentioning the arm is not reporting it.
 NOT_RUN_SENTENCE = r"\b{arm}\b[^.\n]*\bhas not run\b"
@@ -1646,6 +1718,9 @@ def gate_g8(ctx: Context) -> GateResult:
     e3_rows, why = arm_sessions(ctx.clone, "E3", e3)
     if e3_rows is None:
         return fail(why)
+    problem = arm_prereg_problem(ctx, "E3", e3_rows)
+    if problem:
+        return fail(problem)
     absent = report_mentions(ctx.clone, "E2", "E3", "ecological")
     if absent:
         return fail(f"docs/REPORT.md does not report {', '.join(absent)}")
@@ -1760,6 +1835,11 @@ def gate_g9(ctx: Context) -> GateResult:
     if problem:
         return fail(problem)
     problem = e4_rows_problem(ctx, e4, held_out, mitigations)
+    if problem:
+        return fail(problem)
+    problem = arm_prereg_problem(
+        ctx, "E4", load_jsonl(ctx.clone / "artifacts" / "e4" / "sessions.jsonl")
+    )
     if problem:
         return fail(problem)
     pyproject = tomllib.loads((ctx.clone / "pyproject.toml").read_text(encoding="utf-8"))

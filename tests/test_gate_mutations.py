@@ -49,9 +49,9 @@ from typing import Any
 
 import pytest
 
+from halflife import arms_analysis, e1_analysis
 from halflife import bench as bench_mod
 from halflife import compaction as compaction_mod
-from halflife import e1_analysis
 from halflife.bench import verify as verify_mod
 from halflife.experiment import LOG_FIELDS, e0_validation, log_problems
 from halflife.integrity import prereg as prereg_tool
@@ -1624,7 +1624,8 @@ def stamp(git_sha: str = RUN_COMMIT, **fields: Any) -> dict[str, Any]:
 def resolve_stamps(root: Path, files: dict[str, Any], bootstrap: str) -> None:
     """Replace the stamp placeholders in the E1 session rows about to be committed."""
     head = run_git(root, "rev-parse", "HEAD")
-    for row in files.get(f"{E1}/sessions.jsonl", []):
+    rows = [row for rel, value in files.items() if rel.endswith("sessions.jsonl") for row in value]
+    for row in rows:
         provenance = row.get("run_provenance")
         if isinstance(provenance, dict):
             sha = provenance.get("git_sha")
@@ -2567,7 +2568,56 @@ E3 = "artifacts/e3/summary.json"
 E3_ROWS = "artifacts/e3/sessions.jsonl"
 
 
-def build_g8(root: Path) -> Any:
+E3_PREREG = "prereg/0002-e3.md"
+E4_PREREG = "prereg/0003-e4.md"
+E3_PROV = "artifacts/e3/provenance.json"
+E4_PROV = "artifacts/e4/provenance.json"
+ARM_SETTINGS = {"n_boot": N_BOOT, "seed": BOOT_SEED}
+
+
+def arm_prereg_text(exp: str, **fixed: Any) -> str:
+    """An E3 or E4 preregistration whose settings block fixes ``fixed`` over the defaults."""
+    block = {
+        "analysis": "halflife.arms_analysis",
+        "experiment": exp,
+        "n_boot": N_BOOT,
+        "seed": BOOT_SEED,
+        "code_sha256": arms_analysis.analysis_code_sha256(),
+    } | fixed
+    return (
+        f"# {exp.upper()} preregistration\n\nDate: 2026-11-11\n\n```json\n"
+        + json.dumps({"halflife_prereg": block})
+        + "\n```\n"
+    )
+
+
+def commit_arm(
+    root: Path, files: dict[str, Any], prereg: str, text: str, history: str = "prereg-first"
+) -> str:
+    """Commit an arm's preregistration and then its files (or the reverse); HEAD."""
+    root.mkdir(parents=True, exist_ok=True)
+    run_git(root, "init", "-q")
+    boot = commit(root, {"README.md": "# half-life\n", "prereg/.gitkeep": ""}, "bootstrap")
+    if history == "prereg-first":
+        commit(root, {prereg: text}, "freeze the arm")
+        resolve_stamps(root, files, boot)
+        return commit(root, files, "bank the arm")
+    resolve_stamps(root, files, boot)
+    commit(root, files, "bank the arm")
+    return commit(root, {prereg: text}, "freeze the arm afterwards")
+
+
+def arm_rows(rows: list[dict[str, Any]], prereg: str) -> list[dict[str, Any]]:
+    """Session rows tagged with the arm's preregistration and stamped after it."""
+    return [
+        r | {"prereg": prereg, "confirmatory": True, "run_provenance": stamp(prereg=prereg)}
+        for r in rows
+    ]
+
+
+def build_g8(
+    root: Path, *, text: str | None = None, history: str = "prereg-first", fast: bool = True
+) -> Any:
     sessions = [
         {"session_id": f"e2-{i}", "model": "haiku" if i < 3 else "sonnet", "label": "ecological"}
         for i in range(6)
@@ -2579,17 +2629,34 @@ def build_g8(root: Path) -> Any:
         "label": "ecological",
         "models": ["haiku", "sonnet"],
     }
-    write_files(
-        root,
-        {
-            E2: summary,
-            E2_ROWS: sessions,
-            E3: {"arm": "E3", "ran": True, "n_sessions": 8},
-            E3_ROWS: [{"session_id": f"e3-{i}", "model": "qwen2.5-3b"} for i in range(8)],
-            "docs/REPORT.md": REPORT_ARMS,
-        },
+    e3_rows = arm_rows(
+        [{"session_id": f"e3-{i}", "model": "qwen2.5-3b"} for i in range(8)], E3_PREREG
     )
-    return context(root)
+    files = {
+        E2: summary,
+        E2_ROWS: sessions,
+        E3: {"arm": "E3", "ran": True, "n_sessions": 8, "settings": dict(ARM_SETTINGS)},
+        E3_ROWS: e3_rows,
+        E3_PROV: {"prereg": E3_PREREG, "confirmatory": True},
+        "docs/REPORT.md": REPORT_ARMS,
+    }
+    text = arm_prereg_text("e3") if text is None else text
+    sha = commit_arm(root, files, E3_PREREG, text, history)
+    return context(root, sha, setup=not fast, fast=fast)
+
+
+def unlink(rel: str) -> Callable[[Path], None]:
+    return lambda root: (root / rel).unlink()
+
+
+def run_before_the_preregistration(rel: str, index: int) -> Callable[[Path], None]:
+    """Stamp one session with the bootstrap commit, which precedes the preregistration."""
+
+    def apply(root: Path) -> None:
+        first = run_git(root, "rev-list", "--max-parents=0", "HEAD")
+        edit_jsonl(root, rel, lambda rows: rows[index]["run_provenance"].update(git_sha=first))
+
+    return apply
 
 
 def g8(name: str, expect: str, change: Callable[[Path], object], hole: str = "") -> Case:
@@ -2683,6 +2750,28 @@ G8_CASES = params(
             "missing artifacts/e3/sessions.jsonl",
             lambda r: (r / E3_ROWS).unlink(),
         ),
+        # D-050 gate pass: E3 is tied to its preregistration as E1 is.
+        g8("e3-provenance-missing", "missing artifacts/e3/provenance.json", unlink(E3_PROV)),
+        g8(
+            "e3-cites-a-missing-preregistration",
+            "cites missing preregistration",
+            lambda r: edit_json(r, E3_PROV, lambda d: d.update(prereg="prereg/0009-x.md")),
+        ),
+        g8(
+            "e3-session-not-tagged",
+            "E3 session e3-0 not tagged with the E3 preregistration",
+            edit_rows(E3_ROWS, lambda rows: rows[0].update(prereg=None)),
+        ),
+        g8(
+            "e3-session-from-a-dirty-checkout",
+            "E3 session e3-1 did not run from a clean checkout",
+            edit_rows(E3_ROWS, lambda rows: rows[1]["run_provenance"].update(git_dirty=True)),
+        ),
+        g8(
+            "e3-session-before-the-preregistration",
+            "E3 session e3-2 ran at .* which does not contain the preregistration commit",
+            run_before_the_preregistration(E3_ROWS, 2),
+        ),
         g8(
             "e3-summary-overstates-the-sessions",
             "E3 n_sessions 9 != 8 banked session rows",
@@ -2714,6 +2803,43 @@ G8_CASES = params(
 def test_g8_control_passes(tmp_path: Path) -> None:
     result = evaluate(8, build_g8(tmp_path))
     assert result.passed, result.evidence
+
+
+def test_g8_full_check_ties_e3_to_its_preregistered_settings_and_code(tmp_path: Path) -> None:
+    result = evaluate(8, build_g8(tmp_path / "ok", fast=False))
+    assert result.passed, result.evidence
+    for name, text, expect in (
+        (
+            "another-analysis",
+            arm_prereg_text("e3", analysis="halflife.e1_analysis"),
+            "prereg/0002-e3.md does not name the e3 analysis (halflife.arms_analysis e3)",
+        ),
+        (
+            "another-n-boot",
+            arm_prereg_text("e3", n_boot=2000),
+            "E3 summary.json settings n_boot 20 != 2000 fixed in prereg/0002-e3.md",
+        ),
+        (
+            "no-code-pins",
+            arm_prereg_text("e3", code_sha256=None),
+            "prereg/0002-e3.md pins no analysis code (code_sha256)",
+        ),
+        (
+            "edited-code",
+            arm_prereg_text(
+                "e3",
+                code_sha256=arms_analysis.analysis_code_sha256() | {"halflife/stats.py": "0" * 64},
+            ),
+            "analysis code differs from the pins in prereg/0002-e3.md: halflife/stats.py",
+        ),
+    ):
+        result = evaluate(8, build_g8(tmp_path / name, text=text, fast=False))
+        assert not result.passed and result.evidence == expect, (name, result.evidence)
+
+
+def test_g8_e3_preregistration_committed_after_the_arm_fails(tmp_path: Path) -> None:
+    result = evaluate(8, build_g8(tmp_path, history="artifacts-first"))
+    assert not result.passed and "does not predate" in result.evidence
 
 
 def same_plan_per_tier(rows: list[dict[str, Any]]) -> None:
@@ -2760,7 +2886,7 @@ E4_ROWS = [
 BENCH_G9 = (("h01", "heldout"), ("h02", "heldout"), ("t01", "main"), ("t02", "main"))
 
 
-def build_g9(root: Path) -> Any:
+def build_g9(root: Path, *, text: str | None = None, fast: bool = True) -> Any:
     cost = {"tokens": 1200, "latency_s": 0.4, "task_success": 0.83}
     summary = {
         "arm": "E4",
@@ -2778,19 +2904,19 @@ def build_g9(root: Path) -> Any:
         rel = f"{TEMPLATES}/{tid}.yaml"
         write_files(root, {rel: template_text(i, "prohibition", split=split, tid=tid)})
         entries.append({"id": tid, "path": rel, "sha256": sha256(root / rel), "split": split})
-    write_files(
-        root,
-        {
-            E4: summary,
-            OVERHEAD: overhead,
-            E1_SESSIONS: [{"session_id": "s1", "template_id": "t01"}],
-            E4_SESSIONS: [dict(r) for r in E4_ROWS],
-            MANIFEST: {"templates": entries},
-            "pyproject.toml": PYPROJECT,
-            "docs/MITIGATIONS.md": MITIGATIONS,
-        },
-    )
-    return context(root, setup=True)
+    files = {
+        E4: summary | {"settings": dict(ARM_SETTINGS)},
+        OVERHEAD: overhead,
+        E1_SESSIONS: [{"session_id": "s1", "template_id": "t01"}],
+        E4_SESSIONS: arm_rows([dict(r) for r in E4_ROWS], E4_PREREG),
+        E4_PROV: {"prereg": E4_PREREG, "confirmatory": True},
+        MANIFEST: {"templates": entries},
+        "pyproject.toml": PYPROJECT,
+        "docs/MITIGATIONS.md": MITIGATIONS,
+    }
+    templates = {e["path"]: (root / e["path"]).read_text(encoding="utf-8") for e in entries}
+    sha = commit_arm(root, files | templates, E4_PREREG, text or arm_prereg_text("e4"))
+    return context(root, sha, setup=True, fast=fast)
 
 
 def g9(name: str, expect: str, change: Callable[[Path], object], hole: str = "") -> Case:
@@ -3024,6 +3150,23 @@ G9_CASES = params(
 def test_g9_control_passes(tmp_path: Path) -> None:
     result = evaluate(9, build_g9(tmp_path))
     assert result.passed, result.evidence
+
+
+def test_g9_ties_e4_to_its_preregistration(tmp_path: Path) -> None:
+    """D-050 gate pass: E4 is tied to its preregistration as E1 is."""
+    ctx = build_g9(tmp_path / "untagged")
+    edit_jsonl(tmp_path / "untagged", E4_SESSIONS, lambda rows: rows[0].update(confirmatory=False))
+    result = evaluate(9, ctx)
+    assert result.evidence == "E4 session e4s0 not tagged with the E4 preregistration"
+    ctx = build_g9(tmp_path / "unprovenanced")
+    (tmp_path / "unprovenanced" / E4_PROV).unlink()
+    assert evaluate(9, ctx).evidence == "missing artifacts/e4/provenance.json"
+    pins = arms_analysis.analysis_code_sha256() | {"halflife/stats.py": "0" * 64}
+    ctx = build_g9(tmp_path / "pins", text=arm_prereg_text("e4", code_sha256=pins), fast=False)
+    result = evaluate(9, ctx)
+    assert result.evidence == (
+        "analysis code differs from the pins in prereg/0003-e4.md: halflife/stats.py"
+    )
 
 
 def test_g9_installation_heading_counts(tmp_path: Path) -> None:
