@@ -1703,7 +1703,7 @@ def gate_g10(ctx: Context) -> GateResult:
     absent = missing([ctx.clone / "README.md", ctx.clone / "docs" / "REPORT.md"], ctx.clone)
     if absent:
         return fail(f"missing {', '.join(absent)}")
-    return make_targets_pass(ctx, ["claimcheck", "freshness"])
+    return make_targets_pass(ctx, ["claimcheck", "freshness", "report-check"])
 
 
 def gate_g11(ctx: Context) -> GateResult:
@@ -1728,8 +1728,16 @@ def gate_g12(ctx: Context) -> GateResult:
         return fail("review has no blocking list")
     if blocking:
         return fail(f"{len(blocking)} open blocking issue(s)")
-    if not (ctx.clone / "docs" / "REVIEW_LOG.md").is_file():
+    log_path = ctx.clone / "docs" / "REVIEW_LOG.md"
+    if not log_path.is_file():
         return fail("missing docs/REVIEW_LOG.md for non-blocking issues")
+    non_blocking = review.get("non_blocking", [])
+    if not isinstance(non_blocking, list):
+        return fail("review has no non_blocking list")
+    log_text = " ".join(log_path.read_text(encoding="utf-8").split())
+    unlisted = [str(item) for item in non_blocking if " ".join(str(item).split()) not in log_text]
+    if unlisted:
+        return fail(f"non-blocking issue not listed in docs/REVIEW_LOG.md: {unlisted[0][:60]}")
     if reviewed != ctx.sha:
         if not strictly_predates(ctx.clone, reviewed, ctx.sha):
             return fail("reviewed commit is not an ancestor of HEAD")

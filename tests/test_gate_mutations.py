@@ -2850,7 +2850,10 @@ def build_g12(
 ) -> Any:
     root.mkdir(parents=True, exist_ok=True)
     run_git(root, "init", "-q")
-    code = {"src/halflife/x.py": "X = 1\n", "docs/REVIEW_LOG.md": "# Review log\n"}
+    code = {
+        "src/halflife/x.py": "X = 1\n",
+        "docs/REVIEW_LOG.md": "# Review log\n\n- docs could be shorter\n",
+    }
     reviewed = commit(root, code, "code")
     record = {
         "reviewed_commit": reviewed,
@@ -2929,6 +2932,16 @@ G12_CASES = params(
             "missing docs/REVIEW_LOG.md",
             change=lambda r: (r / "docs/REVIEW_LOG.md").unlink(),
         ),
+        g12(
+            "non-blocking-item-not-in-the-log",
+            "non-blocking issue not listed in docs/REVIEW_LOG.md: docs could be shorter",
+            change=lambda r: (r / "docs/REVIEW_LOG.md").write_text("# Review log\n"),
+        ),
+        g12(
+            "non-blocking-item-deleted-from-the-log-after-review",
+            "non-blocking issue not listed in docs/REVIEW_LOG.md",
+            after={"docs/REVIEW_LOG.md": "# Review log\n"},
+        ),
         g12("review-missing", "no review at", change=lambda r: (r / REVIEW).unlink()),
         g12(
             "reviewed-commit-not-an-ancestor",
@@ -2954,7 +2967,7 @@ def test_g12_review_of_head_and_exempt_changes_pass(tmp_path: Path) -> None:
     after = {
         "STATUS.md": "goal_turn: 2\n",
         "artifacts/review/notes.json": "{}",
-        "docs/REVIEW_LOG.md": "# Review log\n\n- a non-blocking item the reviewer appended\n",
+        "docs/REVIEW_LOG.md": "# Review log\n\n- docs could be shorter\n- an item added later\n",
     }
     assert evaluate(12, build_g12(tmp_path / "a", after=after)).passed
     root = tmp_path / "b"
@@ -3290,3 +3303,29 @@ def test_g10_and_g11_fail_until_setup_succeeds(tmp_path: Path) -> None:
 def test_g10_fails_without_the_documents(tmp_path: Path) -> None:
     result = evaluate(10, context(tmp_path))
     assert not result.passed and "missing README.md" in result.evidence
+
+
+def test_review_tool_and_g12_share_the_exempt_paths() -> None:
+    spec = importlib.util.spec_from_file_location(
+        "review_tool", Path(__file__).resolve().parents[1] / "tools" / "review.py"
+    )
+    assert spec is not None and spec.loader is not None
+    review_tool = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(review_tool)
+    assert review_tool.EXEMPT_FILES == sc.REVIEW_EXEMPT_FILES
+    assert tuple(review_tool.EXEMPT_PREFIXES) == tuple(sc.REVIEW_EXEMPT_PREFIXES)
+
+
+def test_g10_requires_the_generated_report_to_be_current(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[list[str]] = []
+
+    def fake(ctx: Any, targets: Sequence[str]) -> Any:
+        seen.append(list(targets))
+        return sc.GateResult(True, "ok")
+
+    monkeypatch.setattr(sc, "make_targets_pass", fake)
+    ctx = write_docs(tmp_path)
+    assert sc.gate_g10(ctx).passed
+    assert seen == [["claimcheck", "freshness", "report-check"]]

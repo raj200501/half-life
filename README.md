@@ -19,7 +19,7 @@ Recall probes leaked into the main run in <!-- claim:e0.leak.leaks -->0<!-- /cla
 
 **Status.** The instrument is validated (E0) and the family pilot is done. The main study (E1) is designed, its analysis code is written and has been through an adversarial audit, and its preregistration comes next; E1 to E4 have not run, so there is no half-life estimate yet. Every number above is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`.
 
-## Quickstart (about a minute, offline)
+## Quickstart (about a minute; the demo runs offline)
 
 ```bash
 git clone https://github.com/raj200501/half-life.git && cd half-life
@@ -27,7 +27,7 @@ make setup    # uv sync --frozen into .venv (Python 3.11 or 3.12)
 make demo     # replays a recorded synthetic session end to end and diffs it against demo/golden_output.txt
 ```
 
-The demo needs no network, no model, and no GPU: it replays a recorded session through the real harness, detectors, compaction, probes, and report code. `make ci` runs lint, types, the test suite, and the demo, exactly as CI does.
+`make setup` downloads the locked dependencies once; the demo itself needs no network, no model, and no GPU: it replays a recorded session through the real harness, detectors, compaction, probes, and report code. `make ci` runs lint, types, the test suite, and the demo, exactly as CI does.
 
 ## What it is and is not
 
@@ -46,7 +46,7 @@ The demo needs no network, no model, and no GPU: it replays a recorded session t
 
 Every result is banked under `artifacts/` with provenance and reported in [docs/REPORT.md](docs/REPORT.md) with its interval.
 
-- **Detectors work, including on indirect writes.** On seeded synthetic action logs written from the rule definitions alone and executed in real sandboxes, the detectors caught every seeded violation, including `sed -i`, scripted writes, `git checkout --`, and `cp` over protected files, with no false alarms ([artifacts/e0/detector_validation.json](artifacts/e0/detector_validation.json); exploratory instrument check).
+- **Detectors work, including on indirect writes.** On seeded synthetic action logs written from the rule definitions alone and executed in real sandboxes, the detectors caught every seeded violation, including `sed -i`, scripted writes, `git checkout --`, and `cp` over protected files, with no false alarms in the reported scoring; the first scoring of the same cases had a false positive, traced to the network shim and fixed before the cases were scored again (D-018) ([artifacts/e0/detector_validation.json](artifacts/e0/detector_validation.json); exploratory instrument check).
 - **Recall scoring is validated on held-out answers** labeled blind by a language model, with the agreement reported only on the half never used for tuning ([artifacts/e0/probe_scoring.json](artifacts/e0/probe_scoring.json), DECISIONS.md D-038).
 - **Probes never leaked** into a main-run model call across the validation runs, and every compaction log was complete ([artifacts/e0/probe_leakage.json](artifacts/e0/probe_leakage.json), [artifacts/e0/compaction_logs.json](artifacts/e0/compaction_logs.json)).
 - **The decision points do tempt real models.** In the exploratory family pilot, small open-weight agents broke stated rules at some decision points, and the pilot picked the two families E1 will use by reach, engagement, and speed, never by outcome ([artifacts/pilot/](artifacts/pilot/), D-026, D-042).

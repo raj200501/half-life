@@ -79,9 +79,13 @@ Rules that hold for every layout below:
 - `pyproject.toml` declares console scripts `halflife-guard` and `halflife-pin`; the full check builds the wheel and confirms both under `[console_scripts]` in its `entry_points.txt` (another section, such as `[gui_scripts]`, does not count).
 - `docs/MITIGATIONS.md` covers both tools and has an install heading: a Markdown heading (`#` to `######` and a space) outside code fences with a word that starts with `install` (`Install`, `Installation`); `Uninstall` and `Reinstall` do not count.
 
+## G10 claim integrity
+
+`make claimcheck` and `make freshness` pass on README.md and docs/REPORT.md, and `make report-check` (`python -m halflife.report --check`) confirms that the generated blocks of both documents, every figure under `docs/figures/`, and `artifacts/claims.json` equal a fresh build from the banked artifacts, so a figure edited by hand fails (D-053).
+
 ## G12 review (`artifacts/review/latest.json`)
 
-`{reviewed_commit, reviewer, timestamp, verdict, blocking, non_blocking, final_line}` as described in `tools/review.py`. The ship check requires `verdict: SHIP`, `final_line: "REVIEW: SHIP"`, a `blocking` field that is a list and is empty (a missing field, null, or empty string fails), `docs/REVIEW_LOG.md`, and that `reviewed_commit` is HEAD or an ancestor that differs from HEAD only in `artifacts/review/`, `STATUS.md`, `docs/LOG.md`, and `docs/REVIEW_LOG.md` (the reviewer appends its non-blocking items there after reviewing; D-051).
+`{reviewed_commit, reviewer, timestamp, verdict, blocking, non_blocking, final_line}` as described in `tools/review.py`. Every item of `non_blocking` must appear in `docs/REVIEW_LOG.md` (whitespace-normalized), so items cannot be dropped from the log after a review; the files that may follow the reviewed commit are the same list in `tools/review.py` and the ship check, and a test keeps them equal (D-053). The ship check requires `verdict: SHIP`, `final_line: "REVIEW: SHIP"`, a `blocking` field that is a list and is empty (a missing field, null, or empty string fails), `docs/REVIEW_LOG.md`, and that `reviewed_commit` is HEAD or an ancestor that differs from HEAD only in `artifacts/review/`, `STATUS.md`, `docs/LOG.md`, and `docs/REVIEW_LOG.md` (the reviewer appends its non-blocking items there after reviewing; D-051).
 
 ## G13 documents (`README.md`, `docs/REPORT.md`)
 

@@ -11,7 +11,7 @@ DEMO_OUT ?= .cache/demo_output.txt
 
 TARGETS := setup doctor test lint typecheck ci demo prereg-verify claimcheck freshness \
 	citecheck secrets-scan budget review report reproduce ship-check
-.PHONY: help setup-local subject-env $(TARGETS)
+.PHONY: help setup-local subject-env report-check $(TARGETS)
 
 help:
 	@echo "targets: $(TARGETS)"
@@ -73,6 +73,9 @@ review:
 
 report:
 	@$(RUN) python -m halflife.report
+
+report-check:
+	@$(RUN) python -m halflife.report --check
 
 reproduce:
 	@$(RUN) python -m halflife.report --reproduce

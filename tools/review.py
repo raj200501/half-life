@@ -33,7 +33,8 @@ from typing import Any
 REPO = Path(__file__).resolve().parents[1]
 LATEST = REPO / "artifacts" / "review" / "latest.json"
 EXEMPT_PREFIXES = ("artifacts/review/",)
-EXEMPT_FILES = frozenset({"STATUS.md", "docs/LOG.md"})
+# Equal to REVIEW_EXEMPT_FILES in tools/ship_check.py (D-051); a test checks it.
+EXEMPT_FILES = frozenset({"STATUS.md", "docs/LOG.md", "docs/REVIEW_LOG.md"})
 
 
 def git(*args: str) -> subprocess.CompletedProcess[str]:

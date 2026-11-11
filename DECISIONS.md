@@ -281,3 +281,14 @@ Two pre-release changes:
 A read-only audit before the repository goes public (two lenses: public-release hygiene, and stale or inconsistent documentation) reported 37 issues. Fixed: SECURITY.md described a Docker sandbox and mock tools that do not exist (it now describes the methods `halflife.sandbox` has and what each confines); design files, docstrings, and the report spoke of preregistrations in the present tense, though none is committed yet; the report's statistics section described round two (D-050) as in force when the code is round one; run provenance recorded absolute module paths that would carry a home directory on Raj's machine; the E2 runbook named the working branch instead of `main`; the report did not say the first detector scoring had a false positive (D-018 requires it); MITIGATIONS.md overstated how much code the E4 arms share with the installed tools and did not say how overhead is measured; the probe-answer labels are described as the judgments of the one Claude agent that wrote the answers, not as an independent rating; the author's name is consistent across CITATION.cff, LICENSE, NOTICE, and pyproject.toml; stale status lines are current. D-021 states the authorship rule without its earlier wording about contribution counts.
 
 D-016 inferred that Claude Code has no `--max-turns` because `claude --help` does not list it; the CLI reference documents the flag for print mode. The driver never relied on the flag (it counts turns in the stream and stops the child at the cap), so no behavior or result changes; the docs and the driver's docstring now say what is true, and CORRECTIONS.md records the claim.
+
+## D-053 2026-11-11: fixes for the first independent review (REVIEW: BLOCK at ae65bb1)
+
+The first review blocked on four issues, each reproduced by the reviewer and each fixed with a test:
+
+1. **B1.** `tools/review.py` did not exempt `docs/REVIEW_LOG.md` from staleness while the ship check did (D-051), so G12 could pass while `make review` printed `REVIEW: STALE`. Both now use the same list, and a test keeps them equal.
+2. **B2.** G12 only checked that `docs/REVIEW_LOG.md` exists. It now requires every non-blocking item of the latest review to be listed there, so items cannot be dropped after a review.
+3. **B3.** G10 did not read the figures, so a hand-edited SVG passed claimcheck and freshness. G10 now also runs `make report-check`, which fails unless the generated report blocks, every figure, and the claims manifest equal a fresh build from the artifacts.
+4. **B4.** A hand-written report sentence typed pilot counts as words, which claimcheck cannot see (rule 1). It now points to the generated pilot table instead.
+
+Two non-blocking README points were fixed with them: the detector result now mentions the first scoring's false positive (D-018), and the quickstart says `make setup` downloads dependencies once while the demo runs offline. The remaining non-blocking items stay in docs/REVIEW_LOG.md.
