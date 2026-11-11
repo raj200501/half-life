@@ -122,6 +122,7 @@ E1, E2, E3, E4 = "artifacts/e1", "artifacts/e2", "artifacts/e3", "artifacts/e4"
 OVERHEAD = "artifacts/e4/overhead.json"
 
 FIG_E0 = f"{FIGURES_DIR}/e0-validity.svg"
+FIG_PILOT = f"{FIGURES_DIR}/pilot.svg"
 FIG_HAZARD = f"{FIGURES_DIR}/e1-hazard.svg"
 FIG_KM = f"{FIGURES_DIR}/e1-km.svg"
 FIG_E3 = f"{FIGURES_DIR}/e3-contrasts.svg"
@@ -787,7 +788,57 @@ def pilot_section(b: Build) -> list[str]:
             "can tempt these models and that the detectors fire on real sessions, not how often "
             "or how soon rules decay."
         )
-    return [*lines, text, "", *table(header, rows), *(["", note] if note else [])]
+    return [
+        *lines,
+        text,
+        "",
+        *table(header, rows),
+        *(["", note] if note else []),
+        *pilot_figure(b, opportunities, synthetic=status.synthetic),
+    ]
+
+
+def pilot_figure(b: Build, opportunities: str, *, synthetic: bool) -> list[str]:
+    """Figure: per pilot family, decision points reached, acted at, and with a violation."""
+    if not b.store.exists(opportunities):
+        return []
+    rows = b.store.rows(opportunities)
+    families = sorted({str(r.get("family")) for r in rows})
+    if not families:
+        return []
+
+    def counts(keep: Callable[[Mapping[str, Any]], bool]) -> list[float | None]:
+        return [float(sum(1 for r in rows if r.get("family") == f and keep(r))) for f in families]
+
+    series = [
+        svgplot.BarSeries("Decision points reached", counts(lambda r: True)),
+        svgplot.BarSeries("Agent acted", counts(lambda r: r.get("acted") is True)),
+        svgplot.BarSeries("Rule broken", counts(lambda r: r.get("violated") is True)),
+    ]
+    svg = svgplot.bar_chart(
+        "Family pilot: decision points reached, acted at, and broken",
+        "Model family",
+        "Decision points",
+        families,
+        series,
+        note="Exploratory pilot on templates E1 never uses; counts, not rates.",
+        width=720,
+        synthetic=synthetic,
+    )
+    number = b.figure(FIG_PILOT, svg)
+    return [
+        "",
+        "![Bar chart of decision points reached, acted at, and with a violation, per pilot "
+        "family](figures/pilot.svg)",
+        "",
+        f"*Figure {number}. Family pilot (exploratory): per family, the decision points its "
+        "sessions reached, those where the agent acted, and those where it broke the rule. "
+        + (
+            "Synthetic data, not model results.*"
+            if synthetic
+            else "Real model sessions on pilot templates; they never enter E1 data.*"
+        ),
+    ]
 
 
 def power_section(b: Build) -> list[str]:

@@ -183,7 +183,7 @@ def assert_plain(text: str) -> None:
 def test_full_synthetic_repo_passes_claimcheck_and_freshness(full_repo: Path) -> None:
     shim = make_shim(full_repo)
     log = report.generate(full_repo, module=shim)
-    assert log[-1].startswith("REPORT: wrote 5 figure(s)")
+    assert log[-1].startswith("REPORT: wrote 6 figure(s)")
     text, readme = generated(full_repo)
     assert_plain(text)
     assert_plain(readme)

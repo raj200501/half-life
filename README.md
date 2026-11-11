@@ -50,6 +50,8 @@ Every result is banked under `artifacts/` with provenance and reported in [docs/
 - **Recall scoring is validated on held-out answers** labeled blind by a language model, with the agreement reported only on the half never used for tuning ([artifacts/e0/probe_scoring.json](artifacts/e0/probe_scoring.json), DECISIONS.md D-038).
 - **Probes never leaked** into a main-run model call across the validation runs, and every compaction log was complete ([artifacts/e0/probe_leakage.json](artifacts/e0/probe_leakage.json), [artifacts/e0/compaction_logs.json](artifacts/e0/compaction_logs.json)).
 - **The decision points do tempt real models.** In the exploratory family pilot, small open-weight agents broke stated rules at some decision points, and the pilot picked the two families E1 will use by reach, engagement, and speed, never by outcome ([artifacts/pilot/](artifacts/pilot/), D-026, D-042).
+![Pilot: decision points reached, acted at, and broken, per model family](docs/figures/pilot.svg)
+
 - **The guard is cheap** relative to a model call ([artifacts/e4/overhead.json](artifacts/e4/overhead.json)).
 - **An adversarial audit caught real statistical bugs before any data existed**: contrast p-values that could never fall below one, two families' sessions silently merged in pooled risk sets, separated fits reported as numbers, and a decision rule that rejected true nulls too often. Each fix is test-first and recorded (D-049, D-050).
 

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="440" viewBox="0 0 720 440" role="img" aria-labelledby="hl-family-pilot-decision-points-reached-act-title hl-family-pilot-decision-points-reached-act-desc" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<title id="hl-family-pilot-decision-points-reached-act-title">Family pilot: decision points reached, acted at, and broken</title>
+<desc id="hl-family-pilot-decision-points-reached-act-desc">Bar chart. Decision points for 4 categories of Model family (granite, phi, qwen, smollm). Series: Decision points reached; Agent acted; Rule broken.</desc>
+<rect width="720" height="440" fill="#fcfcfb"/>
+<defs><clipPath id="hl-family-pilot-decision-points-reached-act-plot"><rect x="61.52" y="68.00" width="640.48" height="302.00"/></clipPath></defs>
+<text x="16.00" y="32.00" font-size="16" fill="#0b0b0b" font-weight="600" class="title">Family pilot: decision points reached, acted at, and broken</text>
+<g class="legend">
+<path d="M22.00 60.00 V50.00 Q22.00 46.00 26.00 46.00 H32.00 Q36.00 46.00 36.00 50.00 V60.00 Z" fill="#2a78d6"/>
+<text x="50.00" y="57.00" font-size="12" fill="#52514e">Decision points reached</text>
+<path d="M202.76 60.00 V50.00 Q202.76 46.00 206.76 46.00 H212.76 Q216.76 46.00 216.76 50.00 V60.00 Z" fill="#eb6834"/>
+<text x="230.76" y="57.00" font-size="12" fill="#52514e">Agent acted</text>
+<path d="M319.20 60.00 V50.00 Q319.20 46.00 323.20 46.00 H329.20 Q333.20 46.00 333.20 50.00 V60.00 Z" fill="#1baf7a"/>
+<text x="347.20" y="57.00" font-size="12" fill="#52514e">Rule broken</text>
+</g>
+<g class="grid">
+<line x1="67.52" y1="364.00" x2="696.00" y2="364.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="67.52" y1="306.00" x2="696.00" y2="306.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="67.52" y1="248.00" x2="696.00" y2="248.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="67.52" y1="190.00" x2="696.00" y2="190.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="67.52" y1="132.00" x2="696.00" y2="132.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+<line x1="67.52" y1="74.00" x2="696.00" y2="74.00" stroke="#e1e0d9" stroke-width="1" class="grid"/>
+</g>
+<g class="data" clip-path="url(#hl-family-pilot-decision-points-reached-act-plot)">
+<path d="M108.08 364.00 V89.60 Q108.08 85.60 112.08 85.60 H128.08 Q132.08 85.60 132.08 89.60 V364.00 Z" fill="#2a78d6" class="bar"><title>Decision points reached, granite: 12</title></path>
+<path d="M134.08 364.00 V89.60 Q134.08 85.60 138.08 85.60 H154.08 Q158.08 85.60 158.08 89.60 V364.00 Z" fill="#eb6834" class="bar"><title>Agent acted, granite: 12</title></path>
+<path d="M160.08 364.00 V321.60 Q160.08 317.60 164.08 317.60 H180.08 Q184.08 317.60 184.08 321.60 V364.00 Z" fill="#1baf7a" class="bar"><title>Rule broken, granite: 2</title></path>
+<path d="M265.20 364.00 V275.20 Q265.20 271.20 269.20 271.20 H285.20 Q289.20 271.20 289.20 275.20 V364.00 Z" fill="#2a78d6" class="bar"><title>Decision points reached, phi: 4</title></path>
+<path d="M291.20 364.00 V275.20 Q291.20 271.20 295.20 271.20 H311.20 Q315.20 271.20 315.20 275.20 V364.00 Z" fill="#eb6834" class="bar"><title>Agent acted, phi: 4</title></path>
+<path d="M422.32 364.00 V89.60 Q422.32 85.60 426.32 85.60 H442.32 Q446.32 85.60 446.32 89.60 V364.00 Z" fill="#2a78d6" class="bar"><title>Decision points reached, qwen: 12</title></path>
+<path d="M448.32 364.00 V89.60 Q448.32 85.60 452.32 85.60 H468.32 Q472.32 85.60 472.32 89.60 V364.00 Z" fill="#eb6834" class="bar"><title>Agent acted, qwen: 12</title></path>
+<path d="M474.32 364.00 V321.60 Q474.32 317.60 478.32 317.60 H494.32 Q498.32 317.60 498.32 321.60 V364.00 Z" fill="#1baf7a" class="bar"><title>Rule broken, qwen: 2</title></path>
+<path d="M579.44 364.00 V89.60 Q579.44 85.60 583.44 85.60 H599.44 Q603.44 85.60 603.44 89.60 V364.00 Z" fill="#2a78d6" class="bar"><title>Decision points reached, smollm: 12</title></path>
+<path d="M605.44 364.00 V159.20 Q605.44 155.20 609.44 155.20 H625.44 Q629.44 155.20 629.44 159.20 V364.00 Z" fill="#eb6834" class="bar"><title>Agent acted, smollm: 9</title></path>
+<path d="M631.44 364.00 V321.60 Q631.44 317.60 635.44 317.60 H651.44 Q655.44 317.60 655.44 321.60 V364.00 Z" fill="#1baf7a" class="bar"><title>Rule broken, smollm: 2</title></path>
+</g>
+<line x1="67.52" y1="364.00" x2="696.00" y2="364.00" stroke="#c3c2b7" stroke-width="1" class="axis"/>
+<g class="ticks">
+<text x="59.52" y="368.00" font-size="12" fill="#52514e" text-anchor="end">0.0</text>
+<text x="59.52" y="310.00" font-size="12" fill="#52514e" text-anchor="end">2.5</text>
+<text x="59.52" y="252.00" font-size="12" fill="#52514e" text-anchor="end">5.0</text>
+<text x="59.52" y="194.00" font-size="12" fill="#52514e" text-anchor="end">7.5</text>
+<text x="59.52" y="136.00" font-size="12" fill="#52514e" text-anchor="end">10.0</text>
+<text x="59.52" y="78.00" font-size="12" fill="#52514e" text-anchor="end">12.5</text>
+<text x="22.00" y="219.00" font-size="13" fill="#52514e" text-anchor="middle" transform="rotate(-90 22.00 219.00)" class="axis-label">Decision points</text>
+<text x="146.08" y="382.00" font-size="12" fill="#52514e" text-anchor="middle">granite</text>
+<text x="303.20" y="382.00" font-size="12" fill="#52514e" text-anchor="middle">phi</text>
+<text x="460.32" y="382.00" font-size="12" fill="#52514e" text-anchor="middle">qwen</text>
+<text x="617.44" y="382.00" font-size="12" fill="#52514e" text-anchor="middle">smollm</text>
+<text x="381.76" y="403.00" font-size="13" fill="#52514e" text-anchor="middle" class="axis-label">Model family</text>
+</g>
+<text x="16.00" y="426.00" font-size="11" fill="#52514e" class="note">Exploratory pilot on templates E1 never uses; counts, not rates.</text>
+</svg>

@@ -139,6 +139,10 @@ Status: exploratory (not preregistered). Each candidate family ran the same plan
 
 Agents did break rules in the pilot: <!-- claim:pilot.violated_total -->6<!-- /claim --> of <!-- claim:pilot.dps_total -->40<!-- /claim --> decision points reached had a violation. These counts come from a handful of unpadded sessions on templates E1 does not use; they show that the decision points can tempt these models and that the detectors fire on real sessions, not how often or how soon rules decay.
 
+![Bar chart of decision points reached, acted at, and with a violation, per pilot family](figures/pilot.svg)
+
+*Figure 2. Family pilot (exploratory): per family, the decision points its sessions reached, those where the agent acted, and those where it broke the rule. Real model sessions on pilot templates; they never enter E1 data.*
+
 ### 5.4 Power analysis for E1
 
 The E1 power analysis has not run, so this report has no power results.
