@@ -62,7 +62,7 @@ Every result is banked under `artifacts/` with provenance and reported in [docs/
 ![Pilot: decision points reached, acted at, and broken, per model family](docs/figures/pilot.svg)
 
 - **The overhead of the guard and the pin is measured** per guarded tool call and per session ([artifacts/e4/overhead.json](artifacts/e4/overhead.json)); what they do to violations, and what that costs in tokens, latency, and task success, waits for E4.
-- **An adversarial audit caught real statistical bugs before any data existed**: contrast p-values that could never fall below one, two families' sessions silently merged in pooled risk sets, separated fits reported as numbers, and a decision rule that rejected true nulls too often. Each fix is test-first and recorded (D-049, D-050).
+- **An adversarial audit caught real statistical bugs before any confirmatory data existed**: contrast p-values that could never fall below one, two families' sessions silently merged in pooled risk sets, separated fits reported as numbers, and a decision rule that rejected true nulls too often. The first round of fixes is test-first and recorded (D-049); the second round (D-050) is in progress.
 
 ## How it works
 

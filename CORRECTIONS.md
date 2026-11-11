@@ -29,3 +29,10 @@ Every changed or withdrawn claim gets a dated entry here (rule 3 of the build br
 - **What changed:** the hand-written parser behind it missed forms GitHub renders: an unclosed `![[` stopped the scan, link definitions in block quotes or list items or split across lines were not seen, and a decoy definition the renderer ignores shadowed the real one. The check now renders the documents with cmark-gfm, GitHub's renderer, and also fails closed on any image file named anywhere in the raw text (DECISIONS.md D-057), and docs/ARTIFACTS.md describes that.
 - **Why:** the fourth independent review (REVIEW: BLOCK at 526ae0d, B1) embedded a hand-edited copy of the pilot figure in both documents and passed G10.
 - **Support:** no reported number changed; the review is in `artifacts/review/latest.json`, and the mutation tests in `tests/test_report.py` cover each form.
+
+## 2026-11-11: when the statistics audit ran
+
+- **Claim as stated:** README.md said the adversarial audit caught its bugs "before any data existed" and that each fix was recorded in D-049 and D-050.
+- **What changed:** the audit ran after the E0 validation data and the exploratory pilot existed, so the README now says "before any confirmatory data existed". D-050's fixes are in progress, not done, so the README says so.
+- **Why:** the fourth independent review (non-blocking item at 526ae0d).
+- **Support:** the commit dates of `artifacts/e0/` and `artifacts/pilot/` against DECISIONS.md D-049 and D-050.

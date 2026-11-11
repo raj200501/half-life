@@ -1570,6 +1570,12 @@ def test_g6_accepts_a_reference_run_banked_by_the_real_bench_verify(tmp_path: Pa
     assert ref["action_log"] == "artifacts/bench/reference/t00.log.json"
     assert sc.action_log_problem(tmp_path, "t00", ref) is None
     assert "session of template 't00'" in str(sc.action_log_problem(tmp_path, "t01", ref))
+    # Review 4: the provenance says whether the banked templates were committed.
+    assert ref["provenance"]["git_dirty"] is True  # t00.yaml is not committed yet
+    sha = commit(tmp_path, {}, "commit the template")
+    verify_mod.bank([report], tmp_path, command="pytest (synthetic)", sandbox_method="none")
+    ref = json.loads((tmp_path / entry["reference_run"]).read_text(encoding="utf-8"))
+    assert ref["provenance"]["git_sha"] == sha and ref["provenance"]["git_dirty"] is False
 
 
 def test_template_loader_reads_the_real_bench(tmp_path: Path) -> None:

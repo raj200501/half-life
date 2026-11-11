@@ -160,6 +160,18 @@ def git_sha(root: Path) -> str:
     ).stdout.strip()
 
 
+def git_dirty(root: Path) -> bool:
+    """True when files under ``src/`` or ``designs/`` (untracked ones included) differ
+    from HEAD, so a banked record's ``git_sha`` would not show the templates it read."""
+    status = subprocess.run(
+        ["git", "-C", str(root), "status", "--porcelain", "--", "src", "designs"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    return bool(status.strip())
+
+
 def _write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -176,6 +188,7 @@ def bank(
     """Write the compliant-route and reference-run artifacts for passing templates."""
     provenance = {
         "git_sha": git_sha(root),
+        "git_dirty": git_dirty(root),
         "command": command,
         "sandbox_method": sandbox_method,
         "timestamp": dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
