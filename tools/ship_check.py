@@ -1235,7 +1235,11 @@ GIT_SHA_RE = re.compile(r"[0-9a-f]{40}")
 
 
 def run_provenance_problem(
-    clone: Path, pre_commit: str, row: dict[str, Any], contains: dict[str, bool]
+    clone: Path,
+    pre_commit: str,
+    row: dict[str, Any],
+    contains: dict[str, bool],
+    changed: dict[str, str] | None = None,
 ) -> str | None:
     """Problem text unless a confirmatory session ran after its preregistration.
 
@@ -1243,8 +1247,10 @@ def run_provenance_problem(
     (DECISIONS.md D-050, item 6). The stamp must name a commit that is the
     preregistration's commit or descends from it, and a clean checkout
     (``git_dirty`` false), so the session ran under code that already held the frozen
-    preregistration. A commit the clone does not have fails. ``contains`` caches the
-    ancestry answer per commit.
+    preregistration. A commit the clone does not have fails. The commit's ``src/`` and
+    ``designs/`` must also equal the preregistration commit's, so the session ran the
+    preregistered harness and designs, not a later edit of them (D-064). ``contains``
+    caches the ancestry answer per commit and ``changed`` the first differing path.
     """
     sid = row.get("session_id")
     stamp = row.get("run_provenance")
@@ -1259,6 +1265,15 @@ def run_provenance_problem(
         contains[sha] = sha == pre_commit or strictly_predates(clone, pre_commit, sha)
     if not contains[sha]:
         return f"session {sid} ran at {sha[:12]}, which does not contain the preregistration commit"
+    cache = {} if changed is None else changed
+    if sha not in cache:
+        diff = git(clone, "diff", "--name-only", pre_commit, sha, "--", "src", "designs")
+        cache[sha] = diff.splitlines()[0] if diff else ""
+    if cache[sha]:
+        return (
+            f"session {sid} ran at {sha[:12]}, whose src/ or designs/ differ from the "
+            f"preregistration commit's ({cache[sha]})"
+        )
     return None
 
 
@@ -1433,6 +1448,74 @@ def prereg_plan_pins(ctx: Context, prereg: str) -> tuple[dict[str, dict[str, Any
     if len({pin["plans_sha256"] for pin in checked.values()}) != len(checked):
         return None, f"{prereg}: plans.main and plans.reserve pin the same plans file"
     return checked, ""
+
+
+E1_RUN_SETTINGS = ("n_ctx", "temperature", "max_step_tokens")
+"""Run settings an E1 preregistration pins beside the model files (D-064)."""
+
+
+def prereg_run_pins(ctx: Context, prereg: str) -> tuple[dict[str, Any] | None, str]:
+    """The ``runs`` pins of the preregistration's settings block, checked for shape.
+
+    ``models`` maps each model registry key to the SHA-256 of its file, and
+    ``n_ctx``, ``temperature``, and ``max_step_tokens`` fix the sampling settings every
+    E1 run uses (D-064). The second value names a problem, empty when there is none.
+    """
+    path = ctx.clone / prereg
+    fixed = prereg_settings(path.read_text(encoding="utf-8") if path.is_file() else "") or {}
+    pins = fixed.get("runs")
+    models = pins.get("models") if isinstance(pins, dict) else None
+    if not isinstance(models, dict) or not models:
+        return None, f"{prereg} pins no E1 runs (runs.models and the run settings)"
+    for key, sha in models.items():
+        if not (isinstance(sha, str) and SHA256_RE.fullmatch(sha)):
+            return None, f"{prereg}: runs.models.{key} is not a SHA-256"
+    assert isinstance(pins, dict)
+    for key in E1_RUN_SETTINGS:
+        value = pins.get(key)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None, f"{prereg}: runs.{key} is not a number"
+    return pins, ""
+
+
+def run_pins_problem(
+    provenance: dict[str, Any],
+    rows: Sequence[dict[str, Any]],
+    pins: dict[str, Any],
+    prereg: str,
+) -> str | None:
+    """Why a banked E1 run did not use the pinned models and settings, or None (D-064).
+
+    Every run record's ``run.json`` must name a pinned model key with its pinned file
+    SHA-256 and the pinned ``n_ctx``, ``temperature``, and ``max_step_tokens``, and
+    every session row must be a session of its run's model.
+    """
+    records = provenance.get("run_records")
+    if not isinstance(records, dict) or not records:
+        return "provenance.json has no run records, so no run is tied to its models"
+    models: dict[str, str] = {}
+    for run_id, record in records.items():
+        run = record.get("run") if isinstance(record, dict) else None
+        run = run if isinstance(run, dict) else {}
+        model = run.get("model") if isinstance(run.get("model"), dict) else {}
+        key, sha = model.get("key"), model.get("sha256")
+        if pins["models"].get(key) is None or pins["models"].get(key) != sha:
+            return (
+                f"run {run_id} ran model {key!r} ({str(sha)[:12]}), not a model pinned in {prereg}"
+            )
+        settings = run.get("settings") if isinstance(run.get("settings"), dict) else {}
+        found = {"n_ctx": run.get("n_ctx"), **{k: settings.get(k) for k in E1_RUN_SETTINGS[1:]}}
+        for name in E1_RUN_SETTINGS:
+            if found[name] != pins[name] or isinstance(found[name], bool):
+                return f"run {run_id} ran with {name} {found[name]!r}, not {pins[name]!r} as pinned"
+        models[str(run_id)] = str(key)
+    for row in rows:
+        run_model = models.get(str(row.get("run_id")))
+        if run_model is not None and row.get("model") != run_model:
+            return (
+                f"session {row.get('session_id')} names model {row.get('model')!r}, not its run's"
+            )
+    return None
 
 
 def run_plan_sets(
@@ -1638,6 +1721,7 @@ def gate_g7(ctx: Context) -> GateResult:
     if pre_commit is None:  # pragma: no cover - check_prereg_link already required it
         return fail(f"{prereg} is not committed")
     contains: dict[str, bool] = {}
+    changed: dict[str, str] = {}
     sessions = load_jsonl(base / "sessions.jsonl")
     reached: dict[str, int] = {}
     keys: set[tuple[str, str]] = set()
@@ -1646,7 +1730,7 @@ def gate_g7(ctx: Context) -> GateResult:
         sid = row.get("session_id")
         if row.get("prereg") != provenance["prereg"] or row.get("confirmatory") is not True:
             return fail(f"session {sid} not tagged with the E1 preregistration")
-        problem = run_provenance_problem(ctx.clone, pre_commit, row, contains)
+        problem = run_provenance_problem(ctx.clone, pre_commit, row, contains, changed)
         if problem:
             return fail(problem)
         family = row.get("family")
@@ -1673,6 +1757,12 @@ def gate_g7(ctx: Context) -> GateResult:
         return fail(problem)
     runs, problem = run_plan_sets(provenance, sessions, pins, prereg)
     if runs is None:
+        return fail(problem)
+    run_pins, problem = prereg_run_pins(ctx, prereg)
+    if run_pins is None:
+        return fail(problem)
+    problem = run_pins_problem(provenance, sessions, run_pins, prereg)
+    if problem:
         return fail(problem)
     opportunities = load_jsonl(base / "opportunities.jsonl")
     seen = {(str(o.get("family")), str(o.get("session_id"))) for o in opportunities}

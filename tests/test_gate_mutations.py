@@ -1669,13 +1669,35 @@ def plan_pins() -> dict[str, dict[str, Any]]:
     return pins
 
 
+RUN_SETTINGS = {"n_ctx": 8192, "temperature": 0.7, "max_step_tokens": 384}
+
+
+def model_sha256(key: str) -> str:
+    """A stand-in model file hash for the fixture's model ``key``."""
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+def run_pins() -> dict[str, Any]:
+    """The ``runs`` pins of the fixture preregistration: models and settings (D-064)."""
+    models = {f"{family}-instruct": model_sha256(f"{family}-instruct") for family in FAMILIES}
+    return {"models": models, **RUN_SETTINGS}
+
+
 def run_records(runs: Mapping[str, str]) -> dict[str, Any]:
-    """``provenance.json`` run records for ``run_id -> plan set`` (each run's run.json)."""
+    """``provenance.json`` run records for ``run_id -> plan set`` (each run's run.json);
+    a run id is ``e1-<family>`` or ``e1r-<family>`` and runs that family's model."""
     pins = plan_pins()
-    return {
-        run_id: {"run": {"plans_sha256": pins[name]["plans_sha256"]}, "invocations": []}
-        for run_id, name in runs.items()
-    }
+    records = {}
+    for run_id, name in runs.items():
+        key = f"{run_id.split('-', 1)[1]}-instruct"
+        run = {
+            "plans_sha256": pins[name]["plans_sha256"],
+            "model": {"key": key, "sha256": model_sha256(key)},
+            "n_ctx": RUN_SETTINGS["n_ctx"],
+            "settings": {k: RUN_SETTINGS[k] for k in ("temperature", "max_step_tokens")},
+        }
+        records[run_id] = {"run": run, "invocations": []}
+    return records
 
 
 def main_runs() -> dict[str, str]:
@@ -1777,6 +1799,7 @@ def prereg_text(**fixed: Any) -> str:
         "seed": BOOT_SEED,
         "code_sha256": e1_analysis.analysis_code_sha256(),
         "plans": plan_pins(),
+        "runs": run_pins(),
     } | fixed
     return (
         "# E1 preregistration\n\nDate: 2026-11-04\n\n```json\n"
@@ -1829,6 +1852,26 @@ def build_g7_symlinked_prereg(root: Path) -> Any:
 def g7_text(name: str, expect: str, text: Callable[[], str]) -> Case:
     """A G7 case whose committed preregistration is ``text()`` (fast check)."""
     return Case(name, expect, lambda root: context(root, commit_e1(root, e1_files(), text=text())))
+
+
+def build_g7_after(root: Path, later: dict[str, Any]) -> Any:
+    """The fast E1 fixture whose sessions ran at a commit after the preregistration that
+    changed ``later`` (paths to contents)."""
+    files = e1_files()
+    root.mkdir(parents=True, exist_ok=True)
+    run_git(root, "init", "-q")
+    commit(root, {"README.md": "# half-life\n", "prereg/.gitkeep": ""}, "bootstrap")
+    commit(root, {PREREG: prereg_text()}, "freeze E1")
+    head = commit(root, later, "a commit after the freeze")
+    for row in table(files, "sessions.jsonl"):
+        row["run_provenance"]["git_sha"] = head
+    return context(root, commit(root, files, "bank E1"))
+
+
+def test_g7_sessions_after_a_docs_only_commit_pass(tmp_path: Path) -> None:
+    """A commit after the freeze that leaves src/ and designs/ alone is fine (D-064)."""
+    result = evaluate(7, build_g7_after(tmp_path, {"README.md": "# half-life, edited\n"}))
+    assert result.passed, result.evidence
 
 
 def run_of(files: dict[str, Any], run_id: str) -> dict[str, Any]:
@@ -2215,6 +2258,42 @@ G7_CASES = params(
             "session-names-no-banked-run",
             r"^session qwen2\.5-000 names no banked run \('e1-other'\)$",
             lambda f: table(f, "sessions.jsonl")[0].update(run_id="e1-other"),
+        ),
+        g7(
+            "run-used-an-unpinned-model-file",
+            r"^run e1-qwen2\.5 ran model 'qwen2\.5-instruct' \(000000000000\), not a model pinned",
+            lambda f: run_of(f, "e1-qwen2.5")["model"].update(sha256="0" * 64),
+        ),
+        g7(
+            "run-used-another-temperature",
+            r"^run e1-llama3\.2 ran with temperature 1\.0, not 0\.7 as pinned$",
+            lambda f: run_of(f, "e1-llama3.2")["settings"].update(temperature=1.0),
+        ),
+        g7(
+            "run-used-another-context-size",
+            r"^run e1-qwen2\.5 ran with n_ctx 4096, not 8192 as pinned$",
+            lambda f: run_of(f, "e1-qwen2.5").update(n_ctx=4096),
+        ),
+        g7(
+            "session-row-of-another-model-than-its-run",
+            r"^session qwen2\.5-000 names model 'other-instruct', not its run's$",
+            lambda f: table(f, "sessions.jsonl")[0].update(model="other-instruct"),
+        ),
+        g7_text(
+            "prereg-pins-no-runs",
+            re.escape(f"{PREREG} pins no E1 runs (runs.models and the run settings)"),
+            lambda: prereg_text(runs=None),
+        ),
+        g7_text(
+            "prereg-run-setting-is-not-a-number",
+            re.escape(f"{PREREG}: runs.temperature is not a number"),
+            lambda: prereg_text(runs=run_pins() | {"temperature": "0.7"}),
+        ),
+        Case(
+            "session-ran-a-harness-edited-after-the-freeze",
+            r"^session \S+ ran at [0-9a-f]{12}, whose src/ or designs/ differ from the "
+            r"preregistration commit's \(src/halflife/agent\.py\)$",
+            lambda root: build_g7_after(root, {"src/halflife/agent.py": "# edited\n"}),
         ),
         g7_text(
             "prereg-pins-no-plans",
