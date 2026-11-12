@@ -119,6 +119,8 @@ The gates that cannot pass yet (the main study, the ecological and placement arm
 | [docs/MITIGATIONS.md](docs/MITIGATIONS.md) | installing and configuring halflife-guard, halflife-pin, and re-injection |
 | [docs/ARTIFACTS.md](docs/ARTIFACTS.md) | every banked artifact layout and what the ship check verifies about it |
 | [docs/CLAIMS.md](docs/CLAIMS.md) | claim markers, the claims manifest, freshness derivations, preregistration rules |
+| [prereg/0001-e1.md](prereg/0001-e1.md) | the frozen E1 preregistration: hypotheses, exclusions, models, tests, stopping rules, limitations, and the pins G7 checks |
+| [docs/E1_RUNBOOK.md](docs/E1_RUNBOOK.md) | running, checkpointing, resuming, and banking E1 on a machine that stays up for days |
 | [docs/E2_RUNBOOK.md](docs/E2_RUNBOOK.md) | running the Claude Code arm on a machine where its billing guard passes |
 | [docs/DATA.md](docs/DATA.md) | model files, licenses, and retrieval dates |
 | [designs/](designs/) | experiment designs (templates, conditions, seeds, session settings) |
