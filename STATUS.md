@@ -5,7 +5,7 @@ STATE: ACTIVE
 
 Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final review and the merge to main next. History lives in docs/LOG.md.
 
-## Gates (fast check at 8c2bde7, 2026-11-11: 10/14; fast results do not count)
+## Gates (fast check at 05d4b2c, 2026-11-12: 10/14; fast results do not count)
 
 | Gate | State | Evidence |
 |---|---|---|
@@ -15,7 +15,7 @@ Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final 
 | G4 Offline demo | PASS | demo in a network namespace with no model calls, matches the golden output |
 | G5 Instrument validity | PASS | detector precision and recall with intervals, probe leakage, complete compaction logs with per-rule retention |
 | G6 Benchmark complete | PASS | thirty templates, four rule types, routes and reference runs with action logs verified |
-| G7 Main study | FAIL | E1 is preregistered and frozen (prereg/0001-e1.md at 084bed1, two amendments the same day) and has not run; G7 ties every session to the pinned plans and reach rule, harness, models, settings, every invocation, and the sandbox (D-062, D-064, D-066) |
+| G7 Main study | FAIL | E1 is preregistered and frozen (prereg/0001-e1.md at 084bed1, two amendments the same day) and running since 2026-11-12T02:31Z from 05d4b2c (no outcome read before the last session); G7 ties every session to the pinned plans and reach rule, harness, models, settings, every invocation, and the sandbox (D-062, D-064, D-066) |
 | G8 Ecological and placement arms | FAIL | E2 needs Raj (billing guard); E3 not run |
 | G9 Mitigations shipped | FAIL | kit packaged with install docs and banked overhead; E4 not run |
 | G10 Claim integrity | PASS | claimcheck, freshness, and report-check pass on README.md and docs/REPORT.md |
@@ -40,6 +40,7 @@ Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final 
 
 ## Now
 
+- E1 running (2026-11-12T02:31Z, from 05d4b2c, `src/` and `designs/` identical to the preregistration commit, sandbox pinned): `runs/e1/driver.sh` in the background, PID in `runs/e1/driver.pid`. Only `runs/e1/exits.log` (plan index, model, exit code) and the reach-only command are read while it runs; `runs/e1/full.log` holds the children's output with violation counts and is not read before the last planned session (amendment 2). Main updated to 05d4b2c under D-056 (RELEASE-READY).
 - E1 preregistration frozen (2026-11-12, prereg/0001-e1.md at 084bed1) before any E1 session, with two same-day amendments (0002: a withdrawn masking sentence and a sensitivity refit; 0003: corrected counts and references, the fixed order of decision points with a refit, operating rules for no interim analysis and the sandbox). Statistics round two landed (a722586) and the calibration re-run from that clean commit reproduced `min_events` 7 (the margin is thin: H2b's highest per-family null rate is just under 7%, D-063). G7 now ties sessions to the pinned plans, reach rule, harness, models, settings, every invocation, and the sandbox (D-062, D-064, D-066); G10 fails on numbers in Mermaid diagrams (D-065). A pre-freeze audit workflow narrowed the claims; its remaining findings that need code or simulations are backlog (below).
 - Review 4 (BLOCK at 526ae0d, B1 only; B2 and B3 held): `report --check` now renders README.md and docs/REPORT.md with cmark-gfm (new dev dependency `cmarkgfm`) and fails closed on any image file named in the raw text (D-057, CORRECTIONS.md).
 - Crunch time (Raj, 2026-11-11): main holds the release commit (merge of pull request #1) and the repository is public. Order: finish D-050 and freeze the E1 preregistration; run E1 (G7); run E3 (G8; E2 stays for Raj's machine); run E4 (G9); a fresh review (G12). Main is updated at RELEASE-READY points under D-056. The heartbeat runs every 30 minutes in this session.
@@ -55,8 +56,8 @@ Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final 
 
 ## Next three actions
 
-1. The final review of the release commit (G12), then update main under D-056 and print RELEASE-READY.
-2. Start E1 (docs/E1_RUNBOOK.md) on a machine that stays up; read only reach while it runs (amendment 2); checkpoint every few hours.
+1. Keep E1 running; every few hours checkpoint finished sessions (`tools/checkpoint_runs.py --out artifacts/e1/raw runs/e1-*`, plus each run's `run.json` and `invocations.jsonl`) with the usage ledger, commit, `tools/prepush_ci.sh`, push.
+2. Review 6 (G12) when the daily allowance permits (2026-11-13 UTC), on the then-current commit.
 3. Start E1 on a machine that stays up for several days (docs/E1_RUNBOOK.md; never `make setup` in that checkout while it runs) and checkpoint finished sessions every few hours; then the E3 and E4 preregistrations with plan pins in G8 and G9 (as D-062 and D-064 do for E1).
 
 ## Usage to date
