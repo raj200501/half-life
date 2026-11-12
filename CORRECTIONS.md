@@ -44,3 +44,10 @@ Every changed or withdrawn claim gets a dated entry here (rule 3 of the build br
 - **Why:** the earlier value calibrated models that are no longer the preregistered ones; with them, H2b rejected too many true nulls at 2 to 6 violations.
 - **Support:** `artifacts/power/min_events.json` (synthetic). No E1 data existed, and README.md and docs/REPORT.md never stated the earlier value.
 
+## 2026-11-12: masking and the hazard models (E1 preregistration)
+
+- **Claim as stated:** prereg/0001-e1.md, section 8, said the hazard models stop at the first violation and are not affected when a state rule already broken cannot show a second violation.
+- **What changed:** the sentence is withdrawn by prereg/0002-e1-amendment-1.md. The risk set ends at the first decision point whose own rule was broken inside its span, so a state rule broken outside every span can mask later decision points of that rule in the hazard models too. The amendment adds an exploratory refit on risk sets that also end at any earlier violation.
+- **Why:** the pre-freeze audit raised it, and a check of `halflife.stats.risk_set` after the freeze confirmed it.
+- **Support:** no E1 session had run; `src/halflife/stats.py` (`risk_set`) and `src/halflife/analysis.py` (`prior_violations`).
+
