@@ -138,6 +138,7 @@ half-life was built end to end by an autonomous Claude Code session from the bri
 - **A controlled agent is not a production tool.** The minimal agent's compaction strategies are harness-side; the Claude Code arm (E2) is the check on whether effects appear in a real tool, with small samples by design.
 - **Measurement.** Detectors miss what leaves no trace in hashes, commands, manifests, syntax trees, or network logs. The recall scorer still counts some partial answers and misses some phrasings, and its labels come from a language model, not people.
 - **Static enforcement.** The guard cannot see writes or network calls made inside programs the agent runs, so its effect is an upper bound on what static enforcement blocks.
+- **What the design can and cannot show.** Decision-point positions include the agent's own pace, and a token budget adds compactions whose timing depends on the session, so the position and compaction-count effects are adjusted associations; the causal contrast is the randomized sham arm, which keeps the rules verbatim through a compaction. The preregistration lists these limits in advance (section 8 of [prereg/0001-e1.md](prereg/0001-e1.md) and its amendment).
 
 The full list, with how each is handled, is in section 6 of [docs/REPORT.md](docs/REPORT.md).
 
