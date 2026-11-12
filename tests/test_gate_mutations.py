@@ -1695,8 +1695,9 @@ def run_records(runs: Mapping[str, str]) -> dict[str, Any]:
             "model": {"key": key, "sha256": model_sha256(key)},
             "n_ctx": RUN_SETTINGS["n_ctx"],
             "settings": {k: RUN_SETTINGS[k] for k in ("temperature", "max_step_tokens")},
+            "sandbox_method": "unshare-mount",
         }
-        records[run_id] = {"run": run, "invocations": []}
+        records[run_id] = {"run": run, "invocations": [copy.deepcopy(run), copy.deepcopy(run)]}
     return records
 
 
@@ -2261,17 +2262,39 @@ G7_CASES = params(
         ),
         g7(
             "run-used-an-unpinned-model-file",
-            r"^run e1-qwen2\.5 ran model 'qwen2\.5-instruct' \(000000000000\), not a model pinned",
+            r"^run e1-qwen2\.5 \(run\.json\) ran model 'qwen2\.5-instruct' \(000000000000\)"
+            r", not a model pinned",
             lambda f: run_of(f, "e1-qwen2.5")["model"].update(sha256="0" * 64),
         ),
         g7(
             "run-used-another-temperature",
-            r"^run e1-llama3\.2 ran with temperature 1\.0, not 0\.7 as pinned$",
+            r"^run e1-llama3\.2 \(run\.json\) ran with temperature 1\.0, not 0\.7 as pinned$",
             lambda f: run_of(f, "e1-llama3.2")["settings"].update(temperature=1.0),
         ),
         g7(
+            "an-earlier-invocation-used-another-temperature",
+            r"^run e1-qwen2\.5 \(invocation 1\) ran with temperature 1\.0, not 0\.7 as pinned$",
+            lambda f: f[f"{E1}/provenance.json"]["run_records"]["e1-qwen2.5"]["invocations"][0][
+                "settings"
+            ].update(temperature=1.0),
+        ),
+        g7(
+            "an-invocation-ran-outside-the-validated-sandbox",
+            r"^run e1-llama3\.2 \(invocation 2\) ran in sandbox 'unshare-net', not unshare-mount$",
+            lambda f: f[f"{E1}/provenance.json"]["run_records"]["e1-llama3.2"]["invocations"][
+                1
+            ].update(sandbox_method="unshare-net"),
+        ),
+        g7(
+            "an-invocation-ran-another-plans-file",
+            r"^run e1-qwen2\.5 \(invocation 2\) ran another plans file than its run\.json names$",
+            lambda f: f[f"{E1}/provenance.json"]["run_records"]["e1-qwen2.5"]["invocations"][
+                1
+            ].update(plans_sha256="0" * 64),
+        ),
+        g7(
             "run-used-another-context-size",
-            r"^run e1-qwen2\.5 ran with n_ctx 4096, not 8192 as pinned$",
+            r"^run e1-qwen2\.5 \(run\.json\) ran with n_ctx 4096, not 8192 as pinned$",
             lambda f: run_of(f, "e1-qwen2.5").update(n_ctx=4096),
         ),
         g7(
@@ -2624,8 +2647,9 @@ def plans_pin_the_design_does_not_generate(root: Path) -> Any:
 
     def edit(files: dict[str, Any]) -> None:
         for record in output(files, "provenance.json")["run_records"].values():
-            if record["run"]["plans_sha256"] == real:
-                record["run"]["plans_sha256"] = wrong
+            for entry in [record["run"], *record["invocations"]]:
+                if entry["plans_sha256"] == real:
+                    entry["plans_sha256"] = wrong
 
     return build_g7_full(root, edit, prereg_text(plans=with_pin("main", plans_sha256=wrong)))
 

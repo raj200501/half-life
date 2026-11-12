@@ -99,6 +99,26 @@
       "format": "d",
       "note": "make report"
     },
+    "calibration.band.hi": {
+      "artifact": "artifacts/power/min_events.json",
+      "field": "/design/band/1",
+      "format": ".0%"
+    },
+    "calibration.band.lo": {
+      "artifact": "artifacts/power/min_events.json",
+      "field": "/design/band/0",
+      "format": ".0%"
+    },
+    "calibration.max_rate": {
+      "artifact": "artifacts/power/min_events.json",
+      "field": "/deciding_extremes/max/rate",
+      "format": ".2%"
+    },
+    "calibration.min_events": {
+      "artifact": "artifacts/power/min_events.json",
+      "field": "/min_events",
+      "format": "d"
+    },
     "e0.cases": {
       "aggregate": "count",
       "artifact": "artifacts/e0/detector_validation.json",
@@ -1830,7 +1850,8 @@
     "artifacts/pilot/compaction_logs.json": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
     "artifacts/pilot/compactions/": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
     "artifacts/pilot/opportunities.jsonl": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
-    "artifacts/pilot/sessions.jsonl": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]"
+    "artifacts/pilot/sessions.jsonl": "runner output banked from finished sessions by python -m halflife.experiment bank (halflife.experiment.bank_runs) [make report]",
+    "artifacts/power/min_events.json": "synthetic calibration of min_events written by python -m halflife.calibrate (about an hour on four cores), so make freshness does not rerun it; the file records its command, code and input hashes, git commit, and dirty flag"
   },
   "schema": "halflife/claims/1"
 }

@@ -404,3 +404,7 @@ Findings that need code or new simulations stay open and are stated as limitatio
 ## D-065 2026-11-12: G10 fails on a number inside a Mermaid diagram (review 4, non-blocking item)
 
 GitHub renders a fenced `mermaid` block as a figure, while `make claimcheck` blanks fenced code, so a number drawn in a diagram escaped G10 (review 4 showed a pie chart with invented counts passing). No claim marker can sit inside a diagram, so G10 now fails on any digit inside a `mermaid` block of README.md or docs/REPORT.md, naming the file and line, before it runs the make targets. The check lives in `tools/ship_check.py`, so `src/` stays identical to the E1 preregistration's commit; it only tightens G10, with mutation tests. The README's one diagram holds no digit.
+
+## D-066 2026-11-12: G7 checks every invocation of an E1 run, and the sandbox (recorded with E1 amendment 2, no E1 data)
+
+A run's `run.json` is rewritten by each `experiment run` invocation, so it holds only the last one, while `invocations.jsonl` (banked as each run record's `invocations`) holds them all. G7's run pins (D-064) now apply to `run.json` and to every invocation: the pinned model and file hash, the pinned `n_ctx`, `temperature`, and `max_step_tokens`, the run's plans hash, and the `unshare-mount` sandbox, the method the harness and its reference runs used (D-019, D-025). prereg/0003-e1-amendment-2.md states the sandbox rule; the check only tightens G7, with mutation tests.

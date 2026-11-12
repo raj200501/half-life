@@ -1,0 +1,11 @@
+{
+  "artifacts": [
+    "min_events.json"
+  ],
+  "command": "python -m halflife.calibrate --out artifacts/power/min_events.json --jobs 4",
+  "created": "2026-11-12T01:44:43Z",
+  "git_dirty": false,
+  "git_sha": "a722586b0e134b8a91d3cbeb5c95226115b06b9d",
+  "note": "Copied by script from the provenance fields of min_events.json (python -m halflife.calibrate); e1.json is re-derived by make freshness.",
+  "synthetic": true
+}

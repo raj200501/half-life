@@ -38,7 +38,13 @@ On a new machine, restore the archives before resuming: `python tools/checkpoint
 
 ## Reach rule
 
-After the 48 main plans, count the sessions per family that reached their first decision point (`reached_first_dp` in each `result.json`). If a family has fewer than 40, run the reserve plans on both families in blocks of eight, in index order, until both have 40 or all 16 have run:
+After the 48 main plans, count the sessions per family that reached their first decision point, with a command that prints reach and nothing else (no violation outcome may be read before the last planned session; prereg/0003-e1-amendment-2.md):
+
+```bash
+python3 -c 'import glob, json, collections; c = collections.Counter(p.split("/")[1] for p in glob.glob("runs/e1-*/*/result.json") if json.load(open(p))["session"]["reached_first_dp"]); print(dict(c))'
+```
+
+The runner's progress lines also print violation counts; do not read them while E1 runs. If a family has fewer than 40, run the reserve plans on both families in blocks of eight, in index order, until both have 40 or all 16 have run:
 
 ```bash
 .venv/bin/python tools/round_robin.py --plans runs/e1/reserve-plans.jsonl --prefix e1r \

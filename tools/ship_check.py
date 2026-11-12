@@ -1478,37 +1478,58 @@ def prereg_run_pins(ctx: Context, prereg: str) -> tuple[dict[str, Any] | None, s
     return pins, ""
 
 
+E1_SANDBOX_METHOD = "unshare-mount"
+"""The sandbox every E1 invocation must use: no network, writes confined to the workspace,
+the method the harness was validated with (DECISIONS.md D-019, D-025, D-066)."""
+
+
 def run_pins_problem(
     provenance: dict[str, Any],
     rows: Sequence[dict[str, Any]],
     pins: dict[str, Any],
     prereg: str,
 ) -> str | None:
-    """Why a banked E1 run did not use the pinned models and settings, or None (D-064).
+    """Why a banked E1 run did not use the pinned models and settings, or None (D-064, D-066).
 
-    Every run record's ``run.json`` must name a pinned model key with its pinned file
-    SHA-256 and the pinned ``n_ctx``, ``temperature``, and ``max_step_tokens``, and
-    every session row must be a session of its run's model.
+    Every run record's ``run.json`` and every invocation in its ``invocations.jsonl``
+    (``run.json`` holds only the last one) must name a pinned model key with its pinned
+    file SHA-256, the pinned ``n_ctx``, ``temperature``, and ``max_step_tokens``, the
+    run's plans hash, and :data:`E1_SANDBOX_METHOD`; and every session row must be a
+    session of its run's model.
     """
     records = provenance.get("run_records")
     if not isinstance(records, dict) or not records:
         return "provenance.json has no run records, so no run is tied to its models"
     models: dict[str, str] = {}
     for run_id, record in records.items():
-        run = record.get("run") if isinstance(record, dict) else None
-        run = run if isinstance(run, dict) else {}
-        model = run.get("model") if isinstance(run.get("model"), dict) else {}
-        key, sha = model.get("key"), model.get("sha256")
-        if pins["models"].get(key) is None or pins["models"].get(key) != sha:
-            return (
-                f"run {run_id} ran model {key!r} ({str(sha)[:12]}), not a model pinned in {prereg}"
-            )
-        settings = run.get("settings") if isinstance(run.get("settings"), dict) else {}
-        found = {"n_ctx": run.get("n_ctx"), **{k: settings.get(k) for k in E1_RUN_SETTINGS[1:]}}
-        for name in E1_RUN_SETTINGS:
-            if found[name] != pins[name] or isinstance(found[name], bool):
-                return f"run {run_id} ran with {name} {found[name]!r}, not {pins[name]!r} as pinned"
-        models[str(run_id)] = str(key)
+        record = record if isinstance(record, dict) else {}
+        run = record.get("run") if isinstance(record.get("run"), dict) else {}
+        invocations = record.get("invocations")
+        entries = [("run.json", run)] + [
+            (f"invocation {i + 1}", entry if isinstance(entry, dict) else {})
+            for i, entry in enumerate(invocations if isinstance(invocations, list) else [])
+        ]
+        for where, entry in entries:
+            model = entry.get("model") if isinstance(entry.get("model"), dict) else {}
+            key, sha = model.get("key"), model.get("sha256")
+            if pins["models"].get(key) is None or pins["models"].get(key) != sha:
+                what = f"{key!r} ({str(sha)[:12]})"
+                return f"run {run_id} ({where}) ran model {what}, not a model pinned in {prereg}"
+            settings = entry.get("settings") if isinstance(entry.get("settings"), dict) else {}
+            found = {
+                "n_ctx": entry.get("n_ctx"),
+                **{k: settings.get(k) for k in E1_RUN_SETTINGS[1:]},
+            }
+            for name in E1_RUN_SETTINGS:
+                got, want = found[name], pins[name]
+                if got != want or isinstance(got, bool):
+                    return f"run {run_id} ({where}) ran with {name} {got!r}, not {want!r} as pinned"
+            if entry.get("plans_sha256") != run.get("plans_sha256"):
+                return f"run {run_id} ({where}) ran another plans file than its run.json names"
+            if entry.get("sandbox_method") != E1_SANDBOX_METHOD:
+                method = entry.get("sandbox_method")
+                return f"run {run_id} ({where}) ran in sandbox {method!r}, not {E1_SANDBOX_METHOD}"
+        models[str(run_id)] = str((run.get("model") or {}).get("key"))
     for row in rows:
         run_model = models.get(str(row.get("run_id")))
         if run_model is not None and row.get("model") != run_model:

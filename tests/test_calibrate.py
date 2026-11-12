@@ -427,7 +427,7 @@ def test_settings_min_events_is_the_banked_calibration() -> None:
     assert derived is not None
     low, high = calibrate.BAND
     assert low <= derived["min"]["rate"] <= derived["max"]["rate"] <= high
-    assert banked.get("deciding_extremes", derived) == derived
+    assert banked["deciding_extremes"] == derived
 
 
 def test_git_dirty_reports_none_without_git(tmp_path: Path) -> None:

@@ -2,13 +2,37 @@
   "code_sha256": {
     "halflife/__init__.py": "3358f44e933ad966d5d5aee10add6aa8ec68807ac76c97e5e6c49fcc18a8ccae",
     "halflife/analysis.py": "4ee58d99a4a15da4efc234703503e45992beb349edbf7572bf0c643ff576cf61",
-    "halflife/calibrate.py": "f7a1bd7ee03fc0275637edba7491d171bc1ee4b807c1e2b0f4edafe696a413ed",
-    "halflife/e1_analysis.py": "2b1b643783754df44f5cc7c2b6ee0294e6c25be477548308ffeb7b97fa4a7e37",
+    "halflife/calibrate.py": "afa48f6bdc44366696f76d5afc442ad5cbcce4fd93d528def463933df9b434af",
+    "halflife/e1_analysis.py": "f64d292391d8bdfd31e852cb67c7d44daa6f6d0501fa22e989b174e4a56f186a",
     "halflife/schema.py": "71565baf8825c53b282d56573fec94f66e13eb87089e4cbd228903c11a977220",
-    "halflife/stats.py": "a0b3062b92285968279457ad4a4761f10f081c58933b2e504b895c4238ef6fc0"
+    "halflife/stats.py": "8b42ac7c817c99ba0e562eccf2bae5be48c6e878f264e9b016ba959269b884bc"
   },
   "command": "python -m halflife.calibrate --out artifacts/power/min_events.json --jobs 4",
-  "created": "2026-11-12T00:23:49Z",
+  "created": "2026-11-12T01:44:43Z",
+  "deciding_extremes": {
+    "max": {
+      "computed": 10810,
+      "deciding": true,
+      "inside": true,
+      "lower": 40,
+      "rate": 0.0698427382054,
+      "scenario": "h2b_null_position_step_1.5_at_35",
+      "scope": "family",
+      "term": "compaction_count",
+      "upper": 59
+    },
+    "min": {
+      "computed": 8062,
+      "deciding": true,
+      "inside": true,
+      "lower": 7,
+      "rate": 0.0518481766311,
+      "scenario": "h1_null_compaction_effect",
+      "scope": "family",
+      "term": "log1p(position)",
+      "upper": 9
+    }
+  },
   "deciding_scope": "family",
   "design": {
     "alpha": 0.05,
@@ -670,11 +694,11 @@
       "upper": 2
     },
     {
-      "computed": 6331,
+      "computed": 6332,
       "deciding": true,
       "inside": false,
       "lower": 3,
-      "rate": 0.0864002527247,
+      "rate": 0.0863866077069,
       "scenario": "h2b_null_position_step_1.5_at_20",
       "scope": "family",
       "term": "compaction_count",
@@ -714,11 +738,11 @@
       "upper": 3
     },
     {
-      "computed": 5044,
+      "computed": 5045,
       "deciding": true,
       "inside": false,
       "lower": 4,
-      "rate": 0.0777160983347,
+      "rate": 0.0778989098117,
       "scenario": "h2b_null_position_step_1.5_at_35",
       "scope": "family",
       "term": "compaction_count",
@@ -769,8 +793,8 @@
       "upper": 4
     }
   ],
-  "git_dirty": true,
-  "git_sha": "33af3fc4bf733281fac5d70a6b1ef6047dbeae0b",
+  "git_dirty": false,
+  "git_sha": "a722586b0e134b8a91d3cbeb5c95226115b06b9d",
   "input_sha256": {
     "designs/e1.yaml": "d9b056317d5aec28bf107c8d935a943fc1a152ec7c85a98652da8b7536901bb0",
     "src/halflife/bench/__init__.py": "42713df38260b020ae8bf37ad2a8f493a02ccf49700a74f64ccfe434bc050c63",
@@ -3548,22 +3572,22 @@
       "upper": 2
     },
     {
-      "computed": 9261,
+      "computed": 9262,
       "deciding": false,
       "inside": false,
       "lower": 3,
-      "rate": 0.0900550696469,
+      "rate": 0.0900453465774,
       "scenario": "h2b_null_position_step_1.5_at_20",
       "scope": "together",
       "term": "compaction_count",
       "upper": 3
     },
     {
-      "computed": 6331,
+      "computed": 6332,
       "deciding": true,
       "inside": false,
       "lower": 3,
-      "rate": 0.0864002527247,
+      "rate": 0.0863866077069,
       "scenario": "h2b_null_position_step_1.5_at_20",
       "scope": "family",
       "term": "compaction_count",
@@ -3581,11 +3605,11 @@
       "upper": 3
     },
     {
-      "computed": 7183,
+      "computed": 7184,
       "deciding": false,
       "inside": false,
       "lower": 4,
-      "rate": 0.0772657663929,
+      "rate": 0.0773942093541,
       "scenario": "h2b_null_position_step_1.5_at_20",
       "scope": "together",
       "term": "compaction_count",
@@ -3603,11 +3627,11 @@
       "upper": 4
     },
     {
-      "computed": 2291,
+      "computed": 2292,
       "deciding": false,
       "inside": false,
       "lower": 4,
-      "rate": 0.0851156700131,
+      "rate": 0.0855148342059,
       "scenario": "h2b_null_position_step_1.5_at_20",
       "scope": "pooled",
       "term": "compaction_count",
@@ -3966,22 +3990,22 @@
       "upper": 3
     },
     {
-      "computed": 7424,
+      "computed": 7425,
       "deciding": false,
       "inside": false,
       "lower": 4,
-      "rate": 0.0851293103448,
+      "rate": 0.0852525252525,
       "scenario": "h2b_null_position_step_1.5_at_35",
       "scope": "together",
       "term": "compaction_count",
       "upper": 4
     },
     {
-      "computed": 5044,
+      "computed": 5045,
       "deciding": true,
       "inside": false,
       "lower": 4,
-      "rate": 0.0777160983347,
+      "rate": 0.0778989098117,
       "scenario": "h2b_null_position_step_1.5_at_35",
       "scope": "family",
       "term": "compaction_count",
@@ -4032,11 +4056,11 @@
       "upper": 6
     },
     {
-      "computed": 11708,
+      "computed": 11709,
       "deciding": false,
       "inside": true,
       "lower": 7,
-      "rate": 0.0690126409293,
+      "rate": 0.0690067469468,
       "scenario": "h2b_null_position_step_1.5_at_35",
       "scope": "together",
       "term": "compaction_count",
@@ -4054,11 +4078,11 @@
       "upper": 9
     },
     {
-      "computed": 3760,
+      "computed": 3761,
       "deciding": false,
       "inside": false,
       "lower": 7,
-      "rate": 0.0739361702128,
+      "rate": 0.0739165115661,
       "scenario": "h2b_null_position_step_1.5_at_35",
       "scope": "pooled",
       "term": "compaction_count",
@@ -8535,11 +8559,11 @@
       "upper": 2
     },
     {
-      "computed": 9261,
+      "computed": 9262,
       "deciding": false,
       "inside": false,
       "lower": 3,
-      "rate": 0.0900550696469,
+      "rate": 0.0900453465774,
       "scenario": "h2b_null_position_step_1.5_at_20",
       "scope": "together",
       "term": "compaction_count",
@@ -8557,22 +8581,22 @@
       "upper": 3
     },
     {
-      "computed": 7183,
+      "computed": 7184,
       "deciding": false,
       "inside": false,
       "lower": 4,
-      "rate": 0.0772657663929,
+      "rate": 0.0773942093541,
       "scenario": "h2b_null_position_step_1.5_at_20",
       "scope": "together",
       "term": "compaction_count",
       "upper": 4
     },
     {
-      "computed": 2291,
+      "computed": 2292,
       "deciding": false,
       "inside": false,
       "lower": 4,
-      "rate": 0.0851156700131,
+      "rate": 0.0855148342059,
       "scenario": "h2b_null_position_step_1.5_at_20",
       "scope": "pooled",
       "term": "compaction_count",
@@ -8656,11 +8680,11 @@
       "upper": 3
     },
     {
-      "computed": 7424,
+      "computed": 7425,
       "deciding": false,
       "inside": false,
       "lower": 4,
-      "rate": 0.0851293103448,
+      "rate": 0.0852525252525,
       "scenario": "h2b_null_position_step_1.5_at_35",
       "scope": "together",
       "term": "compaction_count",
@@ -8700,11 +8724,11 @@
       "upper": 6
     },
     {
-      "computed": 3760,
+      "computed": 3761,
       "deciding": false,
       "inside": false,
       "lower": 7,
-      "rate": 0.0739361702128,
+      "rate": 0.0739165115661,
       "scenario": "h2b_null_position_step_1.5_at_35",
       "scope": "pooled",
       "term": "compaction_count",
@@ -8910,7 +8934,7 @@
     }
   ],
   "rule": "min_events is the smallest bin lower edge at and above which every per-family cell with at least 2000 computed tests has a null rejection rate (p < 0.05) within [0.03, 0.07] for both tests in every scenario that feeds them (the per-family fits are the confirmatory hazard tests, DECISIONS.md D-060); 0 when every such cell does; null when no deciding bin lies above a failing cell. Pooled cells and both scopes together are judged the same way for reference (deciding: false) and decide nothing",
-  "runtime_s": 3092.3,
+  "runtime_s": 3412.2,
   "synthetic": true,
   "table": [
     {
@@ -13076,15 +13100,15 @@
         {
           "by_scope": {
             "family": {
-              "computed": 6331,
+              "computed": 6332,
               "rate": {
-                "hi": 0.0935741648364,
+                "hi": 0.0935594474094,
                 "k": 547,
                 "level": 0.95,
-                "lo": 0.0797279558177,
+                "lo": 0.0797153205841,
                 "method": "wilson",
-                "n": 6331,
-                "value": 0.0864002527247
+                "n": 6332,
+                "value": 0.0863866077069
               },
               "rejected": 547,
               "tests": 6412
@@ -13104,22 +13128,21 @@
               "tests": 3053
             }
           },
-          "computed": 9261,
+          "computed": 9262,
           "lower": 3,
           "not_computed": {
             "no_stratum_with_variation": 63,
             "null_separation": 46,
-            "rank_deficient": 94,
-            "zero_variance": 1
+            "rank_deficient": 94
           },
           "rate": {
-            "hi": 0.0960564772649,
+            "hi": 0.0960461416474,
             "k": 834,
             "level": 0.95,
-            "lo": 0.0843936109802,
+            "lo": 0.0843844718323,
             "method": "wilson",
-            "n": 9261,
-            "value": 0.0900550696469
+            "n": 9262,
+            "value": 0.0900453465774
           },
           "rejected": 834,
           "tests": 9465,
@@ -13142,37 +13165,36 @@
               "tests": 4900
             },
             "pooled": {
-              "computed": 2291,
+              "computed": 2292,
               "rate": {
-                "hi": 0.0972484703993,
-                "k": 195,
+                "hi": 0.0976683166834,
+                "k": 196,
                 "level": 0.95,
-                "lo": 0.0743718641153,
+                "lo": 0.0747484054295,
                 "method": "wilson",
-                "n": 2291,
-                "value": 0.0851156700131
+                "n": 2292,
+                "value": 0.0855148342059
               },
-              "rejected": 195,
+              "rejected": 196,
               "tests": 2299
             }
           },
-          "computed": 7183,
+          "computed": 7184,
           "lower": 4,
           "not_computed": {
             "null_separation": 2,
-            "rank_deficient": 13,
-            "zero_variance": 1
+            "rank_deficient": 13
           },
           "rate": {
-            "hi": 0.0836690655349,
-            "k": 555,
+            "hi": 0.0838016710136,
+            "k": 556,
             "level": 0.95,
-            "lo": 0.0713143809767,
+            "lo": 0.0714384612589,
             "method": "wilson",
-            "n": 7183,
-            "value": 0.0772657663929
+            "n": 7184,
+            "value": 0.0773942093541
           },
-          "rejected": 555,
+          "rejected": 556,
           "tests": 7199,
           "upper": 4
         },
@@ -13709,17 +13731,17 @@
         {
           "by_scope": {
             "family": {
-              "computed": 5044,
+              "computed": 5045,
               "rate": {
-                "hi": 0.0854300024569,
-                "k": 392,
+                "hi": 0.0856198118852,
+                "k": 393,
                 "level": 0.95,
-                "lo": 0.0706449189225,
+                "lo": 0.0708203269591,
                 "method": "wilson",
-                "n": 5044,
-                "value": 0.0777160983347
+                "n": 5045,
+                "value": 0.0778989098117
               },
-              "rejected": 392,
+              "rejected": 393,
               "tests": 5059
             },
             "pooled": {
@@ -13737,24 +13759,23 @@
               "tests": 2396
             }
           },
-          "computed": 7424,
+          "computed": 7425,
           "lower": 4,
           "not_computed": {
             "no_stratum_with_variation": 9,
             "null_separation": 9,
-            "rank_deficient": 12,
-            "zero_variance": 1
+            "rank_deficient": 12
           },
           "rate": {
-            "hi": 0.0916940228106,
-            "k": 632,
+            "hi": 0.09182087599,
+            "k": 633,
             "level": 0.95,
-            "lo": 0.0789937154576,
+            "lo": 0.0791131069008,
             "method": "wilson",
-            "n": 7424,
-            "value": 0.0851293103448
+            "n": 7425,
+            "value": 0.0852525252525
           },
-          "rejected": 632,
+          "rejected": 633,
           "tests": 7455,
           "upper": 4
         },
@@ -13825,33 +13846,31 @@
               "tests": 7948
             },
             "pooled": {
-              "computed": 3760,
+              "computed": 3761,
               "rate": {
-                "hi": 0.0827418432468,
+                "hi": 0.0827199542306,
                 "k": 278,
                 "level": 0.95,
-                "lo": 0.0660001972844,
+                "lo": 0.0659825781188,
                 "method": "wilson",
-                "n": 3760,
-                "value": 0.0739361702128
+                "n": 3761,
+                "value": 0.0739165115661
               },
               "rejected": 278,
               "tests": 3761
             }
           },
-          "computed": 11708,
+          "computed": 11709,
           "lower": 7,
-          "not_computed": {
-            "zero_variance": 1
-          },
+          "not_computed": {},
           "rate": {
-            "hi": 0.073746803803,
+            "hi": 0.0737405220863,
             "k": 808,
             "level": 0.95,
-            "lo": 0.0645612039101,
+            "lo": 0.0645556773898,
             "method": "wilson",
-            "n": 11708,
-            "value": 0.0690126409293
+            "n": 11709,
+            "value": 0.0690067469468
           },
           "rejected": 808,
           "tests": 11709,
