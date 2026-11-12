@@ -3,7 +3,7 @@ STATE: ACTIVE
 
 # Status
 
-Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes public. History lives in docs/LOG.md.
+Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final review and the merge to main next. History lives in docs/LOG.md.
 
 ## Gates (fast check at 8c2bde7, 2026-11-11: 10/14; fast results do not count)
 
@@ -15,11 +15,11 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 | G4 Offline demo | PASS | demo in a network namespace with no model calls, matches the golden output |
 | G5 Instrument validity | PASS | detector precision and recall with intervals, probe leakage, complete compaction logs with per-rule retention |
 | G6 Benchmark complete | PASS | thirty templates, four rule types, routes and reference runs with action logs verified |
-| G7 Main study | FAIL | E1 has not run: its preregistration waits on statistics round 2 (D-050) |
+| G7 Main study | FAIL | E1 is preregistered and frozen (prereg/0001-e1.md at 084bed1, D-064) and has not run; G7 now also ties every session to the pinned plans, harness, models, and settings (D-062, D-064) |
 | G8 Ecological and placement arms | FAIL | E2 needs Raj (billing guard); E3 not run |
 | G9 Mitigations shipped | FAIL | kit packaged with install docs and banked overhead; E4 not run |
 | G10 Claim integrity | PASS | claimcheck, freshness, and report-check pass on README.md and docs/REPORT.md |
-| G11 Preregistration integrity | PASS (trivially) | no preregistration committed yet |
+| G11 Preregistration integrity | PASS | `make prereg-verify`: prereg/0001-e1.md unchanged since its first commit; no confirmatory artifact yet |
 | G12 Independent review | FAIL | review 4 (of 526ae0d) returned BLOCK on one finding, embedded-image forms the hand parser missed; fixed by rendering with cmark-gfm plus a fail-closed raw scan (D-057); a new review waits for the daily allowance |
 | G13 Documentation | PASS | README follows section 11, REPORT complete, citecheck verified |
 | G14 Hygiene | PASS | secrets clean, cash_usd = 0, caps respected, tree clean |
@@ -40,7 +40,7 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Now
 
-- E1 preregistration gate (D-059 to D-062), 2026-11-12: the D-061 calibration (synthetic; H2b's position bands of ten tool calls, 60,000 datasets per scenario) is running in the statistics subagent, and the preregistration is frozen only if it meets the D-050 rule. D-062 is written and its gate tests pass (committed with the statistics): G7 ties every E1 session to the plans the preregistration pins, regenerated in the clone, and checks the reach rule. A pre-freeze adversarial audit of the draft, the code it pins, and G7 runs as a workflow (no model runs). The E1 launch script is ready (`runs/e1/driver.sh`; never `make setup` in this checkout while E1 runs).
+- E1 preregistration frozen (2026-11-12, prereg/0001-e1.md at 084bed1) before any E1 session: statistics round two landed with `min_events` 7 from the synthetic calibration (D-061, D-063; the margin is thin, H2b's highest null rate sits just under 7%), G7 ties sessions to the pinned plans and the reach rule (D-062) and to the pinned harness, models, and settings (D-064), and a pre-freeze audit narrowed the claims: H1 and H2b are adjusted associations, H2a is RQ2's randomized test, H3 is exploratory (D-064). The audit workflow keeps running; its later findings become amendments or backlog. The calibration is being re-banked from the clean commit.
 - Review 4 (BLOCK at 526ae0d, B1 only; B2 and B3 held): `report --check` now renders README.md and docs/REPORT.md with cmark-gfm (new dev dependency `cmarkgfm`) and fails closed on any image file named in the raw text (D-057, CORRECTIONS.md).
 - Crunch time (Raj, 2026-11-11): main holds the release commit (merge of pull request #1) and the repository is public. Order: finish D-050 and freeze the E1 preregistration; run E1 (G7); run E3 (G8; E2 stays for Raj's machine); run E4 (G9); a fresh review (G12). Main is updated at RELEASE-READY points under D-056. The heartbeat runs every 30 minutes in this session.
 - Review 3 (BLOCK at af5ddc6) fixed: `report --check` now finds embedded images in every Markdown and HTML form (B1); every bench template carries the half-life-bench canary and the bench routes, reference runs, manifest, and probe-scoring hashes are re-banked with their scripts (B2, D-055); README.md no longer calls the analysis preregistered, plus four smaller wording fixes (B3, CORRECTIONS.md).
@@ -55,9 +55,9 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Next three actions
 
-1. When the calibration ends and meets the D-050 rule: commit the statistics, D-062, and the artifact; `tools/prepush_ci.sh`, push; re-bank the calibration from that clean commit (synthetic, about an hour) while the day's review (G12) reads the commit and the preregistration draft.
-2. Fold in the audit's and the review's confirmed findings, freeze prereg/0001-e1.md (`fill_prereg.py` fills it from files), confirm `make prereg-verify`, and start E1 in the background (`runs/e1/driver.sh`, both families round-robin, several days); checkpoint finished sessions every few hours (`tools/checkpoint_runs.py --out artifacts/e1/raw runs/e1-*`).
-3. While E1 runs (no `src/` or `designs/` edits in this checkout): pin the E3 and E4 plans in G8 and G9 as D-062 does for E1, finish the E3 and E4 preregistration drafts, and keep README.md and STATUS.md saying E1 is running with no result yet.
+1. Commit the re-banked calibration (clean commit, `deciding_extremes`) with the report's calibration claims; `tools/prepush_ci.sh`, push.
+2. The final review of the release commit (G12, one per day under `cap_share`), then update main under D-056 and print RELEASE-READY.
+3. Start E1 on a machine that stays up for several days (docs/E1_RUNBOOK.md; never `make setup` in that checkout while it runs) and checkpoint finished sessions every few hours; then the E3 and E4 preregistrations with plan pins in G8 and G9 (as D-062 and D-064 do for E1).
 
 ## Usage to date
 
@@ -68,6 +68,7 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Needs Raj
 
+0. **E1 compute (blocks G7).** E1 needs several days of CPU on a machine that stays up. This cloud container can run it while the session lives, and finished sessions are checkpointed into the repository so a run resumes anywhere; if the container is reclaimed, run docs/E1_RUNBOOK.md on your machine.
 1. **Claude backend (blocks E2 in G8, and headless review).** This cloud container sets `ANTHROPIC_BASE_URL` and `CLAUDE_CODE_USE_CCR_V2`, so the billing guard refuses Claude children. To run E2: on a Linux machine with bubblewrap and socat where `env | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_)'` prints nothing and `claude` is logged in to the Max plan, turn off extra usage (paid overage) on the account, then follow docs/E2_RUNBOOK.md (smoke run, plans from `designs/e2.yaml`, two tiers, bank, push). Record any contaminant the smoke run reports (for example a user-level CLAUDE.md) so it can go in DECISIONS.md. E2 needs about 3 days at the capped 6 sessions per day.
 2. **Private vulnerability reporting (not blocking).** To accept private security reports as SECURITY.md describes, turn on private vulnerability reporting in the repository's security settings.
 3. **Model licenses (confirm, not blocking).** Llama-3.2-3B-Instruct is under the Llama 3.2 Community License (its acceptable-use policy file is gated and could not be read here) and Qwen2.5-3B-Instruct under the Qwen Research License (non-commercial research and evaluation). This project uses both only for research evaluation and redistributes no weights (D-035). If you do not accept either license, say so and that family's data is dropped and recorded in CORRECTIONS.md.
