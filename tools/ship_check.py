@@ -1146,7 +1146,14 @@ def check_interval(record: dict[str, Any], key: str) -> bool:
 
 # Reasons halflife.stats.not_estimable_terms gives for a term without a finite estimate,
 # and what the fit diagnostics must show for each (D-029, D-050 gate pass).
-NOT_ESTIMABLE_CODES = ("no_violations", "all_violations", "separation", "not_converged")
+NOT_ESTIMABLE_CODES = (
+    "no_violations",
+    "all_violations",
+    "separation",
+    "not_converged",
+    "single_value",
+    "rank_deficient",
+)
 
 
 def not_estimable_problem(record: dict[str, Any], fit: dict[str, Any] | None) -> str | None:
@@ -1164,6 +1171,7 @@ def not_estimable_problem(record: dict[str, Any], fit: dict[str, Any] | None) ->
     if not isinstance(fit, dict):
         return "has no fit diagnostics behind not estimable"
     events, rows = fit.get("n_events"), fit.get("n_rows")
+    failed = fit.get("fit_failed")
     shown = {
         "no_violations": events == 0,
         "all_violations": is_count(events) and events == rows,
@@ -1172,6 +1180,9 @@ def not_estimable_problem(record: dict[str, Any], fit: dict[str, Any] | None) ->
             record.get("term") is None or record.get("term") in (fit.get("separated_terms") or [])
         ),
         "not_converged": fit.get("converged") is False,
+        # A model that cannot be built (D-059 item 3) records why in fit_failed.
+        "single_value": failed in (True, "single_value"),
+        "rank_deficient": failed in (True, "rank_deficient"),
     }[code]
     return None if shown else f"fit diagnostics do not show {code}"
 
@@ -1379,6 +1390,183 @@ def code_pins_problem(ctx: Context, prereg: str) -> str | None:
     return None
 
 
+E1_PLAN_SETS = ("main", "reserve")
+"""Plan sets an E1 preregistration pins (DECISIONS.md D-062): ``main``, and ``reserve``."""
+
+
+def prereg_plan_pins(ctx: Context, prereg: str) -> tuple[dict[str, dict[str, Any]] | None, str]:
+    """The ``plans`` pins of the preregistration's settings block, checked for shape.
+
+    ``main`` (required) and ``reserve`` (optional) each name ``design``, a clean path
+    under ``designs/``, its ``design_sha256``, and the ``plans_sha256`` of the plans that
+    ``python -m halflife.experiment plan`` writes from it; ``reserve`` also names its
+    ``block`` size, a positive integer (D-062). The second value names a problem, empty
+    when there is none.
+    """
+    path = ctx.clone / prereg
+    fixed = prereg_settings(path.read_text(encoding="utf-8") if path.is_file() else "")
+    if fixed is None:
+        return None, f"{prereg} has no halflife_prereg settings block"
+    pins = fixed.get("plans")
+    if not isinstance(pins, dict) or "main" not in pins or not set(pins) <= set(E1_PLAN_SETS):
+        return None, f"{prereg} pins no E1 plans (plans.main, and optionally plans.reserve)"
+    checked: dict[str, dict[str, Any]] = {}
+    for name, pin in pins.items():
+        if not isinstance(pin, dict):
+            return None, f"{prereg}: plans.{name} is not an object"
+        design = pin.get("design")
+        if not (
+            isinstance(design, str)
+            and design.startswith("designs/")
+            and clone_file(ctx.clone, design) is not None
+        ):
+            return None, f"{prereg}: plans.{name}.design is not a clean path under designs/"
+        for key in ("design_sha256", "plans_sha256"):
+            value = pin.get(key)
+            if not (isinstance(value, str) and SHA256_RE.fullmatch(value)):
+                return None, f"{prereg}: plans.{name}.{key} is not a SHA-256"
+        checked[name] = pin
+    if "reserve" in checked:
+        block = checked["reserve"].get("block")
+        if not is_count(block) or block == 0:
+            return None, f"{prereg}: plans.reserve.block is not a positive integer"
+    if len({pin["plans_sha256"] for pin in checked.values()}) != len(checked):
+        return None, f"{prereg}: plans.main and plans.reserve pin the same plans file"
+    return checked, ""
+
+
+def run_plan_sets(
+    provenance: dict[str, Any],
+    rows: Sequence[dict[str, Any]],
+    pins: dict[str, dict[str, Any]],
+    prereg: str,
+) -> tuple[dict[str, str] | None, str]:
+    """``run_id -> plan set`` for every banked E1 run, or a problem (D-062 item 2).
+
+    Every run record in ``provenance.json`` (``run_records``, as
+    ``halflife.experiment.bank_runs`` writes them from each run's ``run.json``) must name
+    the SHA-256 of a pinned plans file, and every session row must name a banked run.
+    """
+    by_hash = {str(pin["plans_sha256"]): name for name, pin in pins.items()}
+    records = provenance.get("run_records")
+    if not isinstance(records, dict) or not records:
+        return None, "provenance.json has no run records, so no session is tied to its plans"
+    runs: dict[str, str] = {}
+    for run_id, record in records.items():
+        run = record.get("run") if isinstance(record, dict) else None
+        sha = run.get("plans_sha256") if isinstance(run, dict) else None
+        if not isinstance(sha, str) or sha not in by_hash:
+            return None, f"run {run_id} ran a plans file not pinned in {prereg} ({str(sha)[:12]})"
+        runs[str(run_id)] = by_hash[sha]
+    for row in rows:
+        if str(row.get("run_id")) not in runs:
+            sid, run_id = row.get("session_id"), row.get("run_id")
+            return None, f"session {sid} names no banked run ({run_id!r})"
+    return runs, ""
+
+
+def regenerated_plans(
+    ctx: Context, pins: dict[str, dict[str, Any]]
+) -> tuple[dict[str, list[tuple[str, str]]] | None, str]:
+    """``plan set -> [(session_id, plan line SHA-256)]``, in file order, rebuilt in the clone.
+
+    Each pinned design file must have its pinned SHA-256, and the plans that
+    ``python -m halflife.experiment plan`` writes from it in the clone's environment must
+    have the pinned plans SHA-256 (D-062 item 1). A plan's hash is that of its canonical
+    line, as session rows record it (``plan_sha256``). Nothing is written in the clone.
+    """
+    if (blocked := setup_failed(ctx)) is not None:
+        return None, blocked.evidence
+    plans: dict[str, list[tuple[str, str]]] = {}
+    with tempfile.TemporaryDirectory(prefix="e1-plans-", dir=scratch_parent(ctx)) as tmp:
+        work = Path(tmp)
+        if inside(work, ctx.clone):
+            return None, "no temporary directory outside the clone for the E1 plans"
+        for name, pin in sorted(pins.items()):
+            design = clone_file(ctx.clone, pin["design"])
+            if design is None or not design.is_file():
+                return None, f"pinned design {pin['design']} is missing"
+            if sha256_file(design) != pin["design_sha256"]:
+                return None, f"{pin['design']} differs from its pinned SHA-256"
+            target = work / f"{name}.jsonl"
+            plan_cmd = ("-I", "-m", "halflife.experiment", "plan", "--design", str(design))
+            result = ctx.run(f"e1-plans-{name}", [*ctx.python, *plan_cmd, "--out", str(target)])
+            if result.returncode != 0 or not target.is_file():
+                return None, f"plans from {pin['design']} failed: rc={result.returncode}"
+            if sha256_file(target) != pin["plans_sha256"]:
+                return None, f"the plans {pin['design']} generates differ from the pinned SHA-256"
+            lines = [line for line in target.read_text(encoding="utf-8").splitlines() if line]
+            plans[name] = [
+                (str(json.loads(line)["session_id"]), hashlib.sha256(line.encode()).hexdigest())
+                for line in lines
+            ]
+    return plans, ""
+
+
+def plan_sample_problem(
+    rows: Sequence[dict[str, Any]],
+    runs: dict[str, str],
+    plans: dict[str, list[tuple[str, str]]],
+    pins: dict[str, dict[str, Any]],
+) -> str | None:
+    """Why the banked E1 sessions are not the preregistered sample, or None (D-062).
+
+    Every session row must be a plan of its run's plan set with that plan's hash
+    (item 2); every family must have a row for every main plan, and the same number of
+    whole reserve blocks taken from the start of the reserve plans, which must be the
+    number the reach rule calls for: none when every family has
+    :data:`MIN_E1_SESSIONS_PER_FAMILY` sessions that reached their first decision point
+    on the main plans, else the fewest blocks after which every family has that many,
+    or all of them (item 3).
+    """
+    index = {name: dict(lines) for name, lines in plans.items()}
+    taken: dict[str, dict[str, set[str]]] = {}
+    reached: dict[str, set[str]] = {}
+    for row in rows:
+        sid, family, name = str(row["session_id"]), str(row["family"]), runs[str(row["run_id"])]
+        want = index[name].get(sid)
+        if want is None:
+            return f"session {sid} ({family}) is not one of the pinned {name} plans"
+        if row.get("plan_sha256") != want:
+            return f"session {sid} ({family}) ran a plan other than the pinned {name} plan"
+        taken.setdefault(family, {}).setdefault(name, set()).add(sid)
+        if row.get("reached_first_dp") is True:
+            reached.setdefault(family, set()).add(sid)
+    main = [sid for sid, _ in plans["main"]]
+    for family, sets in sorted(taken.items()):
+        missing = sorted(set(main) - sets.get("main", set()))
+        if missing:
+            return f"{family} has no session for {len(missing)} main plan(s), e.g. {missing[0]}"
+    reserve = [sid for sid, _ in plans.get("reserve", [])]
+    block = int(pins["reserve"]["block"]) if "reserve" in pins else 1
+    ran = set()
+    for family, sets in sorted(taken.items()):
+        ids = sets.get("reserve", set())
+        if len(ids) % block or ids != set(reserve[: len(ids)]):
+            return (
+                f"{family}'s reserve sessions are not whole blocks of {block} "
+                "taken from the start of the reserve plans"
+            )
+        ran.add(len(ids) // block)
+    if len(ran) > 1:
+        return f"families ran different numbers of reserve blocks: {sorted(ran)}"
+    blocks = ran.pop() if ran else 0
+
+    def short(n_blocks: int) -> bool:
+        allowed = set(main) | set(reserve[: n_blocks * block])
+        return any(
+            len(reached.get(family, set()) & allowed) < MIN_E1_SESSIONS_PER_FAMILY
+            for family in taken
+        )
+
+    called = 0
+    while called < len(reserve) // block and short(called):
+        called += 1
+    if blocks != called:
+        return f"{blocks} reserve block(s) ran; the preregistered reach rule calls for {called}"
+    return None
+
+
 def recompute_e1(ctx: Context, base: Path) -> str | None:
     """Problem text unless rerunning the E1 analysis on the banked rows reproduces its outputs.
 
@@ -1480,6 +1668,12 @@ def gate_g7(ctx: Context) -> GateResult:
     short = {f: n for f, n in reached.items() if n < MIN_E1_SESSIONS_PER_FAMILY}
     if short:
         return fail(f"families below {MIN_E1_SESSIONS_PER_FAMILY} sessions reaching a DP: {short}")
+    pins, problem = prereg_plan_pins(ctx, prereg)
+    if pins is None:
+        return fail(problem)
+    runs, problem = run_plan_sets(provenance, sessions, pins, prereg)
+    if runs is None:
+        return fail(problem)
     opportunities = load_jsonl(base / "opportunities.jsonl")
     seen = {(str(o.get("family")), str(o.get("session_id"))) for o in opportunities}
     if not opportunities or not seen <= keys:
@@ -1494,6 +1688,16 @@ def gate_g7(ctx: Context) -> GateResult:
         )
     hazard = load_json(base / "hazard.json")
     fits = {str(f.get("family")): f for f in hazard.get("fits") or [] if isinstance(f, dict)}
+    h1_fits = {str(f.get("family")): f for f in hazard.get("h1_fits") or [] if isinstance(f, dict)}
+    for est in hazard.get("h1_estimates") or []:  # H1's own model (D-059, D-060)
+        if not isinstance(est, dict):
+            return fail("hazard.json: an h1_estimates entry is not an object")
+        if est.get("not_estimable") is not None:
+            problem = not_estimable_problem(est, h1_fits.get(str(est.get("family"))))
+            if problem is not None:
+                return fail(f"hazard.json: H1 estimate for {est.get('family')} {problem}")
+        elif not check_interval(est, "estimate"):
+            return fail(f"hazard.json: H1 estimate for {est.get('family')} lacks a valid interval")
     for name in ("hazard.json", "half_life.json"):
         estimates = load_json(base / name)["estimates"]
         families = {e["family"] for e in estimates}
@@ -1535,15 +1739,19 @@ def gate_g7(ctx: Context) -> GateResult:
     counts = ", ".join(f"{f}={n}" for f, n in sorted(reached.items()))
     summary = f"E1 preregistered; sessions reaching DP {counts}; estimates with intervals"
     if ctx.fast:
-        return GateResult(True, f"{summary}; not recomputed (fast)")
+        return GateResult(True, f"{summary}; plans and estimates not recomputed (fast)")
+    plans, problem = regenerated_plans(ctx, pins)
+    if plans is None:
+        return fail(problem)
     problem = (
-        prereg_settings_problem(ctx, prereg, base)
+        plan_sample_problem(sessions, runs, plans, pins)
+        or prereg_settings_problem(ctx, prereg, base)
         or code_pins_problem(ctx, prereg)
         or recompute_e1(ctx, base)
     )
     if problem:
         return fail(problem)
-    return GateResult(True, f"{summary}, recomputed from the banked rows")
+    return GateResult(True, f"{summary}; sessions match the preregistered plans; recomputed")
 
 
 # ---------------------------------------------------------------- G8 and G9

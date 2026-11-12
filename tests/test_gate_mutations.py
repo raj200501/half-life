@@ -52,6 +52,7 @@ import pytest
 from halflife import arms_analysis, e1_analysis
 from halflife import bench as bench_mod
 from halflife import compaction as compaction_mod
+from halflife import experiment as experiment_mod
 from halflife.bench import verify as verify_mod
 from halflife.experiment import LOG_FIELDS, e0_validation, log_problems
 from halflife.integrity import prereg as prereg_tool
@@ -1632,6 +1633,55 @@ def resolve_stamps(root: Path, files: dict[str, Any], bootstrap: str) -> None:
             provenance["git_sha"] = {RUN_COMMIT: head, BOOTSTRAP_COMMIT: bootstrap}.get(sha, sha)
 
 
+# The preregistered E1 plans (D-062): the real design files, whose plans G7 regenerates.
+E1_DESIGNS = {"main": "designs/e1.yaml", "reserve": "designs/e1-reserve.yaml"}
+RESERVE_BLOCK = 8
+_E1_PLANS: dict[str, list[tuple[str, str]]] = {}
+
+
+def e1_plan_lines() -> dict[str, list[tuple[str, str]]]:
+    """``plan set -> [(session_id, canonical plan line)]`` of the real E1 designs."""
+    if not _E1_PLANS:
+        templates = bench_mod.load_all()
+        for name, rel in E1_DESIGNS.items():
+            design = experiment_mod.load_design(REPO_ROOT / rel)
+            for plan in experiment_mod.make_plans(design, templates):
+                line = json.dumps(plan.to_dict(), sort_keys=True)
+                _E1_PLANS.setdefault(name, []).append((str(json.loads(line)["session_id"]), line))
+    return _E1_PLANS
+
+
+def line_sha256(line: str) -> str:
+    return hashlib.sha256(line.encode("utf-8")).hexdigest()
+
+
+def plan_pins() -> dict[str, dict[str, Any]]:
+    """The ``plans`` pins of the real E1 designs, as the E1 preregistration fixes them."""
+    pins: dict[str, dict[str, Any]] = {}
+    for name, rel in E1_DESIGNS.items():
+        text = "".join(line + "\n" for _, line in e1_plan_lines()[name])
+        pins[name] = {
+            "design": rel,
+            "design_sha256": sha256(REPO_ROOT / rel),
+            "plans_sha256": line_sha256(text),
+        }
+    pins["reserve"]["block"] = RESERVE_BLOCK
+    return pins
+
+
+def run_records(runs: Mapping[str, str]) -> dict[str, Any]:
+    """``provenance.json`` run records for ``run_id -> plan set`` (each run's run.json)."""
+    pins = plan_pins()
+    return {
+        run_id: {"run": {"plans_sha256": pins[name]["plans_sha256"]}, "invocations": []}
+        for run_id, name in runs.items()
+    }
+
+
+def main_runs() -> dict[str, str]:
+    return {f"e1-{family}": "main" for family in FAMILIES}
+
+
 def e1_files(prereg: str = PREREG) -> dict[str, Any]:
     sessions = []
     opportunities = []
@@ -1647,6 +1697,7 @@ def e1_files(prereg: str = PREREG) -> dict[str, Any]:
                     "confirmatory": True,
                     "reached_first_dp": i < 40,
                     "run_provenance": stamp(prereg=prereg),
+                    "run_id": f"e1-{family}",
                 }
             )
             if i < 40:
@@ -1692,6 +1743,7 @@ def e1_files(prereg: str = PREREG) -> dict[str, Any]:
         "confirmatory": True,
         "command": "python -m halflife.experiment run",
         "git_sha": SHA,
+        "run_records": run_records(main_runs()),
     }
     return {
         f"{E1}/provenance.json": provenance,
@@ -1724,6 +1776,7 @@ def prereg_text(**fixed: Any) -> str:
         "n_boot": N_BOOT,
         "seed": BOOT_SEED,
         "code_sha256": e1_analysis.analysis_code_sha256(),
+        "plans": plan_pins(),
     } | fixed
     return (
         "# E1 preregistration\n\nDate: 2026-11-04\n\n```json\n"
@@ -1771,6 +1824,29 @@ def build_g7_symlinked_prereg(root: Path) -> Any:
     commit(root, {}, "link the preregistration")
     sha = commit(root, e1_files(), "bank E1")
     return context(root, sha)
+
+
+def g7_text(name: str, expect: str, text: Callable[[], str]) -> Case:
+    """A G7 case whose committed preregistration is ``text()`` (fast check)."""
+    return Case(name, expect, lambda root: context(root, commit_e1(root, e1_files(), text=text())))
+
+
+def run_of(files: dict[str, Any], run_id: str) -> dict[str, Any]:
+    """The run.json record of ``run_id`` in the fixture's provenance.json."""
+    run: dict[str, Any] = files[f"{E1}/provenance.json"]["run_records"][run_id]["run"]
+    return run
+
+
+def main_plans_sha256() -> str:
+    value: str = plan_pins()["main"]["plans_sha256"]
+    return value
+
+
+def with_pin(name: str, **changes: Any) -> dict[str, dict[str, Any]]:
+    """The real plan pins with ``changes`` to the ``name`` plan set's pin."""
+    pins = plan_pins()
+    pins[name].update(changes)
+    return pins
 
 
 def g7(
@@ -1848,6 +1924,27 @@ def not_estimable_term(files: dict[str, Any]) -> None:
         estimate=None, lo=None, hi=None, not_estimable="no_violations"
     )
     output(files, "hazard.json")["fits"][0].update(n_events=0, separation=True)
+
+
+def with_h1(**changes: Any) -> Edit:
+    """Give hazard.json H1's own model (D-059, D-060): one estimate per family and its fit,
+    with ``changes`` applied to the first family's estimate."""
+
+    def apply(files: dict[str, Any]) -> None:
+        hazard = output(files, "hazard.json")
+        hazard["h1_estimates"] = [
+            {"family": f, "term": "log1p(position)", "estimate": 0.3, "lo": 0.1, "hi": 0.5}
+            for f in FAMILIES
+        ]
+        hazard["h1_fits"] = [{"family": f, "n_events": 10, "n_rows": 40} for f in FAMILIES]
+        hazard["h1_estimates"][0].update(changes)
+
+    return apply
+
+
+def h1_fit_failed(files: dict[str, Any]) -> None:
+    with_h1(estimate=None, lo=None, hi=None, not_estimable="single_value")(files)
+    output(files, "hazard.json")["h1_fits"][0].update(fit_failed="single_value")
 
 
 def not_estimable_without_fit(files: dict[str, Any]) -> None:
@@ -1947,6 +2044,16 @@ G7_CASES = params(
             "hazard-not-estimable-without-fit-diagnostics",
             "has no fit diagnostics",
             not_estimable_without_fit,
+        ),
+        g7(
+            "h1-estimate-without-a-valid-interval",
+            "hazard.json: H1 estimate for qwen2.5 lacks a valid interval",
+            with_h1(lo=0.4),
+        ),
+        g7(
+            "h1-not-estimable-against-its-fit",
+            "hazard.json: H1 estimate for qwen2.5 fit diagnostics do not show single_value",
+            with_h1(estimate=None, lo=None, hi=None, not_estimable="single_value"),
         ),
         g7(
             "descriptive-rates-missing",
@@ -2093,6 +2200,52 @@ G7_CASES = params(
             r"artifacts/e1/sessions\.jsonl resolves to a file outside the clone",
             mutated(build_g7, e1_rows_symlinked_outside),
         ),
+        # D-062: every run ran a preregistered plans file, and every session names its run.
+        g7(
+            "run-record-names-an-unpinned-plans-file",
+            r"^run e1-qwen2\.5 ran a plans file not pinned in prereg/0001-e1\.md \(000000000000\)$",
+            lambda f: run_of(f, "e1-qwen2.5").update(plans_sha256="0" * 64),
+        ),
+        g7(
+            "run-records-missing",
+            "^provenance.json has no run records",
+            lambda f: f[f"{E1}/provenance.json"].pop("run_records"),
+        ),
+        g7(
+            "session-names-no-banked-run",
+            r"^session qwen2\.5-000 names no banked run \('e1-other'\)$",
+            lambda f: table(f, "sessions.jsonl")[0].update(run_id="e1-other"),
+        ),
+        g7_text(
+            "prereg-pins-no-plans",
+            re.escape(f"{PREREG} pins no E1 plans (plans.main, and optionally plans.reserve)"),
+            lambda: prereg_text(plans=None),
+        ),
+        g7_text(
+            "prereg-pins-an-unknown-plan-set",
+            re.escape(f"{PREREG} pins no E1 plans"),
+            lambda: prereg_text(plans=plan_pins() | {"pilot": plan_pins()["main"]}),
+        ),
+        g7_text(
+            "prereg-plans-design-outside-designs",
+            re.escape(f"{PREREG}: plans.main.design is not a clean path under designs/"),
+            lambda: prereg_text(plans=with_pin("main", design="designs/../README.md")),
+        ),
+        g7_text(
+            "prereg-plans-hash-is-not-a-sha256",
+            re.escape(f"{PREREG}: plans.reserve.plans_sha256 is not a SHA-256"),
+            lambda: prereg_text(plans=with_pin("reserve", plans_sha256="abc")),
+        ),
+        g7_text(
+            "prereg-reserve-block-of-zero",
+            re.escape(f"{PREREG}: plans.reserve.block is not a positive integer"),
+            lambda: prereg_text(plans=with_pin("reserve", block=0)),
+        ),
+        g7_text(
+            "prereg-reserve-pins-the-main-plans",
+            re.escape(f"{PREREG}: plans.main and plans.reserve pin the same plans file"),
+            lambda: prereg_text(plans=with_pin("reserve", plans_sha256=main_plans_sha256())),
+        ),
     ]
 )
 
@@ -2105,6 +2258,11 @@ def test_g7_control_passes(tmp_path: Path) -> None:
 
 def test_g7_not_estimable_term_with_its_reason_and_fit_passes(tmp_path: Path) -> None:
     result = evaluate(7, build_g7(tmp_path, not_estimable_term))
+    assert result.passed, result.evidence
+
+
+def test_g7_h1_model_that_could_not_be_built_passes_with_its_reason(tmp_path: Path) -> None:
+    result = evaluate(7, build_g7(tmp_path, h1_fit_failed))
     assert result.passed, result.evidence
 
 
@@ -2157,19 +2315,32 @@ ARMS = ("full_summary", "sham")
 RULE_TYPES = ("prohibition", "procedure")
 
 
-def synthetic_e1_rows() -> dict[str, list[dict[str, Any]]]:
+MAIN_REACHED = 46  # of the 48 main plans, per family, in the recomputation fixture
+
+
+def synthetic_e1_rows(
+    reach: tuple[int, int] = (MAIN_REACHED, MAIN_REACHED), reserve_blocks: int = 0
+) -> dict[str, list[dict[str, Any]]]:
     """Session and opportunity rows from a seeded synthetic process, every row labeled so.
 
-    Each family runs 42 sessions; 40 reach six decision points, and the chance of a
-    violation rises with log1p(position).
+    Each family runs every preregistered main plan (``e1_plan_lines``, with the plan's
+    hash) and the first ``reserve_blocks`` blocks of reserve plans; the first ``reach``
+    main plans of each family and every reserve plan reach six decision points, and the
+    chance of a violation rises with log1p(position).
     """
     rng = random.Random(20261104)
     sessions: list[dict[str, Any]] = []
     opportunities: list[dict[str, Any]] = []
+    plans = e1_plan_lines()
     for shift, family in enumerate(FAMILIES):
-        for i in range(42):
-            sid = f"{family}-{i:03d}"
+        chosen = [("main", i, sid, line) for i, (sid, line) in enumerate(plans["main"])]
+        chosen += [
+            ("reserve", -1, sid, line)
+            for sid, line in plans["reserve"][: reserve_blocks * RESERVE_BLOCK]
+        ]
+        for i, (name, rank, sid, line) in enumerate(chosen):
             arm = ARMS[i % 2]
+            reached = name == "reserve" or rank < reach[shift]
             sessions.append(
                 {
                     "session_id": sid,
@@ -2177,13 +2348,15 @@ def synthetic_e1_rows() -> dict[str, list[dict[str, Any]]]:
                     "model": f"{family}-instruct",
                     "prereg": PREREG,
                     "confirmatory": True,
-                    "reached_first_dp": i < 40,
+                    "reached_first_dp": reached,
                     "strategy": arm,
                     "synthetic": True,
                     "run_provenance": stamp(),
+                    "run_id": f"e1-{family}" if name == "main" else f"e1r-{family}",
+                    "plan_sha256": line_sha256(line),
                 }
             )
-            if i >= 40:
+            if not reached:
                 continue
             for k, position in enumerate(DP_POSITIONS):
                 count = rng.randrange(3)
@@ -2204,17 +2377,20 @@ def synthetic_e1_rows() -> dict[str, list[dict[str, Any]]]:
     return {"sessions.jsonl": sessions, "opportunities.jsonl": opportunities}
 
 
-_ANALYZED: dict[str, Any] = {}
+_ANALYZED: dict[tuple[tuple[int, int], int], dict[str, Any]] = {}
 
 
-def analyzed_e1() -> dict[str, Any]:
+def analyzed_e1(
+    reach: tuple[int, int] = (MAIN_REACHED, MAIN_REACHED), reserve_blocks: int = 0
+) -> dict[str, Any]:
     """The synthetic rows and the hazard, half-life, and KM files the real analysis writes.
 
-    ``halflife.e1_analysis`` runs once per test session (its output is fixed by the rows,
-    n_boot, and seed); every caller gets its own copy.
+    ``halflife.e1_analysis`` runs once per test session and fixture shape (its output is
+    fixed by the rows, n_boot, and seed); every caller gets its own copy.
     """
-    if not _ANALYZED:
-        rows = synthetic_e1_rows()
+    key = (reach, reserve_blocks)
+    if key not in _ANALYZED:
+        rows = synthetic_e1_rows(reach, reserve_blocks)
         with tempfile.TemporaryDirectory(prefix="e1-fixture-") as tmp:
             work = Path(tmp)
             write_files(work, rows)
@@ -2224,14 +2400,17 @@ def analyzed_e1() -> dict[str, Any]:
                 name: json.loads((work / name).read_text(encoding="utf-8"))
                 for name in sc.E1_RECOMPUTED
             }
-        _ANALYZED.update(rows)
-        _ANALYZED.update(outputs)
-    return copy.deepcopy(_ANALYZED)
+        _ANALYZED[key] = {**rows, **outputs}
+    return copy.deepcopy(_ANALYZED[key])
 
 
-def recomputable_e1_files() -> dict[str, Any]:
-    """E1 files whose estimates the real analysis computed from the banked rows (synthetic)."""
-    files = {f"{E1}/{name}": value for name, value in analyzed_e1().items()}
+def recomputable_e1_files(
+    reach: tuple[int, int] = (MAIN_REACHED, MAIN_REACHED), reserve_blocks: int = 0
+) -> dict[str, Any]:
+    """E1 files whose estimates the real analysis computed from the banked rows (synthetic),
+    with the design files whose plans the sessions ran."""
+    files = {f"{E1}/{name}": value for name, value in analyzed_e1(reach, reserve_blocks).items()}
+    runs = main_runs() | ({f"e1r-{f}": "reserve" for f in FAMILIES} if reserve_blocks else {})
     files[f"{E1}/provenance.json"] = {
         "prereg": PREREG,
         "confirmatory": True,
@@ -2240,13 +2419,23 @@ def recomputable_e1_files() -> dict[str, Any]:
             f"python -m halflife.e1_analysis --dir {E1} --n-boot {N_BOOT} --seed {BOOT_SEED}"
         ),
         "git_sha": SHA,
+        "run_records": run_records(runs),
     }
+    for rel in E1_DESIGNS.values():
+        files[rel] = (REPO_ROOT / rel).read_text(encoding="utf-8")
     return files
 
 
-def build_g7_full(root: Path, edit: Edit | None = None, text: str | None = None) -> Any:
+def build_g7_full(
+    root: Path,
+    edit: Edit | None = None,
+    text: str | None = None,
+    *,
+    reach: tuple[int, int] = (MAIN_REACHED, MAIN_REACHED),
+    reserve_blocks: int = 0,
+) -> Any:
     """The E1 fixture under a full check (not --fast), after a successful make setup."""
-    files = recomputable_e1_files()
+    files = recomputable_e1_files(reach, reserve_blocks)
     if edit is not None:
         edit(files)
     return context(root, commit_e1(root, files, text=text), setup=True, fast=False)
@@ -2305,11 +2494,61 @@ def flip_first_violation(files: dict[str, Any]) -> None:
     row["violated"] = not row["violated"]
 
 
+UNREACHED = (FAMILIES[0], MAIN_REACHED)  # a session (family, main plan rank) with no DP
+
+
+def unreached_row(files: dict[str, Any]) -> dict[str, Any]:
+    family, rank = UNREACHED
+    sid = e1_plan_lines()["main"][rank][0]
+    rows = table(files, "sessions.jsonl")
+    row = next(r for r in rows if r["family"] == family and r["session_id"] == sid)
+    assert row["reached_first_dp"] is False
+    return row
+
+
 def drop_unreached_session(files: dict[str, Any]) -> None:
     """Drop a session that reached no decision point (it has no opportunity rows)."""
-    files[f"{E1}/sessions.jsonl"] = [
-        r for r in table(files, "sessions.jsonl") if r["session_id"] != f"{FAMILIES[0]}-041"
-    ]
+    row = unreached_row(files)
+    files[f"{E1}/sessions.jsonl"] = [r for r in table(files, "sessions.jsonl") if r is not row]
+
+
+def reserve_rows(n: int, *, families: Sequence[str] = FAMILIES, start: int = 0) -> Edit:
+    """Bank ``n`` reserve sessions per family (none reached a decision point), from reserve
+    plan ``start`` on, with their runs' records."""
+
+    def apply(files: dict[str, Any]) -> None:
+        base = unreached_row(files)
+        rows = table(files, "sessions.jsonl")
+        for family in families:
+            for sid, line in e1_plan_lines()["reserve"][start : start + n]:
+                rows.append(
+                    copy.deepcopy(base)
+                    | {
+                        "session_id": sid,
+                        "family": family,
+                        "model": f"{family}-instruct",
+                        "run_id": f"e1r-{family}",
+                        "plan_sha256": line_sha256(line),
+                    }
+                )
+        records = output(files, "provenance.json")["run_records"]
+        records.update(run_records({f"e1r-{family}": "reserve" for family in families}))
+
+    return apply
+
+
+def plans_pin_the_design_does_not_generate(root: Path) -> Any:
+    """The preregistration pins a main plans hash that its design does not generate, and
+    the runs recorded that hash, so only regenerating the plans can tell."""
+    wrong = "f" * 64
+    real = plan_pins()["main"]["plans_sha256"]
+
+    def edit(files: dict[str, Any]) -> None:
+        for record in output(files, "provenance.json")["run_records"].values():
+            if record["run"]["plans_sha256"] == real:
+                record["run"]["plans_sha256"] = wrong
+
+    return build_g7_full(root, edit, prereg_text(plans=with_pin("main", plans_sha256=wrong)))
 
 
 def rows_without_strategy(files: dict[str, Any]) -> None:
@@ -2443,14 +2682,16 @@ G7_FULL_CASES = params(
             lambda f: output(f, "hazard.json")["estimates"].pop(),
         ),
         g7_full(
-            # The first row is a qwen2.5 session, so the llama3.2 estimates (0 to 4) agree.
+            # The first row is a qwen2.5 session, so the llama3.2 estimates (0 to 8: H2b's
+            # model with its position bands, D-061) agree.
             "violation-flipped-after-the-analysis",
-            differs("hazard.json", "estimates[5].estimate"),
+            differs("hazard.json", "estimates[9].estimate"),
             flip_first_violation,
         ),
         g7_full(
+            # D-062: every family runs every preregistered main plan.
             "unreached-session-dropped-after-the-analysis",
-            differs("hazard.json", "exclusions.sessions_confirmatory"),
+            r"^qwen2\.5 has no session for 1 main plan\(s\), e\.g\. ",
             drop_unreached_session,
         ),
         g7_full(
@@ -2484,8 +2725,81 @@ G7_FULL_CASES = params(
             r"^halflife\.e1_analysis failed on the banked rows: rc=1 .*'strategy'$",
             rows_without_strategy,
         ),
+        # D-062: the sessions are the preregistered plans, and the reach rule holds.
+        g7_full(
+            "session-ran-another-plan",
+            r"^session \S+ \(qwen2\.5\) ran a plan other than the pinned main plan$",
+            lambda f: unreached_row(f).update(plan_sha256="0" * 64),
+        ),
+        g7_full(
+            "session-is-not-a-preregistered-plan",
+            r"^session extra-s999999 \(qwen2\.5\) is not one of the pinned main plans$",
+            lambda f: unreached_row(f).update(session_id="extra-s999999"),
+        ),
+        g7_full(
+            "design-edited-after-the-freeze",
+            r"^designs/e1\.yaml differs from its pinned SHA-256$",
+            lambda f: f.update({"designs/e1.yaml": f["designs/e1.yaml"] + "# edited\n"}),
+        ),
+        g7_full(
+            "reserve-design-missing",
+            r"^pinned design designs/e1-reserve\.yaml is missing$",
+            lambda f: f.pop("designs/e1-reserve.yaml"),
+        ),
+        Case(
+            "plans-pin-the-design-does-not-generate",
+            r"^the plans designs/e1\.yaml generates differ from the pinned SHA-256$",
+            plans_pin_the_design_does_not_generate,
+        ),
+        g7_full(
+            "reserve-block-not-called-for",
+            r"^1 reserve block\(s\) ran; the preregistered reach rule calls for 0$",
+            reserve_rows(RESERVE_BLOCK),
+        ),
+        g7_full(
+            "reserve-partial-block",
+            r"^llama3\.2's reserve sessions are not whole blocks of 8 taken from the start",
+            reserve_rows(3),
+        ),
+        g7_full(
+            "reserve-block-not-taken-from-the-start",
+            r"^llama3\.2's reserve sessions are not whole blocks of 8 taken from the start",
+            reserve_rows(RESERVE_BLOCK, start=RESERVE_BLOCK),
+        ),
+        g7_full(
+            "reserve-block-for-one-family-only",
+            r"^families ran different numbers of reserve blocks: \[0, 1\]$",
+            reserve_rows(RESERVE_BLOCK, families=FAMILIES[:1]),
+        ),
+        Case(
+            "second-reserve-block-not-called-for",
+            r"^2 reserve block\(s\) ran; the preregistered reach rule calls for 1$",
+            lambda root: build_g7_full(
+                root,
+                reserve_rows(RESERVE_BLOCK, start=RESERVE_BLOCK),
+                reach=SHORT_REACH,
+                reserve_blocks=1,
+            ),
+        ),
     ]
 )
+
+SHORT_REACH = (38, MAIN_REACHED)  # the first family reaches 38 on the main plans
+
+
+def test_g7_reserve_block_the_reach_rule_calls_for_passes(tmp_path: Path) -> None:
+    """A family short of 40 on the main plans runs one reserve block, as preregistered."""
+    result = evaluate(7, build_g7_full(tmp_path, reach=SHORT_REACH, reserve_blocks=1))
+    assert result.passed, result.evidence
+
+
+def test_g7_plan_fixture_uses_the_real_designs() -> None:
+    """The fixture's plan pins are those of the committed E1 designs (D-062)."""
+    pins = plan_pins()
+    assert set(pins) == {"main", "reserve"} and pins["reserve"]["block"] == RESERVE_BLOCK
+    assert len(e1_plan_lines()["main"]) == 48 and len(e1_plan_lines()["reserve"]) == 16
+    main_ids = {sid for sid, _ in e1_plan_lines()["main"]}
+    assert not main_ids & {sid for sid, _ in e1_plan_lines()["reserve"]}
 
 
 def test_g7_recomputation_fixture_is_synthetic_real_analysis_output() -> None:
@@ -2508,12 +2822,14 @@ def test_g7_recomputation_fixture_is_synthetic_real_analysis_output() -> None:
 def test_g7_full_check_recomputes_the_estimates(tmp_path: Path) -> None:
     result = evaluate(7, build_g7_full(tmp_path / "full"))
     assert result.passed, result.evidence
-    assert result.evidence.endswith("estimates with intervals, recomputed from the banked rows")
+    assert result.evidence.endswith(
+        "estimates with intervals; sessions match the preregistered plans; recomputed"
+    )
     ctx = build_g7_full(tmp_path / "fast")
     ctx.fast = True
     fast = evaluate(7, ctx)
     assert fast.passed, fast.evidence
-    assert fast.evidence.endswith("; not recomputed (fast)")
+    assert fast.evidence.endswith("; plans and estimates not recomputed (fast)")
 
 
 @pytest.mark.parametrize("case", G7_FULL_CASES)
@@ -2552,6 +2868,8 @@ def test_g7_recomputation_writes_nothing_in_the_clone(tmp_path: Path) -> None:
     assert run_git(root, "status", "--porcelain", "--untracked-files=all") == ""
     assert sorted(path.name for path in ctx.logs.iterdir()) == [
         "e1-code-pins.log",
+        "e1-plans-main.log",
+        "e1-plans-reserve.log",
         "e1-recompute.log",
     ]
 

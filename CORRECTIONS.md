@@ -36,3 +36,11 @@ Every changed or withdrawn claim gets a dated entry here (rule 3 of the build br
 - **What changed:** the audit ran after the E0 validation data and the exploratory pilot existed, so the README now says "before any confirmatory data existed". D-050's fixes are in progress, not done, so the README says so.
 - **Why:** the fourth independent review (non-blocking item at 526ae0d).
 - **Support:** the commit dates of `artifacts/e0/` and `artifacts/pilot/` against DECISIONS.md D-049 and D-050.
+
+## 2026-11-12: the minimum of violations for testing H1 and H2b
+
+- **Claim as stated:** DECISIONS.md D-058 fixed `min_events` at 2, from the synthetic calibration then banked, and STATUS.md repeated it.
+- **What changed:** the audit of statistics round two changed H1's and H2b's models (D-059 to D-061), and the calibration of the final models puts the minimum at 7 (D-063). The E1 preregistration fixes 7.
+- **Why:** the earlier value calibrated models that are no longer the preregistered ones; with them, H2b rejected too many true nulls at 2 to 6 violations.
+- **Support:** `artifacts/power/min_events.json` (synthetic). No E1 data existed, and README.md and docs/REPORT.md never stated the earlier value.
+

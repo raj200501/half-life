@@ -1092,8 +1092,10 @@ NOT_ESTIMABLE_WORDS = {
     "all_violations": "only violations",
     "separation": "separation",
     "not_converged": "fit did not converge",
+    "single_value": "a model term takes a single value",
+    "rank_deficient": "rank deficient",
 }
-"""Table wording for each reason :mod:`halflife.stats` gives no estimate (D-029)."""
+"""Table wording for each reason :mod:`halflife.stats` gives no estimate (D-029, D-059)."""
 UNSTABLE = "unstable interval: too many failed draws, descriptive only"
 """The label of an interval with more than the allowed share of failed bootstrap draws;
 under D-050 it decides nothing."""
@@ -1156,7 +1158,9 @@ def coefficient_cell(led: Ledger, family: str, term: str, label: str) -> tuple[s
     labeled but decides nothing.
     """
     rel = f"{E1}/hazard.json"
-    at = At(rel, "/estimates", {"family": family, "term": term})
+    # H1 has its own model (D-059, D-060), H2b the main one.
+    pointer = "/h1_estimates" if label == "h1" else "/estimates"
+    at = At(rel, pointer, {"family": family, "term": term})
     if led.peek(at) is None:
         return NOT_ESTIMABLE, "not computed", "term not estimated"
     cid = f"e1.hazard.{slug(family)}.{slug(label)}"
@@ -1166,6 +1170,8 @@ def coefficient_cell(led: Ledger, family: str, term: str, label: str) -> tuple[s
     decision = score_reading(
         led, at, rel, f"hazard rises with {words}", f"hazard falls with {words}"
     )
+    if led.peek(at, "/exploratory") is True:
+        decision = f"exploratory: {decision}"
     return cell + interval_label(led, at), p_cell(led, f"{cid}.p", at, "/p_value"), decision
 
 
@@ -1198,6 +1204,7 @@ P_MISSING = {
     "null_not_converged": "null fit did not converge",
     "null_separation": "null fit separated",
     "no_stratum_with_variation": "no family with both outcomes",
+    "arm_absent": "an arm has no decision points",
 }
 """Short table wording for each reason a test has no p-value (:mod:`halflife.stats`
 ``SCORE_PROBLEMS`` and ``WALD_PROBLEMS``)."""
@@ -1272,6 +1279,22 @@ def odds_cell(led: Ledger, cid: str, at: At) -> str:
     return f"{cell} (unstable)" if led.peek(at, "/odds_ratio_unstable") is True else cell
 
 
+def absent_cells(led: Ledger, at: At, *, odds: bool, holm: bool) -> list[str]:
+    """Cells of a contrast one of whose arms has no decision points (D-059 item 3): no
+    estimate, no test, and the arms named, never an empty row."""
+    missing = led.peek(at, "/missing_arms")
+    names = [str(m) for m in missing] if isinstance(missing, list) else []
+    reason = f"no decision points for {join_and(names)}" if names else p_words("arm_absent")
+    cells = [f"{NOT_ESTIMABLE} ({reason})"]
+    if odds:
+        cells.append(f"{NOT_ESTIMABLE} ({reason})")
+    cells.append(f"not computed ({p_words('arm_absent')})")
+    if holm:
+        cells.append(f"not computed ({p_words('arm_absent')})")
+    cells.append(f"not tested ({p_words('arm_absent')})")
+    return cells
+
+
 def contrast_cells(
     led: Ledger, cid: str, at: At, *, odds: bool = True, holm: bool = True
 ) -> list[str]:
@@ -1283,6 +1306,8 @@ def contrast_cells(
     :func:`holm_reading`); without, by its own score test (H2a, :func:`score_reading`).
     The intervals are descriptive either way (D-050).
     """
+    if led.peek(at, "/not_tested") == "arm_absent":
+        return absent_cells(led, at, odds=odds, holm=holm)
     cells = [
         estimate(led, f"{cid}.diff", at, "/difference", "difference", DIFF)
         + interval_label(led, at, "/difference")
@@ -1320,11 +1345,17 @@ def e1_tables(b: Build, families: Sequence[str]) -> list[str]:
         "**Hazard model (H1, H2b).** Coefficients are log odds per decision point on the risk "
         "set (each session's decision points up to its first violation), with the rule type and "
         "the compaction strategy as factors and, pooled, the family. H1 is the "
-        "`log1p(position)` term and H2b the compaction-count term. Each is decided by a "
+        "`log1p(position)` term of its own model, which adjusts for compaction flexibly (the "
+        "compaction arm crossed with the compaction level, none, one, or two or more, plus "
+        "the linear count), and H2b is the compaction-count term of a model that adjusts for "
+        "position flexibly (`log1p(position)` plus a factor of position in bands of ten tool "
+        "calls up to seventy), so "
+        "neither time scale can stand in for the other (D-059 to D-061). Each is decided by a "
         "two-sided score test of the term at the null fit of the model without it, clustered "
-        "by plan through an exchangeable within-plan correlation and, pooled, with the null "
-        "model fit within each family (D-050); per family and pooled are separate hypotheses, "
-        "with no adjustment across families. A fit with fewer violations than the calibrated "
+        "by plan through an exchangeable within-plan correlation. The per-family tests are the "
+        "confirmatory ones; the pooled tests, with the null model fit within each family, are "
+        "exploratory, because their variance cannot represent a decision-point effect shared "
+        "by the families (D-060). A fit with fewer violations than the calibrated "
         "minimum leaves its hypothesis not tested. The bootstrap intervals are descriptive: a "
         "term without a finite estimate reads not estimable and an interval with too many "
         "failed draws is labeled unstable, but neither changes a decision (the analysis rules "
@@ -1351,14 +1382,16 @@ def e1_tables(b: Build, families: Sequence[str]) -> list[str]:
             family = str(entry["family"])
             at = At(contrasts, "/h2a", {"family": family})
             cid = f"e1.h2a.{slug(family)}"
-            h2a_rows.append(
-                [
-                    family,
+            absent = led.peek(at, "/not_tested") == "arm_absent"
+            rates = (
+                ["not computed", "not computed"]
+                if absent
+                else [
                     led.num(f"{cid}.sham", at, "/reference_arm/rate/rate", PROP),
                     led.num(f"{cid}.summary", at, "/arm/rate/rate", PROP),
-                    *contrast_cells(led, cid, at, holm=False),
                 ]
             )
+            h2a_rows.append([family, *rates, *contrast_cells(led, cid, at, holm=False)])
         lines += [
             "**Compaction content (H2a).** Among decision points after at least one compaction, "
             "the violation rate under a full summary against the sham control, which runs the "
@@ -1768,8 +1801,8 @@ def e1_section(b: Build) -> tuple[list[str], list[str]]:
         led, "pooled", "compaction_count", "h2b"
     )
     abstract.append(
-        f"The pooled compaction-count coefficient (H2b) was {pooled_h2b} log odds "
-        f"(score test p {pooled_p}; {pooled_reading})."
+        f"The pooled compaction-count coefficient (H2b, exploratory) was {pooled_h2b} log "
+        f"odds (score test p {pooled_p}; {pooled_reading})."
     )
     return lines, abstract
 

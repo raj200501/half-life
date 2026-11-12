@@ -1,4 +1,5 @@
-"""Calibration of ``min_events`` for the H1 and H2b score tests (DECISIONS.md D-050 item 3).
+"""Calibration of ``min_events`` for the H1 and H2b score tests (DECISIONS.md D-050 item 3,
+D-059 item 1).
 
 Synthetic, not model results. Each simulated dataset runs the 48 plans of
 ``designs/e1.yaml`` (:func:`halflife.experiment.make_plans`) with two synthetic families,
@@ -17,24 +18,37 @@ as E1 runs every plan once per family:
   counts it, so token-budget compactions tie it to position as they do in E1 (D-047).
 * **Outcomes under a null.** Each decision point violates with probability
   ``expit(base + family offset + rule-type effect + slope * log1p(position) + compaction
-  * count + u)``. :data:`SCENARIOS` names three nulls: both terms zero, with a
-  decision-point effect ``u`` that both families share (a correlation inside the pooled
-  plan clusters that no persistent session effect adds, so the marginal hazard still does
-  not depend on position or count), the position term zero while compaction has an effect
-  (for H1), and the compaction term zero while position has an effect (for H2b). The base
-  log odds are drawn per dataset from :data:`BASE_LOGIT`, which spreads the number of
-  violations over the bins.
+  * count + step * [count >= 1 in the step's arms] + u)``. :data:`SCENARIOS` names the
+  nulls: both terms zero, with a decision-point effect ``u`` that both families share (a
+  correlation inside the pooled plan clusters that no persistent session effect adds, so
+  the marginal hazard still does not depend on position or count), at three sizes of
+  ``u`` (D-059, audit N1); the position term zero while compaction has an effect, linear
+  in the count or a step at the first compaction in both arms or in ``full_summary``
+  only (for H1; audit B2); and the compaction term zero while position has an effect,
+  linear in ``log1p(position)`` or a step at 20, 35, or 55 tool calls (for H2b; D-060
+  item 2: at a cut point of H2b's position band and between them). A step in one time
+  scale is an effect of it, so each step null feeds the other hypothesis only. The base
+  log odds are drawn per dataset uniformly from the scenario's ``base_range``, which
+  spreads its number of violations over the bins.
 * **Tests.** The rows go through :func:`halflife.e1_analysis.analysis_set` (procedure rules
   in cut spans leave) and :func:`halflife.e1_analysis.hazard_tests`, the code that decides
   H1 and H2b, per family and pooled. Each test is filed under the number of risk-set
   violations of its fit (the count ``Settings.min_events`` compares) in :data:`BIN_EDGES`.
 
 ``min_events`` is the smallest bin lower edge at and above which, for both tests and in
-every scenario that feeds them, the rejection rate at ``alpha`` among computed tests lies
-in :data:`BAND` in every bin with at least ``min_tests`` computed tests (0 when every
-assessed bin does; None when even the highest bins do not). Every random draw comes from a
-seed, and datasets are split over worker processes by index, so the result does not depend
-on ``--jobs``.
+every scenario that feeds them, the rejection rate at ``alpha`` among computed per-family
+tests lies in :data:`BAND` in every cell with at least ``min_tests`` computed tests (0 when
+every judged cell does; None when even the highest bins do not). The per-family fits are
+the confirmatory hazard tests (D-060 item 3), so only their cells decide
+(:data:`DECIDING_SCOPE`); the pooled fits and both scopes together are judged the same way
+and reported beside them (``judged_cells`` with ``deciding: false``,
+``reference_failing_cells``), deciding nothing. ``deciding_extremes`` names the deciding
+cells at and above ``min_events`` with the highest and the lowest rate, so a reader sees how
+close the calibration comes to the band. Every random draw comes from a seed, and datasets
+are split over worker processes by index, so the result does not depend on ``--jobs``. The
+artifact lists every deciding cell outside the band (``failing_cells``) and hashes the code
+and every input that shapes the simulated plans (``code_sha256``, ``input_sha256``) beside
+``git_sha`` and ``git_dirty``.
 
 ``python -m halflife.calibrate --out artifacts/power/min_events.json`` banks it.
 """
@@ -64,20 +78,26 @@ from halflife.schema import SessionPlan
 ROOT = Path(__file__).resolve().parents[2]
 DESIGN = "designs/e1.yaml"
 DEFAULT_OUT = "artifacts/power/min_events.json"
-DEFAULT_DATASETS = 20000
-"""Datasets per scenario in a full run."""
+DEFAULT_DATASETS = 60000
+"""Datasets per scenario in a full run: twice D-060's 30,000, so a deciding per-family cell's
+Monte Carlo error is about half of what it was (DECISIONS.md D-061 item 2)."""
 DEFAULT_SEED = 20261111
 DEFAULT_MIN_TESTS = 2000
 """Computed tests a bin needs before its rejection rate is judged (a Monte Carlo standard
 error of about 0.5 percentage points at a 5% rate)."""
 BAND = (0.03, 0.07)
 """The null rejection rates D-050 item 3 accepts, at alpha 0.05."""
+DECIDING_SCOPE = "family"
+"""The scope whose cells decide ``min_events``: the per-family fits, the confirmatory hazard
+tests (DECISIONS.md D-060 items 3 and 4)."""
 BIN_EDGES = (1, 2, 3, 4, 5, 7, 10, 15, 20, 30, 40, 60, 97)
 """Lower edges of the event-count bins (``[edge, next edge)``); a fit has at most 96
 risk-set violations (48 plans, two families)."""
-BASE_LOGIT = (-6.5, -0.5)
-"""Uniform range of the base log odds of a violation per decision point, per dataset,
-before a scenario's ``base_shift``."""
+ARMS = ("full_summary", "sham")
+"""The compaction arms of E1."""
+BASE_LOGIT = (-7.0, -0.5)
+"""Default uniform range of the base log odds of a violation per decision point; a
+scenario whose other terms raise the hazard starts lower (``Scenario.base_range``)."""
 TYPE_EFFECTS: Mapping[str, float] = {
     "prohibition": 0.0,
     "invariant": 0.4,
@@ -132,35 +152,77 @@ class Scenario:
         terms: Hypothesis terms whose null it is (``log1p(position)``, ``compaction_count``).
         slope: Log odds per unit of ``log1p(position)``.
         compaction: Log odds per compaction before the decision point.
+        step: Log odds added at decision points after at least one compaction, in
+            ``step_arms`` (a step at the first compaction; D-059, audit B2).
+        step_arms: The compaction arms the step applies in.
+        position_step: Log odds added at decision points at or after ``position_step_at``
+            tool calls (a step by position; D-060 item 2).
+        position_step_at: Where the position step starts.
         dp_sd: Standard deviation of the decision-point effect both families share.
-        base_shift: Added to :data:`BASE_LOGIT`, about minus the log odds the active term
-            adds at a typical decision point, so the scenario's violation counts cover the
-            same bins.
+        base_range: Uniform range of the base log odds per dataset, chosen so the
+            scenario's risk-set violations cover the bins (lower when its other terms
+            raise the hazard, or when a large ``dp_sd`` raises the marginal rate).
     """
 
     name: str
     terms: tuple[str, ...]
     slope: float = 0.0
     compaction: float = 0.0
+    step: float = 0.0
+    step_arms: tuple[str, ...] = ARMS
+    position_step: float = 0.0
+    position_step_at: int = 0
     dp_sd: float = 0.0
-    base_shift: float = 0.0
+    base_range: tuple[float, float] = BASE_LOGIT
 
 
+BOTH = (e1_analysis.POSITION_TERM, "compaction_count")
+H1_ONLY = (e1_analysis.POSITION_TERM,)
 SCENARIOS = (
+    Scenario("both_null_shared_dp_effect", BOTH, dp_sd=0.8),
+    Scenario("both_null_shared_dp_sd_1.5", BOTH, dp_sd=1.5, base_range=(-9.0, -0.5)),
+    Scenario("both_null_shared_dp_sd_2.5", BOTH, dp_sd=2.5, base_range=(-11.0, -0.5)),
+    Scenario("h1_null_compaction_effect", H1_ONLY, compaction=0.4, base_range=(-7.8, -1.3)),
+    Scenario("h1_null_step_0.8_both_arms", H1_ONLY, step=0.8, base_range=(-7.6, -1.1)),
+    Scenario("h1_null_step_1.5_both_arms", H1_ONLY, step=1.5, base_range=(-8.1, -1.6)),
     Scenario(
-        "both_null_shared_dp_effect",
-        (e1_analysis.POSITION_TERM, "compaction_count"),
-        dp_sd=0.8,
+        "h1_null_step_0.8_full_summary",
+        H1_ONLY,
+        step=0.8,
+        step_arms=("full_summary",),
+        base_range=(-7.3, -0.8),
     ),
     Scenario(
-        "h1_null_compaction_effect",
-        (e1_analysis.POSITION_TERM,),
-        compaction=0.4,
-        base_shift=-0.8,
+        "h1_null_step_1.5_full_summary",
+        H1_ONLY,
+        step=1.5,
+        step_arms=("full_summary",),
+        base_range=(-7.5, -1.0),
     ),
-    Scenario("h2b_null_position_effect", ("compaction_count",), slope=0.5, base_shift=-1.6),
+    Scenario("h2b_null_position_effect", ("compaction_count",), slope=0.5, base_range=(-8.6, -2.1)),
+    *(
+        Scenario(
+            f"h2b_null_position_step_{size}_at_{at}",
+            ("compaction_count",),
+            position_step=size,
+            position_step_at=at,
+            base_range=base_range,
+        )
+        for size, at, base_range in (
+            (0.8, 20, (-7.5, -1.0)),
+            (0.8, 35, (-7.3, -0.8)),
+            (0.8, 55, (-7.1, -0.6)),
+            (1.5, 20, (-8.0, -1.5)),
+            (1.5, 35, (-7.6, -1.1)),
+            (1.5, 55, (-7.3, -0.8)),
+        )
+    ),
 )
-"""The synthetic nulls (module docstring)."""
+"""The synthetic nulls (module docstring): global nulls with a shared decision-point effect
+of three sizes (both tests), compaction effects linear or stepped at the first compaction in
+one or both arms without a position effect (H1), and position effects linear in
+``log1p(position)`` or stepped at 20, 35, or 55 tool calls without a compaction effect
+(H2b)."""
 
 
 @dataclass(frozen=True)
@@ -304,6 +366,16 @@ def simulate_dataset(
                     + TYPE_EFFECTS[str(row["constraint_type"])]
                     + scenario.slope * math.log1p(row["position"])
                     + scenario.compaction * row["compaction_count"]
+                    + (
+                        scenario.step
+                        if row["compaction_count"] >= 1 and row["strategy"] in scenario.step_arms
+                        else 0.0
+                    )
+                    + (
+                        scenario.position_step
+                        if row["position"] >= scenario.position_step_at
+                        else 0.0
+                    )
                     + shared[key]
                 )
                 row["violated"] = bool(rng.random() < 1.0 / (1.0 + math.exp(-eta)))
@@ -359,7 +431,7 @@ def _run_chunk(job: tuple[int, int, int, int]) -> list[dict[str, Any]]:
     out = []
     for index in range(start, stop):
         rng = _dataset_seed(seed, scenario_index, index)
-        base = float(rng.uniform(*BASE_LOGIT)) + scenario.base_shift
+        base = float(rng.uniform(*scenario.base_range))
         sessions, opportunities = simulate_dataset(plans, scenario, base, rng)
         for record in dataset_tests(sessions, opportunities, scenario.terms):
             out.append(record | {"scenario": scenario.name, "dataset": index})
@@ -379,11 +451,12 @@ def tabulate(
     alpha: float = 0.05,
     edges: Sequence[int] = BIN_EDGES,
 ) -> list[dict[str, Any]]:
-    """Rejection rates by term, scenario, and event-count bin, with per-scope counts.
+    """Rejection rates by term, scenario, and event-count bin, together and per scope.
 
     ``rate`` is rejections (``p < alpha``) over computed tests, with a Wilson interval for
-    the Monte Carlo error; ``not_computed`` counts tests without a p-value by problem code.
-    Fits outside the bins (no violation) are counted under ``outside_bins``.
+    the Monte Carlo error, for the bin (per-family and pooled fits together) and for each
+    scope under ``by_scope``; ``not_computed`` counts tests without a p-value by problem
+    code. Fits outside the bins (no violation) are counted under ``outside_bins``.
     """
     cells: dict[tuple[str, str, int], dict[str, Any]] = {}
     outside: dict[tuple[str, str], int] = {}
@@ -418,11 +491,13 @@ def tabulate(
             if found is None:
                 continue
             entry: dict[str, Any] = {"lower": edges[i], "upper": edges[i + 1] - 1} | found
-            if found["computed"]:
-                rate = stats.wilson_interval(found["rejected"], found["computed"])
-                entry["rate"] = rate.to_dict()
-            else:
-                entry["rate"] = None
+            for target in (entry, *entry["by_scope"].values()):
+                computed = target["computed"]
+                target["rate"] = (
+                    stats.wilson_interval(target["rejected"], computed).to_dict()
+                    if computed
+                    else None
+                )
             bins.append(entry)
         out.append(
             {
@@ -435,6 +510,84 @@ def tabulate(
     return out
 
 
+def judged_cells(
+    table: Sequence[Mapping[str, Any]],
+    band: tuple[float, float] = BAND,
+    min_tests: int = DEFAULT_MIN_TESTS,
+) -> list[dict[str, Any]]:
+    """Every cell of a :func:`tabulate` table the rule judges, with whether it is inside
+    ``band``: each bin of each term and scenario with per-family and pooled fits together
+    (scope ``together``) and each scope on its own (D-059, audit N2), when it holds at least
+    ``min_tests`` computed tests. ``deciding`` marks the cells of :data:`DECIDING_SCOPE`,
+    the only ones :func:`min_events_from` counts."""
+    out: list[dict[str, Any]] = []
+    for entry in table:
+        for cell in entry["bins"]:
+            scopes = [("together", cell), *sorted(cell.get("by_scope", {}).items())]
+            for scope, found in scopes:
+                rate = found.get("rate")
+                if found["computed"] < min_tests or rate is None:
+                    continue
+                value = float(rate["value"])
+                out.append(
+                    {
+                        "term": entry["term"],
+                        "scenario": entry["scenario"],
+                        "scope": scope,
+                        "lower": int(cell["lower"]),
+                        "upper": int(cell["upper"]),
+                        "computed": int(found["computed"]),
+                        "rate": value,
+                        "inside": band[0] <= value <= band[1],
+                        "deciding": scope == DECIDING_SCOPE,
+                    }
+                )
+    return out
+
+
+def unjudged_cells(
+    table: Sequence[Mapping[str, Any]], min_tests: int = DEFAULT_MIN_TESTS
+) -> list[dict[str, Any]]:
+    """The cells of a :func:`tabulate` table with computed tests but fewer than
+    ``min_tests`` of them, which the rule does not judge, by term, scenario, scope, and bin
+    (listed so a reader sees where the calibration is silent)."""
+    out: list[dict[str, Any]] = []
+    for entry in table:
+        for cell in entry["bins"]:
+            for scope, found in [("together", cell), *sorted(cell.get("by_scope", {}).items())]:
+                if 0 < found["computed"] < min_tests:
+                    out.append(
+                        {
+                            "term": entry["term"],
+                            "scenario": entry["scenario"],
+                            "scope": scope,
+                            "lower": int(cell["lower"]),
+                            "upper": int(cell["upper"]),
+                            "computed": int(found["computed"]),
+                        }
+                    )
+    return out
+
+
+def deciding_extremes(
+    judged: Sequence[Mapping[str, Any]], min_events: int | None
+) -> dict[str, dict[str, Any]] | None:
+    """How close the deciding cells come to the band: the deciding cell of
+    :func:`judged_cells` with the highest rate and the one with the lowest, among bins whose
+    lower edge is at least ``min_events`` (the first in table order on a tie), each as its
+    full cell record; None when ``min_events`` is None (nothing is calibrated) or no such
+    cell exists."""
+    if min_events is None:
+        return None
+    kept = [dict(c) for c in judged if c["deciding"] and c["lower"] >= min_events]
+    if not kept:
+        return None
+    return {
+        "max": max(kept, key=lambda c: float(c["rate"])),
+        "min": min(kept, key=lambda c: float(c["rate"])),
+    }
+
+
 def min_events_from(
     table: Sequence[Mapping[str, Any]],
     band: tuple[float, float] = BAND,
@@ -442,25 +595,19 @@ def min_events_from(
 ) -> int | None:
     """The calibrated ``min_events`` (module docstring) from a :func:`tabulate` table.
 
-    Only bins with at least ``min_tests`` computed tests are judged. Returns 0 when every
-    judged bin of every term and scenario is inside ``band``, the lower edge of the bin
-    above the highest judged bin outside it otherwise, and None when that bin is the
-    highest judged one's successor and no judged bin lies above it (nothing is calibrated).
+    Only the deciding cells of :func:`judged_cells` count (:data:`DECIDING_SCOPE`). Returns
+    0 when every deciding cell of every term and scenario is inside ``band``, the lower edge
+    of the bin above the highest deciding cell outside it otherwise, and None when no
+    deciding bin lies above that cell (nothing is calibrated).
     """
-    judged: list[tuple[int, bool]] = []
-    for entry in table:
-        for cell in entry["bins"]:
-            if cell["computed"] < min_tests or cell["rate"] is None:
-                continue
-            rate = float(cell["rate"]["value"])
-            judged.append((int(cell["lower"]), band[0] <= rate <= band[1]))
+    judged = [c for c in judged_cells(table, band, min_tests) if c["deciding"]]
     if not judged:
         return None
-    failing = [lower for lower, inside in judged if not inside]
+    failing = [cell["lower"] for cell in judged if not cell["inside"]]
     if not failing:
         return 0
     worst = max(failing)
-    above = sorted({lower for lower, _ in judged if lower > worst})
+    above = sorted({cell["lower"] for cell in judged if cell["lower"] > worst})
     return above[0] if above else None
 
 
@@ -492,6 +639,8 @@ def calibration(
             results = pool.map(_run_chunk, work)
     records = [record for part in results for record in part]
     table = tabulate(records, alpha)
+    judged = judged_cells(table, BAND, min_tests)
+    min_events = min_events_from(table, BAND, min_tests)
     plans = e1_plan_shapes()
     data = {
         "synthetic": True,
@@ -516,12 +665,21 @@ def calibration(
         },
         "tests": len(records),
         "table": table,
-        "min_events": min_events_from(table, BAND, min_tests),
+        "min_events": min_events,
+        "deciding_extremes": deciding_extremes(judged, min_events),
+        "deciding_scope": DECIDING_SCOPE,
+        "judged_cells": judged,
+        "failing_cells": [c for c in judged if c["deciding"] and not c["inside"]],
+        "reference_failing_cells": [c for c in judged if not c["deciding"] and not c["inside"]],
+        "unjudged_cells": unjudged_cells(table, min_tests),
         "rule": (
-            "min_events is the smallest bin lower edge at and above which every bin with at "
-            f"least {min_tests} computed tests has a null rejection rate (p < {alpha:g}) within "
-            f"[{BAND[0]:g}, {BAND[1]:g}] for both tests in every scenario that feeds them; 0 "
-            "when every such bin does"
+            "min_events is the smallest bin lower edge at and above which every per-family "
+            f"cell with at least {min_tests} computed tests has a null rejection rate "
+            f"(p < {alpha:g}) within [{BAND[0]:g}, {BAND[1]:g}] for both tests in every "
+            "scenario that feeds them (the per-family fits are the confirmatory hazard "
+            "tests, DECISIONS.md D-060); 0 when every such cell does; null when no deciding "
+            "bin lies above a failing cell. Pooled cells and both scopes together are judged "
+            "the same way for reference (deciding: false) and decide nothing"
         ),
     }
     # As the banked file holds it (lists, not tuples), so a derivation compares equal.
@@ -537,6 +695,44 @@ def code_sha256() -> dict[str, str]:
     """SHA-256 of each module in :data:`CODE_MODULES`, by its path under ``src/``."""
     source = Path(__file__).resolve().parent.parent
     return {rel: hashlib.sha256((source / rel).read_bytes()).hexdigest() for rel in CODE_MODULES}
+
+
+PLAN_INPUTS = (
+    "src/halflife/experiment.py",
+    "src/halflife/sessions.py",
+    "src/halflife/bench/__init__.py",
+    DESIGN,
+)
+"""Files beside the bench templates that shape the simulated plans (paths under the
+repository root): the plan generator, the template loader, and the E1 design."""
+
+
+def input_sha256(root: Path = ROOT) -> dict[str, str]:
+    """SHA-256 of every input that shapes the simulated plans (D-059 item 4): the files of
+    :data:`PLAN_INPUTS` and every bench template file, by path under ``root``."""
+    paths = [root / rel for rel in PLAN_INPUTS] + bench.template_paths()
+    return {
+        path.resolve().relative_to(root.resolve()).as_posix(): hashlib.sha256(
+            path.read_bytes()
+        ).hexdigest()
+        for path in sorted(paths)
+    }
+
+
+def git_dirty(root: Path = ROOT) -> bool | None:
+    """True when files under ``src/`` or ``designs/`` (untracked ones included) differ from
+    HEAD, so ``git_sha`` alone would not name the code and inputs that ran; None without
+    git (the convention of :func:`halflife.bench.verify.git_dirty`)."""
+    try:
+        status = subprocess.run(
+            ["git", "-C", str(root), "status", "--porcelain", "--", "src", "designs"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return bool(status.strip())
 
 
 def _git_sha(root: Path) -> str:
@@ -561,14 +757,23 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--jobs", type=int, default=1, help="worker processes")
     args = parser.parse_args(argv)
     start = time.monotonic()
-    data = calibration(args.n_datasets, args.seed, jobs=args.jobs, min_tests=args.min_tests)
-    artifact = data | {
+    # Provenance is read before the run, so it names the code and inputs that ran.
+    provenance = {
         "command": "python -m halflife.calibrate " + " ".join(argv or sys.argv[1:]),
         "code_sha256": code_sha256(),
+        "input_sha256": input_sha256(),
         "git_sha": _git_sha(ROOT),
-        "created": dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "runtime_s": round(time.monotonic() - start, 1),
+        "git_dirty": git_dirty(),
     }
+    data = calibration(args.n_datasets, args.seed, jobs=args.jobs, min_tests=args.min_tests)
+    artifact = (
+        data
+        | provenance
+        | {
+            "created": dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "runtime_s": round(time.monotonic() - start, 1),
+        }
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
         json.dumps(artifact, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8"

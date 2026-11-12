@@ -78,11 +78,12 @@ from halflife.e1_analysis import (
     TRANSFORM,
     VERDICT_NOTE,
     Settings,
+    absent_contrast,
     analysis_set,
     contrast_entry,
+    descriptive_fit,
     exclusions_by_family,
     families,
-    fit_record,
     holm_verdicts,
     is_unstable,
     load_jsonl,
@@ -168,21 +169,24 @@ def contrasts_against(
     ``strata`` (``family`` for the pooled contrasts, D-050 item 2) its null model is fit
     within each stratum. The Holm family is every arm in ``arms``, as the preregistrations
     will fix it (D-040: over the three placements, over the five mitigations). An arm
-    without rows and one whose p-value cannot be computed stay in it as p = 1
-    (:data:`HOLM_NOTE`), so they never make the other adjustments smaller; absent arms get
-    no entry, and an unstable interval decides nothing. Every entry carries its verdict
+    whose p-value cannot be computed stays in it as p = 1 (:data:`HOLM_NOTE`), so it never
+    makes the other adjustments smaller, and so does an arm whose contrast cannot be formed
+    because it or the reference has no rows: it gets a not-tested record with the reason
+    (:data:`halflife.e1_analysis.ARM_ABSENT`, D-059 item 3) instead of no entry. An
+    unstable interval decides nothing. Every entry carries its verdict
     (:data:`halflife.e1_analysis.VERDICT_NOTE`) and ``exploratory`` (per-family contrasts
     are exploratory; the pooled ones are the confirmatory tests).
     """
     present = {r[key] for r in rows}
     out: list[dict[str, Any]] = []
     names: list[str] = []
-    if reference not in present:
-        return out
     for arm in arms:
-        if arm not in present:
-            continue
         subset = [dict(r) for r in rows if r[key] in {reference, arm}]
+        entry = {key: arm, "reference": reference, "exploratory": exploratory}
+        names.append(arm)
+        if reference not in present or arm not in present:
+            out.append(entry | absent_contrast(subset, key, reference, arm, settings))
+            continue
         result = stats.rate_contrast(
             subset,
             key,
@@ -195,8 +199,6 @@ def contrasts_against(
             session=SESSION,
             strata=strata,
         )
-        names.append(arm)
-        entry = {key: arm, "reference": reference, "exploratory": exploratory}
         out.append(entry | contrast_entry(result, settings))
     holm_verdicts(out, names, list(arms), settings)
     return out
@@ -257,8 +259,10 @@ def e3_hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str
 
     As in E1 (:func:`halflife.e1_analysis.hazard`): each fit's diagnostics go under
     ``fits``, a term the data cannot estimate (for example a placement without
-    violations, which separates its term) is written without a number, and every term
-    carries the unstable and ``not_tested`` flags; no term carries a hypothesis.
+    violations, which separates its term) is written without a number, a model that
+    cannot be fit at all writes its terms in that form with the reason
+    (:func:`halflife.e1_analysis.descriptive_fit`, D-059 item 3), and every term carries
+    the unstable and ``not_tested`` flags; no term carries a hypothesis.
     """
     estimates: list[dict[str, Any]] = []
     fits: list[dict[str, Any]] = []
@@ -267,19 +271,9 @@ def e3_hazard(rows: Sequence[Mapping[str, Any]], settings: Settings) -> dict[str
         factors = [f for f in E3_FACTORS if len({r[f] for r in subset}) > 1]
         if family == "pooled" and several:
             factors.append("family")
-        found = stats.bootstrap_coefficients(
-            subset,
-            settings.n_boot,
-            settings.seed,
-            level=settings.level,
-            cluster=CLUSTER,
-            session=SESSION,
-            covariates=HAZARD_COVARIATES,
-            categorical=tuple(factors),
-            position_transform=TRANSFORM,
-        )
-        fits.append(fit_record(family, subset, found.fit))
-        for term, record in term_records(found, settings, hypotheses={}).items():
+        fit, intervals = descriptive_fit(subset, HAZARD_COVARIATES, factors, settings)
+        fits.append({"family": family} | fit)
+        for term, record in term_records(intervals, settings, hypotheses={}).items():
             estimates.append({"family": family, "term": term} | record)
     return {
         "fits": fits,

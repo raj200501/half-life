@@ -275,21 +275,28 @@ def test_e4_contrast_with_no_violation_in_either_arm_is_not_tested() -> None:
 
 def test_holm_family_is_every_preregistered_arm_even_when_one_has_no_rows() -> None:
     # D-040 fixes the E4 family as the five mitigations. With the reinject arm absent, the
-    # other four are still adjusted over five tests, never over the four that ran.
+    # other four are still adjusted over five tests, never over the four that ran, and the
+    # absent arm has a not-tested record with its reason (D-059 item 3), not no entry.
     _, opportunities = _synthetic("e4", E4_ARMS, ("fa",), 8, 5)
     present = [o for o in opportunities if o["mitigation"] != "reinject"]
     entries = arms_analysis.contrasts_against(
         present, "mitigation", "none", arms_analysis.MITIGATIONS, FAST
     )
-    assert [e["mitigation"] for e in entries] == ["guard", "pin", "preserve", "selfcheck"]
+    assert [e["mitigation"] for e in entries] == list(arms_analysis.MITIGATIONS)
     assert all(e["holm_family_size"] == 5 for e in entries)
-    raw = {e["mitigation"]: e["p_value"] for e in entries}
+    absent = next(e for e in entries if e["mitigation"] == "reinject")
+    assert absent["verdict"] == "not tested" and absent["not_tested"] == "arm_absent"
+    assert absent["p_value"] is None and absent["p_holm"] is None
+    assert absent["missing_arms"] == ["reinject"] and absent["reference_arm"]["n_opportunities"]
+    raw = {e["mitigation"]: e["p_value"] for e in entries if e is not absent}
     assert None not in raw.values()
     expected = e1_holm({**raw, "reinject": None})
     for entry in entries:
-        assert entry["p_holm"] == pytest.approx(expected[entry["mitigation"]])
+        if entry is not absent:
+            assert entry["p_holm"] == pytest.approx(expected[entry["mitigation"]])
     smallest = min(raw.values())
-    assert min(e["p_holm"] for e in entries) == pytest.approx(min(1.0, 5 * smallest))
+    tested = [e["p_holm"] for e in entries if e is not absent]
+    assert min(tested) == pytest.approx(min(1.0, 5 * smallest))
 
 
 def test_e4_pooled_costs_resample_whole_plans() -> None:
@@ -346,11 +353,19 @@ def test_e4_costs_count_missing_usage_and_skip_absent_reference() -> None:
     assert set(means) == {"guard", "pin"}
 
 
-def test_contrasts_need_the_reference_arm() -> None:
+def test_contrasts_without_the_reference_arm_are_not_tested_with_their_reason() -> None:
+    # D-059 item 3: without the reference arm nothing can be contrasted, and every
+    # preregistered arm says so instead of being left out.
     _, opportunities = _synthetic("e4", E4_ARMS[1:], ("fa",), 2, 4)
-    assert (
-        arms_analysis.contrasts_against(opportunities, "mitigation", "none", ["guard"], FAST) == []
+    entries = arms_analysis.contrasts_against(
+        opportunities, "mitigation", "none", ["guard", "pin"], FAST
     )
+    assert [e["mitigation"] for e in entries] == ["guard", "pin"]
+    for entry in entries:
+        assert entry["verdict"] == "not tested" and entry["not_tested"] == "arm_absent"
+        assert entry["missing_arms"] == ["none"] and entry["reference_arm"]["arm"] == "none"
+        assert entry["arm"]["n_opportunities"] > 0 and entry["p_holm"] is None
+        assert entry["holm_family_size"] == 2 and entry["decided_by"] == "score_test"
 
 
 def test_empty_analysis_set_is_an_error() -> None:
@@ -509,3 +524,19 @@ def test_e2_drops_procedure_rules_in_cut_spans_and_counts_them() -> None:
     analyzed = out["rates"]["exclusions"]["opportunities_analyzed"]
     assert analyzed == len(tiered) - len(cut)
     assert out["rates"]["model"][0]["opportunities"] == analyzed
+
+
+def test_an_e3_hazard_model_that_cannot_be_fit_gives_not_estimable_records() -> None:
+    # D-059 item 3 (audit N6). Synthetic: family fb never sees a compaction before a
+    # decision point, so its compaction count is constant and its model cannot be fit.
+    sessions, opportunities = _synthetic("e3", E3_ARMS, ("fa", "fb"), 4, 1)
+    for row in opportunities:
+        if row["family"] == "fb":
+            row["compaction_count"] = 0
+    out = arms_analysis.analyze_e3(sessions, opportunities, FAST)
+    fits = {f["family"]: f for f in out["hazard"]["fits"]}
+    assert fits["fb"]["fit_failed"] == "single_value" and "fit_failed" not in fits["fa"]
+    fb = [e for e in out["hazard"]["estimates"] if e["family"] == "fb"]
+    assert fb and all(e["not_estimable"] == "single_value" for e in fb)
+    assert {e["term"] for e in fb} >= {"intercept", "compaction_count", "placement[system]"}
+    json.dumps(out, allow_nan=False)

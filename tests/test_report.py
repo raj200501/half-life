@@ -982,9 +982,10 @@ def test_hazard_terms_not_estimable_or_not_tested_never_read_as_findings(tmp_pat
     # D-050: an unstable interval is a label and decides nothing (the score test does),
     # and a fit with too few violations leaves its slope untested.
     hazard = outputs["hazard"]
-    for entry in hazard["estimates"]:
+    for entry in hazard["estimates"]:  # H2b's model
         if (entry["family"], entry["term"]) == ("syn-a", "compaction_count"):
             entry.update(unstable=True, not_tested=None, verdict="not supported")
+    for entry in hazard["h1_estimates"]:  # H1's own model (D-059, D-060)
         if (entry["family"], entry["term"]) == ("syn-a", e1_analysis.POSITION_TERM):
             entry.update(not_tested="few_violations", verdict="not tested")
     write_json(tmp_path, "artifacts/e1/hazard.json", hazard)

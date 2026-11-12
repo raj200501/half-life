@@ -8,6 +8,7 @@ unstratified test on the rows that carry information, and on seeded synthetic nu
 from __future__ import annotations
 
 import math
+import warnings
 from typing import Any
 
 import numpy as np
@@ -393,3 +394,48 @@ def test_rate_contrast_score_test_is_stratified_when_asked() -> None:
             seed=1,
             strata="family",
         )
+
+
+# --------------------------------------------------------------------------- saturation
+
+
+def _rho_by_hand(residual: np.ndarray, root_w: np.ndarray, labels: np.ndarray) -> float:
+    """The exchangeable moment estimate written out, over rows with a weight above zero."""
+    keep = root_w > 0.0
+    e, g = residual[keep] / root_w[keep], labels[keep]
+    cross = sum(float(e[g == k].sum() ** 2 - (e[g == k] ** 2).sum()) for k in np.unique(g))
+    pairs = sum(int((g == k).sum()) * (int((g == k).sum()) - 1) for k in np.unique(g))
+    return min(max(cross / pairs, 0.0), stats.SCORE_RHO_MAX) if pairs else 0.0
+
+
+def test_rows_at_a_fitted_value_of_exactly_0_or_1_leave_the_correlation_estimate() -> None:
+    # Synthetic: a row whose null fitted probability is exactly 0 or 1 (a separated row the
+    # drift check cannot see once it has saturated in floating point) has weight 0 and
+    # residual 0, so its Pearson residual is 0/0. It adds nothing to the score or its
+    # variance, so it leaves the correlation estimate and its pair count; before, the 0/0
+    # made rho nan and the test fell to zero_variance.
+    rng = np.random.default_rng(13)
+    labels = np.repeat(np.arange(8), 4)
+    p = rng.uniform(0.1, 0.6, size=32)
+    y = (rng.random(32) < p).astype(float)
+    p[[0, 5]], y[[0, 5]] = 1.0, 1.0
+    p[9], y[9] = 0.0, 0.0
+    residual, root_w = y - p, np.sqrt(p * (1.0 - p))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no 0/0 on the way
+        rho = stats._exchangeable_rho(residual, root_w, labels, 8)
+    assert rho == pytest.approx(_rho_by_hand(residual, root_w, labels), abs=1e-12)
+    assert math.isfinite(rho)
+    # Without such rows nothing changes, to the last bit: the same operations run.
+    fine = np.sqrt(rng.uniform(0.05, 0.25, size=32))
+    resid = rng.normal(0.0, 0.3, size=32)
+    sizes = np.bincount(labels, minlength=8).astype(np.float64)
+    pearson = resid / fine
+    sum_e = np.bincount(labels, weights=pearson, minlength=8)
+    sum_e2 = np.bincount(labels, weights=pearson * pearson, minlength=8)
+    old = min(
+        max(float((sum_e * sum_e - sum_e2).sum()) / float(sizes @ (sizes - 1.0)), 0.0),
+        stats.SCORE_RHO_MAX,
+    )
+    assert stats._exchangeable_rho(resid, fine, labels, 8) == old
+    assert stats._exchangeable_rho(resid, fine, np.arange(32), 32) == 0.0  # no pairs

@@ -133,6 +133,17 @@ class StatsError(ValueError):
     """Raised for unusable input, or for an estimate that is undefined on the data."""
 
 
+class DesignError(StatsError):
+    """A model that cannot be fit to these rows, with a reason code from
+    :data:`NOT_ESTIMABLE` (``single_value``: a covariate takes one value; ``rank_deficient``:
+    collinear terms). Analyses write its terms in the not-estimable form instead of
+    stopping (DECISIONS.md D-059 item 3)."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 def _is_real(value: object) -> bool:
     """True for a real number (Python or numpy), False for booleans and everything else."""
     return isinstance(value, numbers.Real) and not isinstance(value, (bool, np.bool_))
@@ -901,7 +912,9 @@ def _stratum_null_fit(
     """The null fit of one stratum, None when the stratum adds nothing, or a problem code.
 
     The null design is an intercept and the columns of ``extra`` that vary within the
-    stratum (a column constant there is collinear with the intercept and adds nothing).
+    stratum and are not spanned by the columns before them (a column constant there is
+    collinear with the intercept, and a dependent one, for example a count that is constant
+    within the levels of a factor, adds nothing: the fitted values are the same without it).
     When the null model is separated (the separation test of :func:`fit_logistic`: the
     linear predictor drifts by more than :data:`SEPARATION_DRIFT` as the ridge shrinks), the
     rows that drift have maximum likelihood fitted values of 0 or 1, so their residuals and
@@ -919,7 +932,11 @@ def _stratum_null_fit(
         columns = [np.ones(len(index))]
         if extra is not None:
             sub = extra[index]
-            columns += [sub[:, j] for j in np.flatnonzero(np.ptp(sub, axis=0) > 0.0)]
+            for j in np.flatnonzero(np.ptp(sub, axis=0) > 0.0):
+                # A column the kept ones already span adds nothing to the null fit.
+                trial = np.column_stack([*columns, sub[:, j]])
+                if int(np.linalg.matrix_rank(trial)) == trial.shape[1]:
+                    columns.append(sub[:, j])
         z_mat = np.column_stack(columns)
         if z_mat.shape[1] == 1:
             p = np.full(len(index), float(ys.mean()))
@@ -940,6 +957,34 @@ def _stratum_null_fit(
     xs = xx[index]
     coef = np.linalg.lstsq(z_mat * root_w[:, None], root_w * xs, rcond=None)[0]
     return _NullFit(index, p, np.asarray(xs - z_mat @ coef, dtype=np.float64), boundary)
+
+
+def _exchangeable_rho(
+    residual: FloatArray,
+    root_w: FloatArray,
+    labels: npt.NDArray[np.intp],
+    groups: int,
+) -> float:
+    """The moment estimate of the within-cluster correlation of the Pearson residuals
+    ``residual / root_w`` (every within-cluster pair's product over the number of pairs),
+    kept in ``[0, SCORE_RHO_MAX]``; 0 without a pair.
+
+    A row whose fitted null probability is exactly 0 or 1 (``root_w`` 0, which a separated
+    row reaches once it saturates in floating point, where the drift check cannot see it)
+    adds nothing to the score or its variance, and its Pearson residual is 0/0; it is left
+    out of the estimate and of its pair count. On rows without such a value the arithmetic
+    is the same as before, so those estimates do not change.
+    """
+    informative = root_w > 0.0
+    pearson = np.zeros_like(residual)
+    np.divide(residual, root_w, out=pearson, where=informative)
+    sizes = np.bincount(labels, weights=informative.astype(np.float64), minlength=groups)
+    pairs = float(sizes @ (sizes - 1.0))
+    if pairs <= 0.0:
+        return 0.0
+    sum_e = np.bincount(labels, weights=pearson, minlength=groups)
+    sum_e2 = np.bincount(labels, weights=pearson * pearson, minlength=groups)
+    return min(max(float((sum_e * sum_e - sum_e2).sum()) / pairs, 0.0), SCORE_RHO_MAX)
 
 
 def score_test(
@@ -1074,14 +1119,7 @@ def score_test(
         return missing("rank_deficient", used, skipped)
     residual = used_y - p
     root_w = np.sqrt(p * (1.0 - p))
-    pearson = residual / root_w
-    sizes = np.bincount(labels, minlength=used).astype(np.float64)
-    pairs = float(sizes @ (sizes - 1.0))
-    rho = 0.0
-    if pairs > 0.0:
-        sum_e = np.bincount(labels, weights=pearson, minlength=used)
-        sum_e2 = np.bincount(labels, weights=pearson * pearson, minlength=used)
-        rho = min(max(float((sum_e * sum_e - sum_e2).sum()) / pairs, 0.0), SCORE_RHO_MAX)
+    rho = _exchangeable_rho(residual, root_w, labels, used)
     scaled = root_w * resid_x
     together = np.bincount(labels, weights=scaled, minlength=used)
     variance = (1.0 - rho) * float(scaled @ scaled) + rho * float(together @ together)
@@ -1144,9 +1182,10 @@ def _build_design(
         if name == "position" and transform == "log1p":
             values = np.log1p(values)
         if len(rows) > 1 and float(np.ptp(values)) == 0.0:
-            raise StatsError(
+            raise DesignError(
+                "single_value",
                 f"covariate {name!r} takes a single value in these rows, so its effect "
-                "cannot be estimated; drop it from the model"
+                "cannot be estimated; drop it from the model",
             )
         columns.append(values)
         names.append(_position_name(transform) if name == "position" else name)
@@ -1178,9 +1217,10 @@ def _build_design(
     full = np.column_stack([np.ones(len(rows)), matrix])
     rank = int(np.linalg.matrix_rank(full))
     if rank < full.shape[1]:
-        raise StatsError(
+        raise DesignError(
+            "rank_deficient",
             f"the design is rank deficient (rank {rank} of {full.shape[1]} columns: "
-            f"intercept, {', '.join(names)}); some terms are collinear in these rows"
+            f"intercept, {', '.join(names)}); some terms are collinear in these rows",
         )
     return _Design(matrix, tuple(names), all_levels, counts, reference)
 
@@ -1699,6 +1739,10 @@ NOT_ESTIMABLE: dict[str, str] = {
         "estimate and its value is held only by the ridge (D-029: not interpreted)"
     ),
     "not_converged": "the fit did not converge, so the estimate is not a maximum",
+    "single_value": (
+        "a covariate takes a single value in these rows, so the model cannot be fit (DesignError)"
+    ),
+    "rank_deficient": "the model's terms are collinear in these rows, so it cannot be fit",
 }
 """Why an estimate is not reported (its point and bounds are null), by reason code."""
 
@@ -3399,6 +3443,7 @@ __all__ = [
     "SESSION_KEY",
     "WALD_PROBLEMS",
     "ArmSummary",
+    "DesignError",
     "HalfLifeResult",
     "HazardCoefficients",
     "HazardCurve",
