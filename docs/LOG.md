@@ -2,6 +2,13 @@
 
 History moved out of STATUS.md, newest first.
 
+## 2026-11-12: statistics round two lands; the E1 preregistration is frozen
+
+- Statistics round two and its audit landed (D-058 to D-061, D-063): H1 and H2b each in its own model, per-family hazard tests confirmatory and pooled ones exploratory, and `min_events` 7 from a synthetic calibration of the final models on the E1 plans (60,000 datasets per scenario; the margin is thin for H2b). Rows whose fitted null probability saturates now leave the score test's correlation.
+- G7 now ties every E1 session to the preregistered plans and the reach rule (D-062) and to the preregistered harness, models, and run settings (D-064); G10 fails on numbers inside Mermaid diagrams (D-065).
+- A pre-freeze adversarial audit (a workflow of independent lenses) narrowed what the preregistration claims (D-064): H1 and H2b are adjusted associations, H2a is the randomized test, H3 is exploratory, and the limitations are stated in advance.
+- Froze prereg/0001-e1.md (084bed1) before any E1 session, and the same day amendment 1 withdrew one wrong limitation sentence and added an exploratory refit (prereg/0002-e1-amendment-1.md, CORRECTIONS.md). docs/E1_RUNBOOK.md gives the commands to run E1 on any machine that stays up for days.
+
 ## 2026-11-11: pre-release pass
 
 - Replaced the build brief in README.md with the project README (section 11), its first screen generated from artifacts by `make report`; added the pilot figure and violation counts to the report; logged the first correction (CORRECTIONS.md).
