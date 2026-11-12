@@ -20,7 +20,7 @@ Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final 
 | G9 Mitigations shipped | FAIL | kit packaged with install docs and banked overhead; E4 not run |
 | G10 Claim integrity | PASS | claimcheck, freshness, and report-check pass on README.md and docs/REPORT.md |
 | G11 Preregistration integrity | PASS | `make prereg-verify`: prereg/0001-e1.md unchanged since its first commit, amendments 0002 and 0003 dated and in order; no confirmatory artifact yet |
-| G12 Independent review | FAIL | review 4 (of 526ae0d) returned BLOCK on one finding, embedded-image forms the hand parser missed; fixed by rendering with cmark-gfm plus a fail-closed raw scan (D-057); a new review waits for the daily allowance |
+| G12 Independent review | FAIL | review 5 (of 1f9a4c5) returned BLOCK on two findings, both fixed: G10's Mermaid check matched fences by hand (B1; it now reads the cmark-gfm rendering, D-067) and changed claims lacked CORRECTIONS.md entries (B2); the next review waits for the daily allowance (2026-11-13 UTC) |
 | G13 Documentation | PASS | README follows section 11, REPORT complete, citecheck verified |
 | G14 Hygiene | PASS | secrets clean, cash_usd = 0, caps respected, tree clean |
 

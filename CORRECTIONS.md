@@ -51,3 +51,31 @@ Every changed or withdrawn claim gets a dated entry here (rule 3 of the build br
 - **Why:** the pre-freeze audit raised it, and a check of `halflife.stats.risk_set` after the freeze confirmed it.
 - **Support:** no E1 session had run; `src/halflife/stats.py` (`risk_set`) and `src/halflife/analysis.py` (`prior_violations`).
 
+## 2026-11-12: four statements of the frozen E1 preregistration (amendment 2)
+
+- **Claims as stated:** prereg/0001-e1.md said the confirmatory tests were six (section 1), that the dry runs used seeds from 990000, 991000, and 992000 (front matter), that an E1-shaped session took about 23 to 46 minutes in dry runs (section 6), and that H2a's conservativeness is recorded in D-060 (section 8).
+- **What changed:** prereg/0003-e1-amendment-2.md corrects them: seven confirmatory tests; seeds 990001, 991000 and 991001, and 992000 and 992001; the timings are smollm2's, since no granite session finished an E1-shaped dry run; and the reference is D-059.
+- **Why:** the pre-freeze audit's later lenses, and the fifth independent review (B2), found them.
+- **Support:** the dry-run directories' plans and results (not in the repository) and DECISIONS.md D-059; no E1 session had run.
+
+## 2026-11-12: what the recall probes touch (README.md)
+
+- **Claim as stated:** README.md said the recall probes "never touch the main run".
+- **What changed:** since 5f9592e it says no probe text ever enters the main run, and that the probes share its sampling seed sequence.
+- **Why:** the fourth independent review showed that probes advance the seed sequence the main run samples from, so the main run's sampled tokens depend on how many probes ran (alike in every arm).
+- **Support:** `src/halflife/agent.py` (`_seed`).
+
+## 2026-11-12: "all were fixed before the freeze" (README.md)
+
+- **Claim as stated:** README.md (acccec3) said the findings of the second audit and the pre-freeze audit were all fixed before the E1 freeze.
+- **What changed:** the README now says those fixes landed before the freeze and that two amendments the same day, before any E1 data, corrected the frozen text.
+- **Why:** the fifth independent review (B2): both amendments correct statements of the frozen preregistration.
+- **Support:** prereg/0002-e1-amendment-1.md and prereg/0003-e1-amendment-2.md.
+
+## 2026-11-12: what G10's Mermaid check catches (DECISIONS.md D-065)
+
+- **Claim as stated:** D-065 said G10 fails on "any digit inside a mermaid block".
+- **What changed:** the check it described matched the closing fence by hand and missed a longer closing fence, block quotes, list items, and an unclosed fence; G10 now renders the documents with cmark-gfm, the renderer report-check uses, and fails on a digit in any rendered mermaid block (D-067).
+- **Why:** the fifth independent review (B1) passed G10 with a pie chart of invented counts closed by a longer fence.
+- **Support:** the mutation tests in `tests/test_gate_mutations.py` cover each form.
+

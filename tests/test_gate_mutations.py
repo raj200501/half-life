@@ -4118,29 +4118,36 @@ def test_g10_fails_without_the_documents(tmp_path: Path) -> None:
 
 
 MERMAID_PIE = '```mermaid\npie showData\n  "rule broken" : 0\n  "rule kept" : 40\n```\n'
+PIE_BODY = 'pie showData\n  "rule broken" : 0\n  "rule kept" : 40\n'
 
 
 @pytest.mark.parametrize(
     ("readme", "report", "where"),
     [
-        (f"# t\n\n{MERMAID_PIE}", "# r\n", "README.md:5"),
-        (
-            "# t\n",
-            "# r\n\n~~~ mermaid\nflowchart LR\n  a[step 2] --> b\n~~~\n",
-            "docs/REPORT.md:5",
-        ),
-        (f"# t\n\n  {MERMAID_PIE}", "# r\n", "README.md:5"),
+        (f"# t\n\n{MERMAID_PIE}", "# r\n", "README.md"),
+        ("# t\n", "# r\n\n~~~ mermaid\nflowchart LR\n  a[step 2] --> b\n~~~\n", "docs/REPORT.md"),
+        (f"# t\n\n  {MERMAID_PIE}", "# r\n", "README.md"),
+        # review 5 B1: a longer closing fence closes the block for every renderer
+        (f"# t\n\n~~~mermaid\n{PIE_BODY}~~~~\n", "# r\n", "README.md"),
+        (f"# t\n\n```mermaid\n{PIE_BODY}`````\n", "# r\n", "README.md"),
+        ('# t\n\n> ```mermaid\n> pie\n>   "x" : 3\n> ```\n', "# r\n", "README.md"),
+        ('# t\n\n- item\n\n  ```mermaid\n  pie\n    "x" : 3\n  ```\n', "# r\n", "README.md"),
+        (f"# t\n\n```mermaid\n{PIE_BODY}", "# r\n", "README.md"),
+        (f"# t\n\n``` mermaid theme\n{PIE_BODY}```\n", "# r\n", "README.md"),
     ],
 )
 def test_g10_fails_on_a_number_inside_a_mermaid_diagram(
     tmp_path: Path, readme: str, report: str, where: str
 ) -> None:
     """GitHub renders a mermaid block as a figure, and claimcheck blanks fenced code, so a
-    digit in a diagram fails G10 before the make targets run (review 4, D-065)."""
+    digit in a diagram fails G10 before the make targets run, in every fence form the
+    cmark-gfm renderer accepts (review 4, review 5 B1, D-065)."""
     write_files(tmp_path, {"README.md": readme, "docs/REPORT.md": report})
     result = evaluate(10, context(tmp_path, setup=True))
     assert not result.passed
-    assert result.evidence == f"{where}: a number inside a mermaid diagram escapes claimcheck"
+    assert (
+        result.evidence == f"{where}: a number inside a rendered mermaid diagram escapes claimcheck"
+    )
 
 
 def test_g10_mermaid_check_passes_diagrams_without_numbers(tmp_path: Path) -> None:
@@ -4150,10 +4157,19 @@ def test_g10_mermaid_check_passes_diagrams_without_numbers(tmp_path: Path) -> No
             "README.md": (
                 "# t\n\n```mermaid\nflowchart LR\n  a --> b\n```\n\n```python\nx = 1\n```\n"
             ),
-            "docs/REPORT.md": "# r\n",
+            "docs/REPORT.md": "# r\n\nA table with 12 rows and `code 3`.\n",
         },
     )
-    assert sc.mermaid_digit_problem(tmp_path) is None
+    assert sc.mermaid_digit_problem(context(tmp_path, setup=True)) is None
+
+
+def test_g10_mermaid_scan_failure_fails_closed(tmp_path: Path) -> None:
+    write_files(tmp_path, {"README.md": "# t\n", "docs/REPORT.md": "# r\n"})
+    ctx = context(tmp_path, setup=True)
+    ctx.python = (sys.executable, "-c", "raise SystemExit(3)", "--")
+    assert sc.mermaid_digit_problem(ctx) == (
+        "the mermaid scan of README.md and docs/REPORT.md failed: rc=3"
+    )
 
 
 def test_review_tool_and_g12_share_the_exempt_paths() -> None:
@@ -4178,6 +4194,7 @@ def test_g10_requires_the_generated_report_to_be_current(
 
     monkeypatch.setattr(sc, "make_targets_pass", fake)
     ctx = write_docs(tmp_path)
+    ctx.shared["setup_ok"] = True  # the mermaid scan runs in the clone's environment
     assert sc.gate_g10(ctx).passed
     assert seen == [["claimcheck", "freshness", "report-check"]]
 

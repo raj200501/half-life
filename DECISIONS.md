@@ -408,3 +408,8 @@ GitHub renders a fenced `mermaid` block as a figure, while `make claimcheck` bla
 ## D-066 2026-11-12: G7 checks every invocation of an E1 run, and the sandbox (recorded with E1 amendment 2, no E1 data)
 
 A run's `run.json` is rewritten by each `experiment run` invocation, so it holds only the last one, while `invocations.jsonl` (banked as each run record's `invocations`) holds them all. G7's run pins (D-064) now apply to `run.json` and to every invocation: the pinned model and file hash, the pinned `n_ctx`, `temperature`, and `max_step_tokens`, the run's plans hash, and the `unshare-mount` sandbox, the method the harness and its reference runs used (D-019, D-025). prereg/0003-e1-amendment-2.md states the sandbox rule; the check only tightens G7, with mutation tests.
+
+## D-067 2026-11-12: G10 reads Mermaid diagrams from the cmark-gfm rendering (review 5, B1; recorded before acting)
+
+D-065's hand-written fence match disagreed with the renderer: a closing fence longer than the opening one closes the block for CommonMark, cmark-gfm, and claimcheck, so a pie chart of invented counts passed G10, and block-quote, list-item, and unclosed forms were missed too (the same failure mode as review 4's B1). G10 now runs a scan in the clone's environment that renders README.md and docs/REPORT.md with cmark-gfm, as report-check does, and fails on any digit inside a rendered `<pre lang="mermaid">` block; a scan that cannot run fails the gate. The check stays in `tools/ship_check.py`, so `src/` stays identical to the E1 preregistration's commit, and every form the review named is a mutation test.
+

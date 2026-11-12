@@ -7,6 +7,7 @@ E1 is preregistered in [prereg/0001-e1.md](../prereg/0001-e1.md), frozen before 
 - Run from a clean checkout of the preregistration's commit or a later commit whose `src/` and `designs/` are identical to it. Gate G7 rejects any session whose commit changed them, or whose tree was dirty when it started.
 - Do not edit `src/` or `designs/` in that checkout while E1 runs, and do not run `make setup` there (an exact sync removes the local model runtime). Commits that change only documents or artifacts are fine.
 - Use the pinned models (`artifacts/models/pins.json`) and the default run settings; G7 checks each run's model file hash, context size, temperature, and step tokens against the preregistration.
+- Run in the `unshare-mount` sandbox (amendment 2; G7 checks every invocation). The harness otherwise picks the strongest method it finds, bubblewrap first, so export `HALFLIFE_SANDBOX_METHOD=unshare-mount` in the shell that starts the runner, as the commands below do.
 - Do not analyze any violation outcome before every planned session has run (no interim analysis).
 
 ## Set up
@@ -22,6 +23,7 @@ sha256sum runs/e1/plans.jsonl runs/e1/reserve-plans.jsonl   # must equal the pla
 ## Run, checkpoint, resume
 
 ```bash
+export HALFLIFE_SANDBOX_METHOD=unshare-mount
 nohup .venv/bin/python tools/round_robin.py --plans runs/e1/plans.jsonl --prefix e1 \
   --models smollm2-1.7b-instruct-q4km granite-3.3-2b-instruct-q4km \
   --prereg prereg/0001-e1.md >> runs/e1/driver.log 2>&1 &
@@ -34,7 +36,7 @@ python tools/checkpoint_runs.py --out artifacts/e1/raw runs/e1-*
 git add artifacts/e1/raw && git commit -m "E1: checkpoint finished sessions"
 ```
 
-On a new machine, restore the archives before resuming: `python tools/checkpoint_runs.py --restore --out artifacts/e1/raw runs`.
+On a new machine, restore the archives before resuming: `python tools/checkpoint_runs.py --restore --out artifacts/e1/raw runs`. The archives hold each finished session's files; also commit each run's `run.json` and `invocations.jsonl` (copy them to `artifacts/e1/raw/<run>/`), since G7 checks every invocation's model, settings, and sandbox and a lost machine would take them along.
 
 ## Reach rule
 
@@ -47,7 +49,7 @@ python3 -c 'import glob, json, collections; c = collections.Counter(p.split("/")
 The runner's progress lines also print violation counts; do not read them while E1 runs. If a family has fewer than 40, run the reserve plans on both families in blocks of eight, in index order, until both have 40 or all 16 have run:
 
 ```bash
-.venv/bin/python tools/round_robin.py --plans runs/e1/reserve-plans.jsonl --prefix e1r \
+HALFLIFE_SANDBOX_METHOD=unshare-mount .venv/bin/python tools/round_robin.py --plans runs/e1/reserve-plans.jsonl --prefix e1r \
   --models smollm2-1.7b-instruct-q4km granite-3.3-2b-instruct-q4km \
   --prereg prereg/0001-e1.md --indices 0 1 2 3 4 5 6 7
 ```

@@ -2248,27 +2248,49 @@ def make_targets_pass(ctx: Context, targets: Sequence[str]) -> GateResult:
     return GateResult(True, "; ".join(f"make {t} ok" for t, _, _ in outcomes))
 
 
-MERMAID_BLOCK_RE = re.compile(
-    r"^[ \t]*(`{3,}|~{3,})[ \t]*mermaid\b[^\n]*\n(.*?)^[ \t]*\1[ \t]*$", re.MULTILINE | re.DOTALL
-)
-"""A fenced ``mermaid`` block, which GitHub renders as a figure (D-065)."""
+MERMAID_MARK = "HALFLIFE-MERMAID "
+# Runs in the clone's environment: renders README.md and docs/REPORT.md with cmark-gfm, as
+# report-check does, and names each document with a digit inside a rendered mermaid block.
+MERMAID_SCAN = f"""
+import html, json, re
+import cmarkgfm
+from cmarkgfm.cmark import Options
+found = []
+for rel in ("README.md", "docs/REPORT.md"):
+    with open(rel, encoding="utf-8") as handle:
+        text = handle.read()
+    rendered = cmarkgfm.github_flavored_markdown_to_html(text, options=Options.CMARK_OPT_UNSAFE)
+    for match in re.finditer(r'<pre lang="([^"]*)"[^>]*>(.*?)</pre>', rendered, re.S):
+        body = html.unescape(re.sub(r"<[^>]+>", "", match.group(2)))
+        if match.group(1).strip().lower() == "mermaid" and re.search(r"[0-9]", body):
+            found.append(rel)
+            break
+print({MERMAID_MARK!r} + json.dumps(found))
+"""
 
 
-def mermaid_digit_problem(clone: Path) -> str | None:
+def mermaid_digit_problem(ctx: Context) -> str | None:
     """Why a document holds a number inside a rendered Mermaid diagram, or None.
 
-    ``make claimcheck`` blanks fenced code, so a diagram's numbers would escape it while
-    GitHub shows them as a figure. No claim marker can live inside a diagram, so any digit
-    in a ``mermaid`` block of README.md or docs/REPORT.md fails (review 4, D-065).
+    GitHub draws a ``mermaid`` code block as a figure, and ``make claimcheck`` blanks
+    fenced code, so a diagram's numbers would escape it; no claim marker can live inside a
+    diagram. The documents are rendered with cmark-gfm in the clone's environment, the
+    renderer report-check uses, so every fence form the renderer accepts (a longer closing
+    fence, a block quote, a list item, a fence left open) is seen; any digit in a rendered
+    mermaid block fails (review 4, review 5 B1, D-065). A scan that cannot run fails.
     """
-    for rel in ("README.md", "docs/REPORT.md"):
-        path = clone / rel
-        text = path.read_text(encoding="utf-8") if path.is_file() else ""
-        for match in MERMAID_BLOCK_RE.finditer(text):
-            digit = re.search(r"[0-9]", match.group(2))
-            if digit is not None:
-                line = text.count("\n", 0, match.start(2) + digit.start()) + 1
-                return f"{rel}:{line}: a number inside a mermaid diagram escapes claimcheck"
+    result = ctx.run("g10-mermaid", [*ctx.python, "-I", "-c", MERMAID_SCAN])
+    lines = [line for line in result.output.splitlines() if line.startswith(MERMAID_MARK)]
+    if result.returncode != 0 or len(lines) != 1:
+        return f"the mermaid scan of README.md and docs/REPORT.md failed: rc={result.returncode}"
+    try:
+        found = json.loads(lines[0][len(MERMAID_MARK) :])
+    except json.JSONDecodeError:
+        return "the mermaid scan printed no list of documents"
+    if not isinstance(found, list):
+        return "the mermaid scan printed no list of documents"
+    if found:
+        return f"{found[0]}: a number inside a rendered mermaid diagram escapes claimcheck"
     return None
 
 
@@ -2276,7 +2298,9 @@ def gate_g10(ctx: Context) -> GateResult:
     absent = missing([ctx.clone / "README.md", ctx.clone / "docs" / "REPORT.md"], ctx.clone)
     if absent:
         return fail(f"missing {', '.join(absent)}")
-    problem = mermaid_digit_problem(ctx.clone)
+    if (blocked := setup_failed(ctx)) is not None:
+        return blocked
+    problem = mermaid_digit_problem(ctx)
     if problem:
         return fail(problem)
     return make_targets_pass(ctx, ["claimcheck", "freshness", "report-check"])
