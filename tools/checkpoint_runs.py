@@ -7,8 +7,12 @@ session (a directory with ``result.json``) is packed once into
 ``<out>/<run_id>/<session_id>.tar.gz``. Archives are reproducible (sorted members, no
 owners, zero times), are never rewritten, and are raw outputs only: nothing is analyzed,
 so a checkpoint is not an interim analysis (prereg/0001-e1.md, stopping rules).
+Each run's ``run.json`` and ``invocations.jsonl`` are copied beside its archives and
+refreshed as they grow, since the ship check reads every invocation (DECISIONS.md D-066);
+``progress.jsonl``, which carries outcomes, is not copied (prereg/0003-e1-amendment-2.md).
 ``--restore`` unpacks every archive into ``<target>/<run_id>/<session_id>/`` for a
-session the target lacks, so the resumable runner skips it.
+session the target lacks, so the resumable runner skips it, and puts back the run
+records the target lacks.
 
 Usage:
     python tools/checkpoint_runs.py --out artifacts/e1/raw runs/e1-<model> ...
@@ -42,10 +46,24 @@ def _archive_bytes(session: Path) -> bytes:
     return gzip.compress(raw.getvalue(), compresslevel=9, mtime=0)
 
 
+RUN_RECORDS = ("run.json", "invocations.jsonl")
+"""Run-level files copied beside the archives: the settings of every invocation, no outcomes."""
+
+
 def checkpoint(run_dirs: Sequence[Path], out: Path) -> list[Path]:
-    """Archive every finished session not archived yet; return the archives written."""
+    """Archive every finished session not archived yet, and refresh each run's run records.
+
+    Returns the archives written (the run records are copied whenever they changed).
+    """
     written: list[Path] = []
     for run in run_dirs:
+        for name in RUN_RECORDS:
+            source, copy = run / name, out / run.name / name
+            if source.is_file() and (
+                not copy.is_file() or copy.read_bytes() != source.read_bytes()
+            ):
+                copy.parent.mkdir(parents=True, exist_ok=True)
+                copy.write_bytes(source.read_bytes())
         for session in sorted(p for p in run.iterdir() if (p / "result.json").is_file()):
             target = out / run.name / f"{session.name}.tar.gz"
             if target.exists():
@@ -63,6 +81,12 @@ def restore(out: Path, target_root: Path) -> list[Path]:
         ValueError: when an archive holds a path outside its session directory.
     """
     restored: list[Path] = []
+    for name in RUN_RECORDS:
+        for copy in sorted(out.glob(f"*/{name}")):
+            target = target_root / copy.parent.name / name
+            if not target.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(copy.read_bytes())
     for archive in sorted(out.glob("*/*.tar.gz")):
         session = target_root / archive.parent.name / archive.name.removesuffix(".tar.gz")
         if session.exists():

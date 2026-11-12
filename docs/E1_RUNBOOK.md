@@ -36,7 +36,7 @@ python tools/checkpoint_runs.py --out artifacts/e1/raw runs/e1-*
 git add artifacts/e1/raw && git commit -m "E1: checkpoint finished sessions"
 ```
 
-On a new machine, restore the archives before resuming: `python tools/checkpoint_runs.py --restore --out artifacts/e1/raw runs`. The archives hold each finished session's files; also commit each run's `run.json` and `invocations.jsonl` (copy them to `artifacts/e1/raw/<run>/`), since G7 checks every invocation's model, settings, and sandbox and a lost machine would take them along.
+On a new machine, restore the archives before resuming: `python tools/checkpoint_runs.py --restore --out artifacts/e1/raw runs`. The archives hold each finished session's files, and the tool also keeps each run's `run.json` and `invocations.jsonl` beside them (refreshed on every checkpoint, never `progress.jsonl`, which carries outcomes), since G7 checks every invocation's model, settings, and sandbox; `--restore` puts those back too.
 
 ## Reach rule
 

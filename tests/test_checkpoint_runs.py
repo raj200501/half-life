@@ -100,3 +100,38 @@ def test_cli_checkpoints_and_restores(tmp_path: Path) -> None:
     assert (out / "e1-smollm" / "s-done.tar.gz").is_file()
     assert tool.main(["--restore", "--out", str(out), str(tmp_path / "back")]) == 0
     assert (tmp_path / "back" / "e1-smollm" / "s-done" / "result.json").is_file()
+
+
+def test_run_records_are_archived_and_refreshed_but_progress_is_not(tmp_path: Path) -> None:
+    """G7 checks every invocation (D-066), so each run's run.json and invocations.jsonl
+    are kept beside the session archives and refreshed as they grow; progress.jsonl, which
+    carries outcomes, is not copied (amendment 2: no interim analysis)."""
+    tool = load_tool()
+    run = fake_run(tmp_path)
+    (run / "invocations.jsonl").write_text('{"run_id": "e1-smollm"}\n', encoding="utf-8")
+    (run / "progress.jsonl").write_text('{"violations": 1}\n', encoding="utf-8")
+    out = tmp_path / "raw"
+    tool.checkpoint([run], out)
+    for name in ("run.json", "invocations.jsonl"):
+        assert (out / "e1-smollm" / name).read_bytes() == (run / name).read_bytes()
+    assert not (out / "e1-smollm" / "progress.jsonl").exists()
+    with (run / "invocations.jsonl").open("a", encoding="utf-8") as handle:
+        handle.write('{"run_id": "e1-smollm", "second": true}\n')
+    tool.checkpoint([run], out)
+    copied = (out / "e1-smollm" / "invocations.jsonl").read_text(encoding="utf-8")
+    assert copied.count("\n") == 2
+
+
+def test_restore_puts_run_records_back_when_missing(tmp_path: Path) -> None:
+    tool = load_tool()
+    run = fake_run(tmp_path)
+    (run / "invocations.jsonl").write_text('{"run_id": "e1-smollm"}\n', encoding="utf-8")
+    out = tmp_path / "raw"
+    tool.checkpoint([run], out)
+    target = tmp_path / "new-machine"
+    tool.restore(out, target)
+    for name in ("run.json", "invocations.jsonl"):
+        assert (target / "e1-smollm" / name).read_bytes() == (run / name).read_bytes()
+    (target / "e1-smollm" / "run.json").write_text('{"kept": true}\n', encoding="utf-8")
+    tool.restore(out, target)  # an existing run record is left alone
+    assert (target / "e1-smollm" / "run.json").read_text(encoding="utf-8") == '{"kept": true}\n'
