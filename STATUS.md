@@ -40,6 +40,7 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Now
 
+- E1 preregistration gate (D-059 to D-062), 2026-11-12: the D-061 calibration (synthetic; H2b's position bands of ten tool calls, 60,000 datasets per scenario) is running in the statistics subagent, and the preregistration is frozen only if it meets the D-050 rule. D-062 is written and its gate tests pass (committed with the statistics): G7 ties every E1 session to the plans the preregistration pins, regenerated in the clone, and checks the reach rule. A pre-freeze adversarial audit of the draft, the code it pins, and G7 runs as a workflow (no model runs). The E1 launch script is ready (`runs/e1/driver.sh`; never `make setup` in this checkout while E1 runs).
 - Review 4 (BLOCK at 526ae0d, B1 only; B2 and B3 held): `report --check` now renders README.md and docs/REPORT.md with cmark-gfm (new dev dependency `cmarkgfm`) and fails closed on any image file named in the raw text (D-057, CORRECTIONS.md).
 - Crunch time (Raj, 2026-11-11): main holds the release commit (merge of pull request #1) and the repository is public. Order: finish D-050 and freeze the E1 preregistration; run E1 (G7); run E3 (G8; E2 stays for Raj's machine); run E4 (G9); a fresh review (G12). Main is updated at RELEASE-READY points under D-056. The heartbeat runs every 30 minutes in this session.
 - Review 3 (BLOCK at af5ddc6) fixed: `report --check` now finds embedded images in every Markdown and HTML form (B1); every bench template carries the half-life-bench canary and the bench routes, reference runs, manifest, and probe-scoring hashes are re-banked with their scripts (B2, D-055); README.md no longer calls the analysis preregistered, plus four smaller wording fixes (B3, CORRECTIONS.md).
@@ -54,9 +55,9 @@ Updated 2026-11-11 (goal_turn 4). Release sprint before the repository goes publ
 
 ## Next three actions
 
-1. Land the statistics audit fixes (D-059: flexible compaction adjustment in H1's model, recalibrated `min_events`, no-crash records, calibration provenance) from the subagent, verify, commit; check the dry run (`runs/dryrun2/`, pilot template, seeds from 992000).
-2. Freeze prereg/0001-e1.md (draft in the session scratchpad; settings and `code_sha256` block, plan hashes, the reach rule with `designs/e1-reserve.yaml`), then start E1 in the background: `tools/round_robin.py --plans runs/e1/plans.jsonl --prefix e1 --models smollm2-1.7b-instruct-q4km granite-3.3-2b-instruct-q4km --prereg prereg/0001-e1.md` (several days on this CPU); checkpoint finished sessions with `tools/checkpoint_runs.py --out artifacts/e1/raw runs/e1-*` every few hours.
-3. While E1 runs: G8 and G9 preregistration ties for E3 and E4 (task 75), the E3 and E4 preregistrations, and a fresh review of the frozen preregistration once the daily allowance permits; then E3, then E4, one model-heavy run at a time.
+1. When the calibration ends and meets the D-050 rule: commit the statistics, D-062, and the artifact; `tools/prepush_ci.sh`, push; re-bank the calibration from that clean commit (synthetic, about an hour) while the day's review (G12) reads the commit and the preregistration draft.
+2. Fold in the audit's and the review's confirmed findings, freeze prereg/0001-e1.md (`fill_prereg.py` fills it from files), confirm `make prereg-verify`, and start E1 in the background (`runs/e1/driver.sh`, both families round-robin, several days); checkpoint finished sessions every few hours (`tools/checkpoint_runs.py --out artifacts/e1/raw runs/e1-*`).
+3. While E1 runs (no `src/` or `designs/` edits in this checkout): pin the E3 and E4 plans in G8 and G9 as D-062 does for E1, finish the E3 and E4 preregistration drafts, and keep README.md and STATUS.md saying E1 is running with no result yet.
 
 ## Usage to date
 

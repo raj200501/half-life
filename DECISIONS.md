@@ -370,3 +370,13 @@ The D-060 recalibration (synthetic) still found no `min_events` that meets the D
 1. **H2b's position-step factor uses bands of ten tool calls up to 70 ([0,10), [10,20), ..., [60,70), and [70,150])** beside `log1p(position)`, so a step anywhere sits within a narrow band and leaves little to leak into the compaction score. The power cost falls on position, which H2b only adjusts for.
 2. **The calibration runs 60,000 datasets per scenario** (twice as many), so a deciding cell's Monte Carlo error is about half of what it was.
 3. If the rule still fails, the preregistration still does not proceed, and the failing cells are reported.
+
+## D-062 2026-11-11: G7 ties every E1 session to a preregistered plan and to the reach rule (recorded before acting, no data)
+
+G7 checks that E1 sessions carry the preregistration's tag, ran after it from a clean checkout, and give the banked estimates when the pinned analysis reruns, but nothing ties a session to the preregistered plans: sessions from another plans file, a plan dropped for one family, or reserve plans run when the reach rule did not call for them would all pass. So the preregistration's settings block also pins the plans (`plans`): for `main` and `reserve`, the design file, its SHA-256, and the SHA-256 of the plans that `python -m halflife.experiment plan` writes from it, and for `reserve` the block size (8). G7 will then require:
+
+1. in the full check, each pinned design file in the clone has its pinned hash, and the plans the clone's own environment regenerates from it have the pinned plans hash;
+2. every run record in `artifacts/e1/provenance.json` names one of the pinned plans hashes, and every session row's `plan.json` hash equals that of the plan with its session id in its run's plans file (full check);
+3. every family has a row for every main plan, and the same number of whole reserve blocks taken from the start of the reserve plans: none when every family has at least 40 sessions that reached their first decision point on the main plans, and otherwise the fewest blocks after which every family has 40, or all of them (full check).
+
+This only tightens G7. The fast check verifies the run records' plans hashes and says the rest is skipped. The pins go into prereg/0001-e1.md when it is frozen; the gate code follows in `tools/ship_check.py` with mutation tests, and it changes nothing under `src/` or `designs/`, so it can land while E1 runs without touching a session's provenance.
