@@ -15,11 +15,11 @@ Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final 
 | G4 Offline demo | PASS | demo in a network namespace with no model calls, matches the golden output |
 | G5 Instrument validity | PASS | detector precision and recall with intervals, probe leakage, complete compaction logs with per-rule retention |
 | G6 Benchmark complete | PASS | thirty templates, four rule types, routes and reference runs with action logs verified |
-| G7 Main study | FAIL | E1 is preregistered and frozen (prereg/0001-e1.md at 084bed1, D-064) and has not run; G7 now also ties every session to the pinned plans, harness, models, and settings (D-062, D-064) |
+| G7 Main study | FAIL | E1 is preregistered and frozen (prereg/0001-e1.md at 084bed1, two amendments the same day) and has not run; G7 ties every session to the pinned plans and reach rule, harness, models, settings, every invocation, and the sandbox (D-062, D-064, D-066) |
 | G8 Ecological and placement arms | FAIL | E2 needs Raj (billing guard); E3 not run |
 | G9 Mitigations shipped | FAIL | kit packaged with install docs and banked overhead; E4 not run |
 | G10 Claim integrity | PASS | claimcheck, freshness, and report-check pass on README.md and docs/REPORT.md |
-| G11 Preregistration integrity | PASS | `make prereg-verify`: prereg/0001-e1.md unchanged since its first commit; no confirmatory artifact yet |
+| G11 Preregistration integrity | PASS | `make prereg-verify`: prereg/0001-e1.md unchanged since its first commit, amendments 0002 and 0003 dated and in order; no confirmatory artifact yet |
 | G12 Independent review | FAIL | review 4 (of 526ae0d) returned BLOCK on one finding, embedded-image forms the hand parser missed; fixed by rendering with cmark-gfm plus a fail-closed raw scan (D-057); a new review waits for the daily allowance |
 | G13 Documentation | PASS | README follows section 11, REPORT complete, citecheck verified |
 | G14 Hygiene | PASS | secrets clean, cash_usd = 0, caps respected, tree clean |
@@ -40,7 +40,7 @@ Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final 
 
 ## Now
 
-- E1 preregistration frozen (2026-11-12, prereg/0001-e1.md at 084bed1) before any E1 session: statistics round two landed with `min_events` 7 from the synthetic calibration (D-061, D-063; the margin is thin, H2b's highest null rate sits just under 7%), G7 ties sessions to the pinned plans and the reach rule (D-062) and to the pinned harness, models, and settings (D-064), and a pre-freeze audit narrowed the claims: H1 and H2b are adjusted associations, H2a is RQ2's randomized test, H3 is exploratory (D-064). The audit workflow keeps running; its later findings become amendments or backlog. The calibration is being re-banked from the clean commit.
+- E1 preregistration frozen (2026-11-12, prereg/0001-e1.md at 084bed1) before any E1 session, with two same-day amendments (0002: a withdrawn masking sentence and a sensitivity refit; 0003: corrected counts and references, the fixed order of decision points with a refit, operating rules for no interim analysis and the sandbox). Statistics round two landed (a722586) and the calibration re-run from that clean commit reproduced `min_events` 7 (the margin is thin: H2b's highest per-family null rate is just under 7%, D-063). G7 now ties sessions to the pinned plans, reach rule, harness, models, settings, every invocation, and the sandbox (D-062, D-064, D-066); G10 fails on numbers in Mermaid diagrams (D-065). A pre-freeze audit workflow narrowed the claims; its remaining findings that need code or simulations are backlog (below).
 - Review 4 (BLOCK at 526ae0d, B1 only; B2 and B3 held): `report --check` now renders README.md and docs/REPORT.md with cmark-gfm (new dev dependency `cmarkgfm`) and fails closed on any image file named in the raw text (D-057, CORRECTIONS.md).
 - Crunch time (Raj, 2026-11-11): main holds the release commit (merge of pull request #1) and the repository is public. Order: finish D-050 and freeze the E1 preregistration; run E1 (G7); run E3 (G8; E2 stays for Raj's machine); run E4 (G9); a fresh review (G12). Main is updated at RELEASE-READY points under D-056. The heartbeat runs every 30 minutes in this session.
 - Review 3 (BLOCK at af5ddc6) fixed: `report --check` now finds embedded images in every Markdown and HTML form (B1); every bench template carries the half-life-bench canary and the bench routes, reference runs, manifest, and probe-scoring hashes are re-banked with their scripts (B2, D-055); README.md no longer calls the analysis preregistered, plus four smaller wording fixes (B3, CORRECTIONS.md).
@@ -55,8 +55,8 @@ Updated 2026-11-12 (goal_turn 4). Crunch time: E1 preregistration frozen; final 
 
 ## Next three actions
 
-1. Commit the re-banked calibration (clean commit, `deciding_extremes`) with the report's calibration claims; `tools/prepush_ci.sh`, push.
-2. The final review of the release commit (G12, one per day under `cap_share`), then update main under D-056 and print RELEASE-READY.
+1. The final review of the release commit (G12), then update main under D-056 and print RELEASE-READY.
+2. Start E1 (docs/E1_RUNBOOK.md) on a machine that stays up; read only reach while it runs (amendment 2); checkpoint every few hours.
 3. Start E1 on a machine that stays up for several days (docs/E1_RUNBOOK.md; never `make setup` in that checkout while it runs) and checkpoint finished sessions every few hours; then the E3 and E4 preregistrations with plan pins in G8 and G9 (as D-062 and D-064 do for E1).
 
 ## Usage to date
@@ -79,4 +79,5 @@ Nothing yet.
 
 ## Backlog (suggestions for Raj, not ladder rungs)
 
+0. **Audit backlog (2026-11-12).** From the pre-freeze audit, needing code or simulations (each becomes an amendment or an exploratory analysis before E1 is analyzed): H2b counting only scheduled compactions; G7 re-deriving the banked rows from the raw archives; the half-life's observed-range reading in the report; H3 labeled exploratory in the report's tables; power on the final models (D-063); and G8 and G9 tied to their plans as D-062 ties E1.
 1. Publish half-life-bench templates with a canary string and a stable YAML constraint spec so other teams can run their own agents against it. The templates carry no canary yet (rule 9 asks for one in any dataset meant for release). Adding one changes each template's file hash, which the E0, pilot, and reference-run artifacts pin, so it needs a recorded decision and re-banked references, and it should land before E1 so E1 pins the final template bytes.
