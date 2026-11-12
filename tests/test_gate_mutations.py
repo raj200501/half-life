@@ -4093,6 +4093,45 @@ def test_g10_fails_without_the_documents(tmp_path: Path) -> None:
     assert not result.passed and "missing README.md" in result.evidence
 
 
+MERMAID_PIE = '```mermaid\npie showData\n  "rule broken" : 0\n  "rule kept" : 40\n```\n'
+
+
+@pytest.mark.parametrize(
+    ("readme", "report", "where"),
+    [
+        (f"# t\n\n{MERMAID_PIE}", "# r\n", "README.md:5"),
+        (
+            "# t\n",
+            "# r\n\n~~~ mermaid\nflowchart LR\n  a[step 2] --> b\n~~~\n",
+            "docs/REPORT.md:5",
+        ),
+        (f"# t\n\n  {MERMAID_PIE}", "# r\n", "README.md:5"),
+    ],
+)
+def test_g10_fails_on_a_number_inside_a_mermaid_diagram(
+    tmp_path: Path, readme: str, report: str, where: str
+) -> None:
+    """GitHub renders a mermaid block as a figure, and claimcheck blanks fenced code, so a
+    digit in a diagram fails G10 before the make targets run (review 4, D-065)."""
+    write_files(tmp_path, {"README.md": readme, "docs/REPORT.md": report})
+    result = evaluate(10, context(tmp_path, setup=True))
+    assert not result.passed
+    assert result.evidence == f"{where}: a number inside a mermaid diagram escapes claimcheck"
+
+
+def test_g10_mermaid_check_passes_diagrams_without_numbers(tmp_path: Path) -> None:
+    write_files(
+        tmp_path,
+        {
+            "README.md": (
+                "# t\n\n```mermaid\nflowchart LR\n  a --> b\n```\n\n```python\nx = 1\n```\n"
+            ),
+            "docs/REPORT.md": "# r\n",
+        },
+    )
+    assert sc.mermaid_digit_problem(tmp_path) is None
+
+
 def test_review_tool_and_g12_share_the_exempt_paths() -> None:
     spec = importlib.util.spec_from_file_location(
         "review_tool", Path(__file__).resolve().parents[1] / "tools" / "review.py"

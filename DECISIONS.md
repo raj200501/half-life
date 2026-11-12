@@ -400,3 +400,7 @@ A pre-freeze audit of the draft, the code it pins, and G7 (independent lenses wi
 6. The sham arm keeps the whole opening user message (the rules and the first request) verbatim, not the rule text alone; the preregistration says so.
 
 Findings that need code or new simulations stay open and are stated as limitations: counting only scheduled compactions in a causal H2b, the procedure-span exclusion (D-050 item 5) selecting on how the span ended, and power on the final models (D-063 item 3).
+
+## D-065 2026-11-12: G10 fails on a number inside a Mermaid diagram (review 4, non-blocking item)
+
+GitHub renders a fenced `mermaid` block as a figure, while `make claimcheck` blanks fenced code, so a number drawn in a diagram escaped G10 (review 4 showed a pie chart with invented counts passing). No claim marker can sit inside a diagram, so G10 now fails on any digit inside a `mermaid` block of README.md or docs/REPORT.md, naming the file and line, before it runs the make targets. The check lives in `tools/ship_check.py`, so `src/` stays identical to the E1 preregistration's commit; it only tightens G10, with mutation tests. The README's one diagram holds no digit.

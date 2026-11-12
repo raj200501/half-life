@@ -2227,10 +2227,37 @@ def make_targets_pass(ctx: Context, targets: Sequence[str]) -> GateResult:
     return GateResult(True, "; ".join(f"make {t} ok" for t, _, _ in outcomes))
 
 
+MERMAID_BLOCK_RE = re.compile(
+    r"^[ \t]*(`{3,}|~{3,})[ \t]*mermaid\b[^\n]*\n(.*?)^[ \t]*\1[ \t]*$", re.MULTILINE | re.DOTALL
+)
+"""A fenced ``mermaid`` block, which GitHub renders as a figure (D-065)."""
+
+
+def mermaid_digit_problem(clone: Path) -> str | None:
+    """Why a document holds a number inside a rendered Mermaid diagram, or None.
+
+    ``make claimcheck`` blanks fenced code, so a diagram's numbers would escape it while
+    GitHub shows them as a figure. No claim marker can live inside a diagram, so any digit
+    in a ``mermaid`` block of README.md or docs/REPORT.md fails (review 4, D-065).
+    """
+    for rel in ("README.md", "docs/REPORT.md"):
+        path = clone / rel
+        text = path.read_text(encoding="utf-8") if path.is_file() else ""
+        for match in MERMAID_BLOCK_RE.finditer(text):
+            digit = re.search(r"[0-9]", match.group(2))
+            if digit is not None:
+                line = text.count("\n", 0, match.start(2) + digit.start()) + 1
+                return f"{rel}:{line}: a number inside a mermaid diagram escapes claimcheck"
+    return None
+
+
 def gate_g10(ctx: Context) -> GateResult:
     absent = missing([ctx.clone / "README.md", ctx.clone / "docs" / "REPORT.md"], ctx.clone)
     if absent:
         return fail(f"missing {', '.join(absent)}")
+    problem = mermaid_digit_problem(ctx.clone)
+    if problem:
+        return fail(problem)
     return make_targets_pass(ctx, ["claimcheck", "freshness", "report-check"])
 
 
