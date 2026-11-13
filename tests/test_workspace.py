@@ -105,7 +105,11 @@ def test_workspace_seeds_files_and_baseline_commit() -> None:
             text=True,
             check=True,
         ).stdout.strip()
-        assert log == "half-life 2026-01-01T00:00:00+00:00 baseline"
+        # newer git prints a UTC offset as "Z" under --date=iso-strict, older git as "+00:00"
+        assert log in {
+            "half-life 2026-01-01T00:00:00+00:00 baseline",
+            "half-life 2026-01-01T00:00:00Z baseline",
+        }
         status = subprocess.run(
             ["git", "status", "--porcelain"],
             cwd=root,
