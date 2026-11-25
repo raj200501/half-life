@@ -1,6 +1,6 @@
 # half-life
 
-**How long do AI coding agents keep the rules you give them?** half-life measures rule persistence as a survival problem: rules are stated at the start of a long session, decision points later make breaking one the easiest way to finish a request, and a discrete-time hazard model estimates how the chance of a violation changes with tool calls since the rule was stated and with context compaction. It ships a benchmark, a sandboxed harness, validated detectors, a preregistered analysis frozen before any main-study data ([prereg/0001-e1.md](prereg/0001-e1.md)), and a mitigation kit for Claude Code.
+**How long do AI coding agents keep the rules you give them?** Coding agents get their rules up front (do not edit the tests, do not add dependencies, keep the public API) and then work through long sessions in which the context is compacted and the rules can fall out of view. half-life measures rule persistence as a survival problem: rules are stated at the start of a session, decision points later make breaking one the easiest way to finish a request, and a discrete-time hazard model estimates how the chance of a violation changes with tool calls since the rules were stated and with each compaction. It ships a benchmark, a sandboxed harness, validated detectors, an analysis preregistered before any main-study data ([prereg/0001-e1.md](prereg/0001-e1.md)), and a mitigation kit for Claude Code.
 
 <!-- report:begin headline -->
 **Finding so far.** Before any model run, the rule-violation detectors reached precision <!-- claim:e0.precision -->1.000<!-- /claim --> (95% confidence interval [<!-- claim:e0.precision.lo -->0.978<!-- /claim -->, <!-- claim:e0.precision.hi -->1.000<!-- /claim -->]) and recall <!-- claim:e0.recall -->1.000<!-- /claim --> ([<!-- claim:e0.recall.lo -->0.978<!-- /claim -->, <!-- claim:e0.recall.hi -->1.000<!-- /claim -->]) on <!-- claim:e0.cases -->328<!-- /claim --> seeded synthetic action logs; the main study has not run.
@@ -17,14 +17,27 @@
 Recall probes leaked into the main run in <!-- claim:e0.leak.leaks -->0<!-- /claim --> of <!-- claim:e0.leak.runs -->10<!-- /claim --> validation runs. In an exploratory pilot of small open-weight models, agents broke a stated rule at <!-- claim:pilot.violated_total -->6<!-- /claim --> of <!-- claim:pilot.dps_total -->40<!-- /claim --> decision points they reached.
 <!-- report:end headline -->
 
+## What you can use today
+
+| If you are | Use | What it gives you |
+|---|---|---|
+| building or running coding agents | `halflife-guard` and `halflife-pin` ([docs/MITIGATIONS.md](docs/MITIGATIONS.md)) | a Claude Code PreToolUse hook that refuses tool calls breaking a YAML rule spec, indirect writes included (`sed -i`, `tee`, `cp`, `git checkout --`), plus rules pinned in CLAUDE.md or AGENTS.md, with the overhead measured |
+| evaluating agents | half-life-bench and the harness | <!-- claim:bench.templates -->30<!-- /claim --> synthetic projects whose decision points make breaking a rule the shortcut, deterministic detectors that read file hashes rather than the agent's account of itself, and forked recall probes; run your own agent through the same sessions |
+| studying agent reliability | the preregistered design and its integrity tooling | a survival analysis of rule persistence with a sham-compaction control, frozen before data, where every reported number resolves to a banked artifact and every gate has mutation tests |
+
 ## Status
 
-This is a release before the main study: the instrument is validated (E0), the family pilot is done, and the main study's preregistration is frozen ([prereg/0001-e1.md](prereg/0001-e1.md)) before any of its sessions ran; E1 is running and E2 to E4 have not run, so there is no half-life estimate and no compaction effect yet. Every result number on this page (a measured rate, count, estimate, or interval) is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`; counts that describe the design, such as how many templates the bench has, are not results.
+| Part | State |
+|---|---|
+| E0, instrument validity | done: detectors, the recall scorer, probe leakage, and compaction logs validated ([artifacts/e0/](artifacts/e0/)) |
+| Family pilot | done and exploratory: it chose the two local model families by reach, engagement, and speed, never by outcome (D-026, D-042) |
+| E1, controlled decay study | preregistered and frozen before any of its sessions ([prereg/0001-e1.md](prereg/0001-e1.md), with two same-day amendments); one session has run and the study is paused, to resume on any machine that stays up for a few days ([docs/E1_RUNBOOK.md](docs/E1_RUNBOOK.md)); no E1 outcome is analyzed before its last planned session |
+| E2, Claude Code | driver, fixtures, and runbook ready; it runs on a machine where the Claude billing guard passes ([docs/E2_RUNBOOK.md](docs/E2_RUNBOOK.md)) |
+| E3 and E4, placement and mitigations | designed, with their analyses written and tested; they run after E1 |
 
-`make ship-check` checks the fourteen gates in section 6 of [docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md) on a fresh clone. In the latest run recorded in [STATUS.md](STATUS.md), a fast run (the brief counts only a full run as the ship check):
+So there is no half-life estimate and no compaction effect yet. Every result number on this page (a measured rate, count, estimate, or interval) is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`; counts that describe the design, such as how many templates the bench has, are not results.
 
-- **Passing:** G1 build and tests, G2 static quality, G3 CI parity, G4 offline demo, G5 instrument validity (E0), G6 benchmark complete, G10 claim integrity, G11 preregistration integrity (the E1 preregistration is unchanged since its first commit), G13 documentation, and G14 hygiene.
-- **Not passing yet:** G7 main study (E1 is preregistered and frozen, with both rounds of the statistics implemented and audited (D-049 to D-064); its sessions, forty-eight plans on each of two model families, take several days of CPU and started on 2026-11-12 following [docs/E1_RUNBOOK.md](docs/E1_RUNBOOK.md), with no E1 result reported or analyzed before the last planned session, and G7 ties every one to the preregistered plans, harness, models, and settings), G8 ecological and placement arms (E2, the Claude Code arm, is pending: it runs on Raj's machine, where the Claude billing guard passes, following [docs/E2_RUNBOOK.md](docs/E2_RUNBOOK.md); E3 has not run), G9 mitigations (the kit is packaged with install docs and its overhead is banked; the E4 study has not run), and G12 independent review (no review has returned SHIP yet; each review's blocking findings and their fixes are recorded in [DECISIONS.md](DECISIONS.md) and [CORRECTIONS.md](CORRECTIONS.md), and its other findings in [docs/REVIEW_LOG.md](docs/REVIEW_LOG.md)).
+`make ship-check` checks the fourteen gates in section 6 of [docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md) on a fresh clone. In the latest fast run recorded in [STATUS.md](STATUS.md), build and tests, static quality, CI parity, the offline demo, instrument validity, the benchmark, claim integrity, preregistration integrity, documentation, and hygiene pass. The main study, the ecological and placement arms, and the mitigation study need their experiments to finish, and the independent review has not yet returned SHIP; none of these gates is weakened to pass. Each review's blocking findings and their fixes are in [DECISIONS.md](DECISIONS.md) and [CORRECTIONS.md](CORRECTIONS.md), and its other findings in [docs/REVIEW_LOG.md](docs/REVIEW_LOG.md).
 
 Every bench template carries the half-life-bench canary string (DECISIONS.md D-055), so the templates can be filtered out of training corpora.
 
@@ -129,7 +142,15 @@ The gates that cannot pass yet (the main study, the ecological and placement arm
 
 ## How this repository was built
 
-half-life was built end to end by an autonomous Claude Code session from the brief in [docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md), under the guardrails in [CLAUDE.md](CLAUDE.md): no cash spent (local open-weight models on a CPU, no paid API), no hand-typed result numbers, preregistration before confirmatory data, publication of null results, defensive scope only, and gates that may never be passed by weakening a check. Work was split among parallel subagents with one owner per file, and milestone changes went through adversarial review. Every assumption, deviation, and interpretation is in [DECISIONS.md](DECISIONS.md), changed claims go in [CORRECTIONS.md](CORRECTIONS.md), and the current state is in [STATUS.md](STATUS.md).
+half-life was built end to end by an autonomous Claude Code session from the brief in [docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md), under the guardrails in [CLAUDE.md](CLAUDE.md): no cash spent (local open-weight models on a CPU, no paid API), no hand-typed result numbers, preregistration before confirmatory data, publication of null results, defensive scope only, and gates that may never be passed by weakening a check. The guardrails are enforced by code rather than by intent:
+
+- **The definition of done is a program.** [tools/ship_check.py](tools/ship_check.py) checks the fourteen gates on a fresh clone, and the gates themselves have mutation tests that try to make each one pass while its property is false.
+- **Numbers cannot be typed by hand.** Every number in this README and in the report is a claim marker that `make claimcheck` resolves against a banked artifact, and `make freshness` re-derives the artifacts from the raw data with committed code.
+- **Analysis cannot move after the data.** The E1 preregistration pins the analysis code by hash, the plans, the model files, the run settings, and the sandbox, and G7 rejects any session that ran under anything else.
+- **Every push is checked first.** `make ci` (lint, strict types, the test suite with a coverage gate, the offline demo) runs on a fresh clone before each push.
+- **Fresh eyes, often.** Five independent adversarial reviews and two statistics audits ran before any confirmatory data; every blocking finding was fixed, with the decision in [DECISIONS.md](DECISIONS.md), any changed claim in [CORRECTIONS.md](CORRECTIONS.md), and the rest in [docs/REVIEW_LOG.md](docs/REVIEW_LOG.md).
+
+Work was split among parallel subagents with one owner per file. The current state is in [STATUS.md](STATUS.md) and the history in [docs/LOG.md](docs/LOG.md).
 
 ## Limitations and threats to validity
 
