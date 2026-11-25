@@ -13,6 +13,7 @@ E1 is preregistered in [prereg/0001-e1.md](../prereg/0001-e1.md), frozen before 
 ## Set up
 
 ```bash
+git fetch --unshallow origin 2>/dev/null || true    # prereg-verify (G11) refuses a shallow clone's first commits
 make setup-local                                   # the project environment with llama.cpp
 uv run --frozen python tools/fetch_models.py --models smollm2-1.7b-instruct-q4km granite-3.3-2b-instruct-q4km
 python -m halflife.experiment plan --design designs/e1.yaml --out runs/e1/plans.jsonl

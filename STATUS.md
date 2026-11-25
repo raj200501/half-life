@@ -5,7 +5,7 @@ STATE: ACTIVE
 
 Updated 2026-11-25 (goal_turn 4). E1 preregistered and paused after one session; front page refreshed. History lives in docs/LOG.md.
 
-## Gates (fast check at 05d4b2c, 2026-11-12: 10/14; fast results do not count)
+## Gates (fast check at de7b3dd, 2026-11-25: 10/14; fast results do not count)
 
 | Gate | State | Evidence |
 |---|---|---|
@@ -43,6 +43,7 @@ Updated 2026-11-25 (goal_turn 4). E1 preregistered and paused after one session;
 - E1 is preregistered and frozen (prereg/0001-e1.md at 084bed1, amendments 0002 and 0003). It started on 2026-11-12 from 05d4b2c; one session finished (checkpointed raw and unanalyzed in `artifacts/e1/raw/`) before Raj's wrap-up stopped the run to save usage (37465c9). The cloud container was later replaced, so `runs/` and the model files are gone; E1 resumes on any machine with docs/E1_RUNBOOK.md (restore the checkpoints first). `src/` and `designs/` stay identical to the preregistration commit, as G7 requires.
 - 2026-11-25: Raj's CI fix on main (the workspace test's UTC offset) is merged into the branch, so main fast-forwards to the branch. README.md's first screen now says what each audience can use today, gives an accurate status table, and describes how the build process is enforced by code. A one-page summary for Raj to review is in `outbound/one-pager.md`.
 - Review 5 (BLOCK at 1f9a4c5) is fixed (D-067, CORRECTIONS.md); review 6 waits for a review allowance.
+- A fresh cloud container checks the repository out shallow, and `make prereg-verify` (G11) then fails closed because first commits cannot be trusted; `git fetch --unshallow origin` fixes it (now the runbook's first setup step).
 
 ## Next three actions
 
