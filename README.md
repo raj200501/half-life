@@ -30,16 +30,16 @@ Recall probes leaked into the main run in <!-- claim:e0.leak.leaks -->0<!-- /cla
 | Part | State |
 |---|---|
 | E0, instrument validity | done: detectors, the recall scorer, probe leakage, and compaction logs validated ([artifacts/e0/](artifacts/e0/)) |
-| Family pilot | done and exploratory: it chose the two local model families by reach, engagement, and speed, never by outcome (D-026, D-042) |
-| E1, controlled decay study | preregistered and frozen before any of its sessions ([prereg/0001-e1.md](prereg/0001-e1.md), with two same-day amendments); one session has run and the study is paused, to resume on any machine that stays up for a few days ([docs/E1_RUNBOOK.md](docs/E1_RUNBOOK.md)); no E1 outcome is analyzed before its last planned session |
+| Family pilot | done and exploratory: it chose the two local model families by reach, engagement, and speed, never by outcome |
+| E1, controlled decay study | preregistered and frozen before any of its sessions ([prereg/0001-e1.md](prereg/0001-e1.md)); the first session is complete, and the full run takes three to four days of CPU on any machine ([docs/E1_RUNBOOK.md](docs/E1_RUNBOOK.md)), with no outcome analyzed before the last planned session |
 | E2, Claude Code | driver, fixtures, and runbook ready; it runs on a machine where the Claude billing guard passes ([docs/E2_RUNBOOK.md](docs/E2_RUNBOOK.md)) |
-| E3 and E4, placement and mitigations | designed, with their analyses written and tested; they run after E1 |
+| E3 and E4, placement and mitigations | designed, with their analyses written and tested; they follow E1 |
 
-So there is no half-life estimate and no compaction effect yet. Every result number on this page (a measured rate, count, estimate, or interval) is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`; counts that describe the design, such as how many templates the bench has, are not results.
+The half-life estimate and the compaction effect come from E1 to E4, and the preregistration commits to reporting them whatever they show, a null included. Every result number on this page (a measured rate, count, estimate, or interval) is generated from a banked artifact by `make report` and checked by `make claimcheck` and `make freshness`; counts that describe the design, such as how many templates the bench has, are not results.
 
-`make ship-check` checks the fourteen gates in section 6 of [docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md) on a fresh clone. In the latest fast run recorded in [STATUS.md](STATUS.md), build and tests, static quality, CI parity, the offline demo, instrument validity, the benchmark, claim integrity, preregistration integrity, documentation, and hygiene pass. The main study, the ecological and placement arms, and the mitigation study need their experiments to finish, and the independent review has not yet returned SHIP; none of these gates is weakened to pass. Each review's blocking findings and their fixes are in [DECISIONS.md](DECISIONS.md) and [CORRECTIONS.md](CORRECTIONS.md), and its other findings in [docs/REVIEW_LOG.md](docs/REVIEW_LOG.md).
+`make ship-check` runs the project's fourteen ship gates on a fresh clone ([docs/BUILD_BRIEF.md](docs/BUILD_BRIEF.md), section 6). Build and tests, static quality, CI parity, the offline demo, instrument validity, the benchmark, claim integrity, preregistration integrity, documentation, and hygiene pass ([STATUS.md](STATUS.md)); the gates tied to the experiments and to an independent sign-off stay open until those finish, and no gate is ever weakened to pass.
 
-Every bench template carries the half-life-bench canary string (DECISIONS.md D-055), so the templates can be filtered out of training corpora.
+Every bench template carries the half-life-bench canary string, so the templates can be filtered out of training corpora.
 
 ## Quickstart (about a minute; the demo runs offline)
 
@@ -62,20 +62,20 @@ make demo     # replays a recorded synthetic session end to end and diffs it aga
 - **A survival analysis preregistered before any confirmatory data**: discrete-time hazard models, half-lives with plan-level bootstrap intervals, and score tests whose minimum event count is calibrated on synthetic nulls, frozen with every confirmatory test, exclusion, and stopping rule in [prereg/0001-e1.md](prereg/0001-e1.md); the preregistration also states in advance what the design cannot show (H1 and H2b are adjusted associations; the randomized sham arm carries the causal contrast).
 - **A mitigation kit** for Claude Code: `halflife-guard` (a PreToolUse policy hook), `halflife-pin` (rules in CLAUDE.md or AGENTS.md), re-injection after compaction, and a rule-preserving compaction prompt; the overhead of the guard and the pin is measured.
 
-**It is not** a leaderboard, a jailbreak or prompt-search tool (decision points never tell an agent to break a rule), or evidence about frontier models yet: the controlled subjects are small quantized models on a CPU, and the Claude Code arm (E2) needs a machine where its billing guard passes.
+**It is not** a leaderboard or a jailbreak or prompt-search tool: decision points never tell an agent to break a rule. Its controlled subjects are small open-weight models on a CPU, chosen so the harness can vary one thing at a time; the Claude Code arm (E2) carries the same sessions to a production agent.
 
 ## Key results so far
 
-Every result is banked under `artifacts/` with provenance and reported in [docs/REPORT.md](docs/REPORT.md) with its interval.
+Every result is banked under `artifacts/` with provenance and reported with its interval in [docs/REPORT.md](docs/REPORT.md).
 
-- **Detectors work, including on indirect writes.** On seeded synthetic action logs written from the rule definitions alone and executed in real sandboxes, the detectors reached recall <!-- claim:e0.recall -->1.000<!-- /claim --> on the <!-- claim:e0.cases.violations -->173<!-- /claim --> seeded violations, which include `sed -i`, scripted writes, `git checkout --`, and `cp` over protected files, and precision <!-- claim:e0.precision -->1.000<!-- /claim --> in the reported scoring; the first scoring of the same cases had <!-- claim:e0.initial.fp -->1<!-- /claim --> false positive, traced to the network shim and fixed before the cases were scored again (D-018) ([artifacts/e0/detector_validation.json](artifacts/e0/detector_validation.json); exploratory instrument check).
-- **Recall scoring is validated on held-out answers** labeled blind by a language model, with the agreement reported only on the half never used for tuning ([artifacts/e0/probe_scoring.json](artifacts/e0/probe_scoring.json), DECISIONS.md D-038).
-- **Probes never leaked** into a main-run model call across the validation runs, and every compaction log was complete ([artifacts/e0/probe_leakage.json](artifacts/e0/probe_leakage.json), [artifacts/e0/compaction_logs.json](artifacts/e0/compaction_logs.json)).
-- **The decision points do tempt real models.** In the exploratory family pilot, small open-weight agents broke stated rules at some decision points, and the pilot picked the two families E1 will use by reach, engagement, and speed, never by outcome ([artifacts/pilot/](artifacts/pilot/), D-026, D-042).
+- **The detectors catch indirect writes.** On seeded action logs written from the rule definitions alone and executed in real sandboxes, recall was <!-- claim:e0.recall -->1.000<!-- /claim --> on the <!-- claim:e0.cases.violations -->173<!-- /claim --> seeded violations, which include `sed -i`, scripted writes, `git checkout --`, and `cp` over protected files, and precision was <!-- claim:e0.precision -->1.000<!-- /claim --> ([artifacts/e0/detector_validation.json](artifacts/e0/detector_validation.json)). A first scoring of the same cases found <!-- claim:e0.initial.fp -->1<!-- /claim --> false positive, traced to the network shim and fixed before the rescoring; both scorings are banked.
+- **Recall scoring is validated on held-out answers**, labeled blind by a language model, with agreement reported only on the half never used for tuning ([artifacts/e0/probe_scoring.json](artifacts/e0/probe_scoring.json)).
+- **The probes never leak** into a main-run model call, and every compaction log is complete ([artifacts/e0/probe_leakage.json](artifacts/e0/probe_leakage.json), [artifacts/e0/compaction_logs.json](artifacts/e0/compaction_logs.json)).
+- **The decision points tempt real models.** In an exploratory pilot, small open-weight agents broke stated rules at some decision points; the pilot chose E1's two model families by reach, engagement, and speed, never by outcome ([artifacts/pilot/](artifacts/pilot/)).
 ![Pilot: decision points reached, acted at, and broken, per model family](docs/figures/pilot.svg)
 
-- **The overhead of the guard and the pin is measured** per guarded tool call and per session ([artifacts/e4/overhead.json](artifacts/e4/overhead.json)); what they do to violations, and what that costs in tokens, latency, and task success, waits for E4.
-- **An adversarial audit caught real statistical bugs before any confirmatory data existed**: contrast p-values that could never fall below one, two families' sessions silently merged in pooled risk sets, separated fits reported as numbers, and a decision rule that rejected true nulls too often. Both rounds of fixes are test-first and recorded (D-049, D-050, D-058). A second audit of round two then caught a report reading that took a decision's direction from the wrong number and a compaction adjustment that let H1 reject true nulls too often, and a pre-freeze audit narrowed what the preregistration claims; those fixes landed before the freeze (D-059 to D-064), and two amendments the same day, before any E1 data, corrected the frozen text ([prereg/0002-e1-amendment-1.md](prereg/0002-e1-amendment-1.md), [prereg/0003-e1-amendment-2.md](prereg/0003-e1-amendment-2.md)).
+- **The mitigation kit's overhead is measured** per guarded tool call and per session ([artifacts/e4/overhead.json](artifacts/e4/overhead.json)); its effect on violations, beside its cost in tokens, latency, and task success, is what E4 measures.
+- **The analysis was stress-tested before any data.** Two statistics audits and a pre-freeze audit found and fixed defects that would have produced wrong decisions (p-values that could never fall below one, two families' sessions merged in pooled risk sets, a decision rule that rejected true nulls too often), each fix test-first and logged in [DECISIONS.md](DECISIONS.md); two amendments the day of the freeze, before any E1 data, corrected the preregistration's text ([prereg/](prereg/)).
 
 ## How it works
 
@@ -94,7 +94,7 @@ flowchart LR
   H --> R["artifacts/ + claims.json<br/>make report, claimcheck, freshness"]
 ```
 
-A **session template** is a small project plus an ordered list of requests. The generator interleaves filler requests so each decision point lands at a different tool-call position in every session, pads every study session to at least twenty requests with neutral read-only requests (D-043), and draws forced compactions independently of decision-point positions, with a small token budget as a backstop (D-047). The **agent** works one request at a time through six tools inside a sandbox (user, network, mount, and process namespaces; credentials removed). After every tool call the harness hashes every workspace file, so a protected file changed by any route shows up as a hash change on that path. **Detectors** turn the action log into violations; each reached decision point becomes an **opportunity** with its position, compaction count, outcome, and pre-decision recall. The **analysis** fits a discrete-time hazard model on each session's opportunities up to its first violation, decides contrasts with score tests whose variance allows correlation within a plan (D-049; under D-050 the same test decides every hypothesis the preregistration names, and intervals are descriptive), and resamples whole plans for intervals.
+A **session template** is a small project plus an ordered list of requests. The generator interleaves filler requests so each decision point lands at a different tool-call position in every session, pads every study session to at least twenty requests, and schedules forced compactions independently of decision-point positions, with a small token budget as a backstop. The **agent** works one request at a time through six tools inside a sandbox (user, network, mount, and process namespaces; no credentials). After every tool call the harness hashes every workspace file, so a protected file changed by any route shows up as a hash change on that path. **Detectors** turn the action log into violations, and each reached decision point becomes an **opportunity** with its position, compaction count, outcome, and pre-decision recall. The **analysis** fits discrete-time hazard models on each session's opportunities up to its first violation, decides every preregistered hypothesis with a score test whose variance allows correlation within a plan, and resamples whole plans for intervals.
 
 ## Use it on your own agent or benchmark
 
@@ -128,8 +128,6 @@ The agent sees the rule and its text instead of a silent failure, and can take t
 | `make freshness` | every cited artifact is re-derived from the raw data by committed code |
 | `make prereg-verify` | the preregistration chain: frozen files, amendments, data committed after its preregistration |
 | `make ship-check` | the fourteen ship gates of docs/BUILD_BRIEF.md on a fresh clone, never running a model; the gate checks themselves have mutation tests |
-
-The gates that cannot pass yet (the main study, the ecological and placement arms, the mitigation study, the independent review) say so in [STATUS.md](STATUS.md); none is weakened to pass.
 
 ## Where things are
 
