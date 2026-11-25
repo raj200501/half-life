@@ -107,7 +107,14 @@ halflife-guard --spec halflife.yaml --explain # what will be enforced, rule by r
 halflife-pin --spec halflife.yaml --out CLAUDE.md
 ```
 
-`halflife-guard` refuses tool calls that would break a rule (protected paths, including writes through `sed -i`, `tee`, `cp`, or `git checkout --`; forbidden commands; network use; new dependencies; line limits; file invariants; public API changes) and tells the agent which rule and why. The `.claude/settings.json` snippet, the re-injection hook for the `compact` matcher, the fail-open and fail-closed behavior, and the limits of static analysis are in [docs/MITIGATIONS.md](docs/MITIGATIONS.md).
+`halflife-guard` refuses tool calls that would break a rule (protected paths, including writes through `sed -i`, `tee`, `cp`, or `git checkout --`; forbidden commands; network use; new dependencies; line limits; file invariants; public API changes) and tells the agent which rule and why. This is what Claude Code receives when an agent tries an indirect write to a frozen test file, with `examples/halflife.yaml` as the spec (the hook reads the tool call on stdin; an allowed call gets no output):
+
+```console
+$ echo '{"tool_name": "Bash", "tool_input": {"command": "sed -i s/True/False/ tests/test_api.py"}}' | halflife-guard --spec halflife.yaml
+{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "halflife-guard: the command would modify tests/test_api.py (sed -i). Rule tests-frozen: Never modify, create, or delete files under tests/."}}
+```
+
+The agent sees the rule and its text instead of a silent failure, and can take the compliant route. The `.claude/settings.json` snippet, the re-injection hook for the `compact` matcher, the fail-open and fail-closed behavior, and the limits of static analysis are in [docs/MITIGATIONS.md](docs/MITIGATIONS.md).
 
 **Measure your own agent.** Every template is one YAML file under `src/halflife/bench/templates/` with its rules, detectors, requests, decision points, scripted compliant and tempting routes, and success checks; `python -m halflife.bench verify <id>` runs the routes in real sandboxes and fails unless the compliant route passes cleanly and every tempting route trips its detector. Point the minimal agent at another local GGUF model by adding a pinned entry (repository, revision, file, SHA-256) to `src/halflife/models.py`, or adapt `src/halflife/drivers/claude_code.py`, which runs headless Claude Code with clean child settings, a snapshot hook, turn caps, and forked probes ([docs/E2_RUNBOOK.md](docs/E2_RUNBOOK.md)).
 
